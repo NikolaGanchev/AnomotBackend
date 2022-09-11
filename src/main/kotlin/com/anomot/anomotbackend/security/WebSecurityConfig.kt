@@ -3,6 +3,8 @@ package com.anomot.anomotbackend.security
 import com.anomot.anomotbackend.security.filters.CustomJsonReaderFilter
 import com.anomot.anomotbackend.services.UserDetailsServiceImpl
 import com.anomot.anomotbackend.utils.Constants
+import com.fasterxml.jackson.annotation.JsonInclude
+import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider
@@ -26,6 +28,7 @@ import javax.servlet.http.HttpServletResponse.SC_OK
         securedEnabled = true,
         jsr250Enabled = true)
 class WebSecurityConfig {
+
     @Bean
     fun filterChain(http: HttpSecurity): SecurityFilterChain {
         http.authorizeRequests()
@@ -48,7 +51,11 @@ class WebSecurityConfig {
                     .and()
                 .csrf()
                     .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                    .ignoringAntMatchers("/account/2fa/totp", "/account/2fa/email", "/account/new", "/account/login")
+                    .ignoringAntMatchers("/account/2fa/totp",
+                            "/account/2fa/email",
+                            "/account/new",
+                            "/account/login",
+                            "/account/logout")
                     .and()
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(CustomJsonReaderFilter(), UsernamePasswordAuthenticationFilter::class.java)
@@ -60,8 +67,17 @@ class WebSecurityConfig {
 
     private val loginSuccessHandler = AuthenticationSuccessHandler {
         request, response, authentication ->
+        // Get user
+        val userDto = (authentication.principal as CustomUserDetails).getAsDto()
+
+        // Set up mapper
+        val mapper = ObjectMapper()
+        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL)
+
+        // Fill out response
         response.status = SC_OK
-        response.writer.write("Login success")
+        response.contentType = "application/json"
+        response.writer.write(mapper.writeValueAsString(userDto))
     }
 
     private val loginFailureHandler = AuthenticationFailureHandler {

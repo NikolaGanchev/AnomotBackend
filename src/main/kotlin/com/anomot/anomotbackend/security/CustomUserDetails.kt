@@ -1,5 +1,6 @@
 package com.anomot.anomotbackend.security
 
+import com.anomot.anomotbackend.dto.UserDto
 import com.anomot.anomotbackend.entities.User
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.authority.SimpleGrantedAuthority
@@ -34,5 +35,13 @@ class CustomUserDetails(private val user: User): UserDetails {
 
     override fun isEnabled(): Boolean {
         return true
+    }
+
+    fun getAsDto(): UserDto {
+        return UserDto(email = user.email, username = user.username, roles = getAuthoritiesAsList())
+    }
+
+    private fun getAuthoritiesAsList(): List<String> {
+        return user.authorities.map { it -> it.authority }.toCollection(mutableListOf())
     }
 }
