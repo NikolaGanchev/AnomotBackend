@@ -3,17 +3,17 @@ package com.anomot.anomotbackend.security.filters
 import com.anomot.anomotbackend.utils.Constants
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.security.authentication.AuthenticationServiceException
-import org.springframework.web.filter.GenericFilterBean
+import org.springframework.web.filter.OncePerRequestFilter
 import javax.servlet.FilterChain
-import javax.servlet.ServletRequest
-import javax.servlet.ServletResponse
+import javax.servlet.http.HttpServletRequest
+import javax.servlet.http.HttpServletResponse
 
 
 class CustomJsonReaderFilter:
-        GenericFilterBean() {
+        OncePerRequestFilter() {
 
-    override fun doFilter(request: ServletRequest, response: ServletResponse, chain: FilterChain) {
-        if (request.contentType != "application/json") {
+    override fun doFilterInternal(request: HttpServletRequest, response: HttpServletResponse, chain: FilterChain) {
+        if (request.contentType != "application/json" || !request.requestURL.endsWith("account/login")) {
             chain.doFilter(request, response)
         } else {
 

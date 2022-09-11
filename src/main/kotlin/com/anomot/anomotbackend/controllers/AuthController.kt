@@ -1,4 +1,4 @@
-package com.anomot.anomotbackend.controller
+package com.anomot.anomotbackend.controllers
 
 import com.anomot.anomotbackend.dto.UserDto
 import com.anomot.anomotbackend.dto.UserRegisterDto

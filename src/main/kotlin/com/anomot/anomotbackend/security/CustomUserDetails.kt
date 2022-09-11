@@ -2,13 +2,14 @@ package com.anomot.anomotbackend.security
 
 import com.anomot.anomotbackend.entities.User
 import org.springframework.security.core.GrantedAuthority
+import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.userdetails.UserDetails
 
 class CustomUserDetails(private val user: User): UserDetails {
 
 
     override fun getAuthorities(): MutableCollection<out GrantedAuthority> {
-        return mutableListOf<GrantedAuthority>()
+        return user.authorities.map { it -> SimpleGrantedAuthority(it.authority) }.toCollection(mutableListOf())
     }
 
     override fun getPassword(): String {

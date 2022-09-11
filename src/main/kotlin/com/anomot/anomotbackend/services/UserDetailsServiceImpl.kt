@@ -2,16 +2,21 @@ package com.anomot.anomotbackend.services
 
 import com.anomot.anomotbackend.dto.UserDto
 import com.anomot.anomotbackend.dto.UserRegisterDto
+import com.anomot.anomotbackend.entities.Authority
 import com.anomot.anomotbackend.entities.User
 import com.anomot.anomotbackend.exceptions.UserAlreadyExistsException
+import com.anomot.anomotbackend.repositories.AuthorityRepository
 import com.anomot.anomotbackend.repositories.UserRepository
+import com.anomot.anomotbackend.security.Authorities
 import com.anomot.anomotbackend.security.CustomUserDetails
+import org.hibernate.Hibernate
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder
 import org.springframework.stereotype.Service
+import javax.transaction.Transactional
 
 @Service
 class UserDetailsServiceImpl: UserDetailsService {
@@ -20,12 +25,16 @@ class UserDetailsServiceImpl: UserDetailsService {
     private lateinit var userRepository: UserRepository
     @Autowired
     private lateinit var passwordEncoder: Argon2PasswordEncoder
+    @Autowired
+    private lateinit var authorityRepository: AuthorityRepository
 
+    @Transactional
     override fun loadUserByUsername(email: String?): UserDetails {
         if (email == null) {
             throw NullPointerException("Email cannot be null")
         }
         val user = userRepository.findByEmail(email) ?: throw UsernameNotFoundException("Email not found")
+        Hibernate.initialize(user.authorities)
         return CustomUserDetails(user)
     }
 
@@ -38,11 +47,17 @@ class UserDetailsServiceImpl: UserDetailsService {
 
         val hashedPassword = passwordEncoder.encode(userRegisterDto.password)
 
-        val user = User(email = userRegisterDto.email, password = hashedPassword, username = userRegisterDto.username)
+        val userAuthority = authorityRepository.findByAuthority(Authorities.USER.roleName)
+                ?: authorityRepository.save(Authority(Authorities.USER.roleName))
+
+        val user = User(email = userRegisterDto.email,
+                password = hashedPassword,
+                username = userRegisterDto.username,
+                arrayListOf(userAuthority))
 
         val savedUser = userRepository.save(user)
 
-        return UserDto(email = savedUser.email, username = savedUser.username)
+        return UserDto(email = savedUser.email, username = savedUser.username, listOf(Authorities.USER.roleName))
     }
 
     private fun userExists(userRegisterDto: UserRegisterDto): Boolean {

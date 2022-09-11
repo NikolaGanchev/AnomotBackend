@@ -6,6 +6,7 @@ import com.anomot.anomotbackend.utils.Constants
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder
@@ -20,6 +21,10 @@ import javax.servlet.http.HttpServletResponse.SC_OK
 
 @Configuration
 @EnableWebSecurity
+@EnableGlobalMethodSecurity(
+        prePostEnabled = true,
+        securedEnabled = true,
+        jsr250Enabled = true)
 class WebSecurityConfig {
     @Bean
     fun filterChain(http: HttpSecurity): SecurityFilterChain {

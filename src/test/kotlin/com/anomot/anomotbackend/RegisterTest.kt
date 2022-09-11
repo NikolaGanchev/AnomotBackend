@@ -2,9 +2,11 @@ package com.anomot.anomotbackend
 
 import com.anomot.anomotbackend.dto.UserDto
 import com.anomot.anomotbackend.dto.UserRegisterDto
+import com.anomot.anomotbackend.entities.Authority
 import com.anomot.anomotbackend.entities.User
 import com.anomot.anomotbackend.exceptions.UserAlreadyExistsException
 import com.anomot.anomotbackend.repositories.UserRepository
+import com.anomot.anomotbackend.security.Authorities
 import com.anomot.anomotbackend.services.UserDetailsServiceImpl
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
@@ -28,8 +30,9 @@ class RegisterTest {
 
     @Test
     fun `When create user then return User`() {
-        val user = User("example@test.com", "password12$", "Georgi")
-        val expectedResult = UserDto("example@test.com", "Georgi")
+        val authority = Authority(Authorities.USER.roleName)
+        val user = User("example@test.com", "password12$", "Georgi", mutableListOf(authority))
+        val expectedResult = UserDto("example@test.com", "Georgi", mutableListOf(authority.authority))
 
         every { passwordEncoder.encode(user.password) } returns user.password
         every { userRepository.save(any()) } returns user
@@ -42,7 +45,8 @@ class RegisterTest {
 
     @Test
     fun `When user exists then throw exception`() {
-        val user = User("example@test.com", "password12$", "Georgi")
+        val authority = Authority(Authorities.USER.roleName)
+        val user = User("example@test.com", "password12$", "Georgi", mutableListOf(authority))
 
         every { passwordEncoder.encode(user.password) } returns user.password
         every { userRepository.save(any()) } returns user

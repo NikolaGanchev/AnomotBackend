@@ -11,4 +11,13 @@ class User(
     var email: String,
     var password: String,
     var username: String,
+    @ManyToMany(cascade = [
+        CascadeType.PERSIST,
+        CascadeType.MERGE
+    ])
+    @JoinTable(name = "user_authorities",
+            joinColumns = [JoinColumn(name = "user_id")],
+            inverseJoinColumns = [JoinColumn(name = "authority_id")]
+    )
+    var authorities: MutableList<Authority>,
     @Id @GeneratedValue(strategy = GenerationType.AUTO) var id: Long? = null) : Serializable
