@@ -83,6 +83,7 @@ class WebSecurityConfig {
     private val loginFailureHandler = AuthenticationFailureHandler {
         request, response, authentication ->
         response.status = SC_FORBIDDEN
+        response.contentType = "text/plain"
         response.writer.write("Login error")
     }
 
