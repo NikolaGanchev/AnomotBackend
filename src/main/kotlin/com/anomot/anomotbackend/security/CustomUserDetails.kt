@@ -34,7 +34,7 @@ class CustomUserDetails(private val user: User): UserDetails {
     }
 
     override fun isEnabled(): Boolean {
-        return true
+        return user.isEmailVerified
     }
 
     fun getAsDto(): UserDto {

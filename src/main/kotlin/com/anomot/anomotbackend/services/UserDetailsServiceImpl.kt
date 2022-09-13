@@ -9,6 +9,7 @@ import com.anomot.anomotbackend.repositories.AuthorityRepository
 import com.anomot.anomotbackend.repositories.UserRepository
 import com.anomot.anomotbackend.security.Authorities
 import com.anomot.anomotbackend.security.CustomUserDetails
+import com.anomot.anomotbackend.utils.Constants
 import org.hibernate.Hibernate
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.core.userdetails.UserDetails
@@ -16,6 +17,7 @@ import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder
 import org.springframework.stereotype.Service
+import java.time.Instant
 import javax.transaction.Transactional
 
 @Service
@@ -27,6 +29,8 @@ class UserDetailsServiceImpl: UserDetailsService {
     private lateinit var passwordEncoder: Argon2PasswordEncoder
     @Autowired
     private lateinit var authorityRepository: AuthorityRepository
+    @Autowired
+    private lateinit var emailVerificationService: EmailVerificationService
 
     @Transactional
     override fun loadUserByUsername(email: String?): UserDetails {
@@ -57,7 +61,19 @@ class UserDetailsServiceImpl: UserDetailsService {
 
         val savedUser = userRepository.save(user)
 
+        sendVerificationEmail(savedUser)
+
         return UserDto(email = savedUser.email, username = savedUser.username, listOf(Authorities.USER.roleName))
+    }
+
+    private fun sendVerificationEmail(user: User) {
+        val code = emailVerificationService.generateVerificationCode()
+        val expiryDate = emailVerificationService.generateExpiryDate(
+                Constants.EMAIL_VERIFICATION_TOKEN_LIFETIME,
+                Instant.now())
+        val token = emailVerificationService.createEmailVerificationToken(code, user, expiryDate)
+        val savedToken = emailVerificationService.saveEmailVerificationToken(token)
+        emailVerificationService.sendVerificationEmail(user, savedToken)
     }
 
     private fun userExists(userRegisterDto: UserRegisterDto): Boolean {

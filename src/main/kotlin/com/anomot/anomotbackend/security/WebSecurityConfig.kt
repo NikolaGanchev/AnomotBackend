@@ -32,7 +32,7 @@ class WebSecurityConfig {
     @Bean
     fun filterChain(http: HttpSecurity): SecurityFilterChain {
         http.authorizeRequests()
-                    .antMatchers("/account/new").permitAll()
+                    .antMatchers("/account/new", "/account/email/verify").permitAll()
                     .anyRequest().authenticated()
                     .and()
                 .formLogin()
@@ -55,7 +55,8 @@ class WebSecurityConfig {
                             "/account/2fa/email",
                             "/account/new",
                             "/account/login",
-                            "/account/logout")
+                            "/account/logout",
+                            "/account/email/verify")
                     .and()
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(CustomJsonReaderFilter(), UsernamePasswordAuthenticationFilter::class.java)

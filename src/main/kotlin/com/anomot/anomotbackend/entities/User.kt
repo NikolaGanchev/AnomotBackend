@@ -20,4 +20,5 @@ class User(
             inverseJoinColumns = [JoinColumn(name = "authority_id")]
     )
     var authorities: MutableList<Authority>,
+    var isEmailVerified: Boolean = false,
     @Id @GeneratedValue(strategy = GenerationType.AUTO) var id: Long? = null) : Serializable
