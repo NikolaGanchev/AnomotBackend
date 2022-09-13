@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager
+import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
 import java.util.*
@@ -78,5 +79,38 @@ class RepositoryTests @Autowired constructor(
         val result = emailVerificationTokenRepository.findByVerificationCode(token.verificationCode)
 
         assertThat(result).isEqualTo(token)
+    }
+
+    @Test
+    fun `When delete old tokens then remove`() {
+        val authority = Authority(Authorities.USER.roleName)
+        val user1 = User("example@example1.com", "password", "Georgi", mutableListOf(authority))
+        val user2 = User("example@example2.com", "password", "Georgi", mutableListOf(authority))
+        val user3 = User("example@example3.com", "password", "Georgi", mutableListOf(authority))
+
+        entityManager.persist(user1)
+        entityManager.persist(user2)
+        entityManager.persist(user3)
+        entityManager.flush()
+
+        val expiryDate = Date.from(Instant.now())
+
+        val token1 = EmailVerificationToken("test1", user1, expiryDate)
+        val token2 = EmailVerificationToken("test2", user2, expiryDate)
+        val token3 = EmailVerificationToken("test3", user3, expiryDate)
+
+        entityManager.persist(token1)
+        entityManager.persist(token2)
+        entityManager.persist(token3)
+        entityManager.flush()
+
+        val currentDateForward = Date.from(OffsetDateTime.now( ZoneOffset.UTC )
+                .plusDays(1).toInstant())
+
+        val editedRows = emailVerificationTokenRepository.deleteOldTokens(currentDateForward)
+        val numberOfRows = emailVerificationTokenRepository.count()
+
+        assertThat(editedRows).isEqualTo(3)
+        assertThat(numberOfRows).isEqualTo(0)
     }
 }

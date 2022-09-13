@@ -53,6 +53,8 @@ class EmailVerificationService @Autowired constructor(
             val editedRows = userRepository.setIsEmailVerifiedByEmail(true,
                     emailVerificationToken.user.email)
 
+            emailVerificationTokenRepository.delete(emailVerificationToken)
+
             editedRows != 0
         } else {
             false
