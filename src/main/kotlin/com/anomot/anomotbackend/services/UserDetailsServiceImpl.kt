@@ -39,6 +39,7 @@ class UserDetailsServiceImpl: UserDetailsService {
         }
         val user = userRepository.findByEmail(email) ?: throw UsernameNotFoundException("Email not found")
         Hibernate.initialize(user.authorities)
+        Hibernate.initialize(user.mfaMethods)
         return CustomUserDetails(user)
     }
 
@@ -63,7 +64,7 @@ class UserDetailsServiceImpl: UserDetailsService {
 
         sendVerificationEmail(savedUser)
 
-        return UserDto(email = savedUser.email, username = savedUser.username, listOf(Authorities.USER.roleName))
+        return UserDto(email = savedUser.email, username = savedUser.username, listOf(Authorities.USER.roleName), false)
     }
 
     private fun sendVerificationEmail(user: User) {

@@ -38,10 +38,18 @@ class CustomUserDetails(private val user: User): UserDetails {
     }
 
     fun getAsDto(): UserDto {
-        return UserDto(email = user.email, username = user.username, roles = getAuthoritiesAsList())
+        return UserDto(email = user.email,
+                username = user.username,
+                roles = getAuthoritiesAsList(),
+                isMfaActive = user.isMfaActive,
+                if (user.isMfaActive) getMfaMethodsAsList() else null)
     }
 
     private fun getAuthoritiesAsList(): List<String> {
         return user.authorities.map { it -> it.authority }.toCollection(mutableListOf())
+    }
+
+    private fun getMfaMethodsAsList(): List<String>? {
+        return user.mfaMethods?.map { it.method }?.toCollection(mutableListOf())
     }
 }

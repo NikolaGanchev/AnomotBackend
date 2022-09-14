@@ -2,11 +2,14 @@ package com.anomot.anomotbackend
 
 import com.anomot.anomotbackend.entities.Authority
 import com.anomot.anomotbackend.entities.EmailVerificationToken
+import com.anomot.anomotbackend.entities.MfaMethod
 import com.anomot.anomotbackend.entities.User
 import com.anomot.anomotbackend.repositories.AuthorityRepository
 import com.anomot.anomotbackend.repositories.EmailVerificationTokenRepository
+import com.anomot.anomotbackend.repositories.MfaMethodRepository
 import com.anomot.anomotbackend.repositories.UserRepository
 import com.anomot.anomotbackend.security.Authorities
+import com.anomot.anomotbackend.security.MfaMethods
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -23,7 +26,8 @@ class RepositoryTests @Autowired constructor(
         val entityManager: TestEntityManager,
         val userRepository: UserRepository,
         val authorityRepository: AuthorityRepository,
-        val emailVerificationTokenRepository: EmailVerificationTokenRepository
+        val emailVerificationTokenRepository: EmailVerificationTokenRepository,
+        val mfaMethodRepository: MfaMethodRepository
 ) {
 
     @Test
@@ -112,5 +116,17 @@ class RepositoryTests @Autowired constructor(
 
         assertThat(editedRows).isEqualTo(3)
         assertThat(numberOfRows).isEqualTo(0)
+    }
+
+    @Test
+    fun `When findByMethod then return mfaMethod`() {
+        val mfaMethod = MfaMethod(MfaMethods.TOTP.method)
+
+        entityManager.persist(mfaMethod)
+        entityManager.flush()
+
+        val result = mfaMethodRepository.findByMethod(MfaMethods.TOTP.method)
+
+        assertThat(result).isEqualTo(mfaMethod)
     }
 }

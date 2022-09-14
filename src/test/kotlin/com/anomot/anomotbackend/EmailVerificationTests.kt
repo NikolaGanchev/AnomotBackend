@@ -33,11 +33,13 @@ class EmailVerificationTests @Autowired constructor(
 
         val expiryDate = emailVerificationService.generateExpiryDate(1, Instant.now())
         val token = emailVerificationService.createEmailVerificationToken(code, user, expiryDate)
-        emailVerificationService.saveEmailVerificationToken(token)
 
-        every { emailVerificationTokenRepository.save(token) } returns token
+        every { emailVerificationTokenRepository.save(any()) } returns token
+        every { emailVerificationTokenRepository.delete(any()) } returns Unit
         every { emailVerificationTokenRepository.findByVerificationCode(code) } returns token
         every { userRepository.setIsEmailVerifiedByEmail(true, user.email) } returns 1
+
+        emailVerificationService.saveEmailVerificationToken(token)
 
         val isVerified = emailVerificationService.verifyEmail(code, Instant.now())
 
@@ -52,11 +54,13 @@ class EmailVerificationTests @Autowired constructor(
 
         val expiryDate = emailVerificationService.generateExpiryDate(-1, Instant.now())
         val token = emailVerificationService.createEmailVerificationToken(code, user, expiryDate)
-        emailVerificationService.saveEmailVerificationToken(token)
 
-        every { emailVerificationTokenRepository.save(token) } returns token
+        every { emailVerificationTokenRepository.save(any()) } returns token
+        every { emailVerificationTokenRepository.delete(any()) } returns Unit
         every { emailVerificationTokenRepository.findByVerificationCode(code) } returns token
         every { userRepository.setIsEmailVerifiedByEmail(true, user.email) } returns 1
+
+        emailVerificationService.saveEmailVerificationToken(token)
 
         val isVerified = emailVerificationService.verifyEmail(code, Instant.now().minusSeconds(60 * 24))
 

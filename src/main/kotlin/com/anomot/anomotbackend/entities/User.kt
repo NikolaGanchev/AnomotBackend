@@ -21,4 +21,14 @@ class User(
     )
     var authorities: MutableList<Authority>,
     var isEmailVerified: Boolean = false,
+    var isMfaActive: Boolean = false,
+    @ManyToMany(cascade = [
+        CascadeType.PERSIST,
+        CascadeType.MERGE
+    ])
+    @JoinTable(name = "user_2fa_methods",
+            joinColumns = [JoinColumn(name = "user_id")],
+            inverseJoinColumns = [JoinColumn(name = "mfa_method_id")]
+    )
+    var mfaMethods: MutableList<MfaMethod>? = null,
     @Id @GeneratedValue(strategy = GenerationType.AUTO) var id: Long? = null) : Serializable
