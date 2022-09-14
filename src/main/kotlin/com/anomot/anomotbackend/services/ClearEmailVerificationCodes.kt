@@ -12,7 +12,7 @@ class ClearEmailVerificationCodes @Autowired constructor(
         val emailVerificationTokenRepository: EmailVerificationTokenRepository
 ) {
 
-    @Scheduled(cron = "0 0 * * *")
+    @Scheduled(cron = "0 0 0 * * ?")
     fun clearEmailVerificationCodes() {
         emailVerificationTokenRepository.deleteOldTokens(Date.from(Instant.now()))
     }
