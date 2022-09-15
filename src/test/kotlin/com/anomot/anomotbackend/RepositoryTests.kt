@@ -1,13 +1,7 @@
 package com.anomot.anomotbackend
 
-import com.anomot.anomotbackend.entities.Authority
-import com.anomot.anomotbackend.entities.EmailVerificationToken
-import com.anomot.anomotbackend.entities.MfaMethod
-import com.anomot.anomotbackend.entities.User
-import com.anomot.anomotbackend.repositories.AuthorityRepository
-import com.anomot.anomotbackend.repositories.EmailVerificationTokenRepository
-import com.anomot.anomotbackend.repositories.MfaMethodRepository
-import com.anomot.anomotbackend.repositories.UserRepository
+import com.anomot.anomotbackend.entities.*
+import com.anomot.anomotbackend.repositories.*
 import com.anomot.anomotbackend.security.Authorities
 import com.anomot.anomotbackend.security.MfaMethods
 import org.assertj.core.api.Assertions.assertThat
@@ -27,7 +21,8 @@ class RepositoryTests @Autowired constructor(
         val userRepository: UserRepository,
         val authorityRepository: AuthorityRepository,
         val emailVerificationTokenRepository: EmailVerificationTokenRepository,
-        val mfaMethodRepository: MfaMethodRepository
+        val mfaMethodRepository: MfaMethodRepository,
+        val mfaTotpSecretRepository: MfaTotpSecretRepository
 ) {
 
     @Test
@@ -128,5 +123,21 @@ class RepositoryTests @Autowired constructor(
         val result = mfaMethodRepository.findByMethod(MfaMethods.TOTP.method)
 
         assertThat(result).isEqualTo(mfaMethod)
+    }
+
+    @Test
+    fun `When findByUser then return mfaTotpSecret`() {
+        val authority = Authority(Authorities.USER.roleName)
+        val user = User("example@example.com", "password", "Georgi", mutableListOf(authority))
+
+        val mfaTotpSecret = MfaTotpSecret("secret", user)
+
+        entityManager.persist(user)
+        entityManager.persist(mfaTotpSecret)
+        entityManager.flush()
+
+        val result = mfaTotpSecretRepository.findByUser(user)
+
+        assertThat(result).isEqualTo(mfaTotpSecret)
     }
 }
