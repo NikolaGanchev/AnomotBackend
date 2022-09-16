@@ -20,13 +20,13 @@ class RedisRepositoryTests @Autowired constructor(
         val authority = Authority(Authorities.USER.roleName)
         val user = User("example@example.com", "password", "Georgi", mutableListOf(authority))
         val code = "12ab79"
-        val mfaEmailCode =  MfaEmailCode(id = code, email = user.email)
+        val mfaEmailCode =  MfaEmailCode(code = code, email = user.email)
 
         mfaEmailCodeRepository.save(mfaEmailCode)
 
-        val result = mfaEmailCodeRepository.findById(code)
+        val result = mfaEmailCodeRepository.findById(user.email)
 
-        assertThat(result.get().id).isEqualTo(mfaEmailCode.id)
         assertThat(result.get().email).isEqualTo(mfaEmailCode.email)
+        assertThat(result.get().code).isEqualTo(mfaEmailCode.code)
     }
 }
