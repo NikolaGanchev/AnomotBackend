@@ -6,7 +6,7 @@ import org.springframework.data.redis.core.RedisHash
 import java.io.Serializable
 
 @RedisHash("MfaEmailCode", timeToLive = Constants.MFA_EMAIL_CODE_LIFETIME)
-class MfaEmailCode(
+class MfaEmailToken(
         @Id var email: String,
         var code: String
 ): Serializable

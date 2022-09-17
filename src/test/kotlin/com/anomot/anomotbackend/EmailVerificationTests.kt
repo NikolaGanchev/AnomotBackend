@@ -43,7 +43,7 @@ class EmailVerificationTests @Autowired constructor(
 
         val isVerified = emailVerificationService.verifyEmail(code, Instant.now())
 
-        assertThat(isVerified).isEqualTo(true)
+        assertThat(isVerified).isTrue
     }
 
     @Test
@@ -64,7 +64,7 @@ class EmailVerificationTests @Autowired constructor(
 
         val isVerified = emailVerificationService.verifyEmail(code, Instant.now().minusSeconds(60 * 24))
 
-        assertThat(isVerified).isEqualTo(false)
+        assertThat(isVerified).isFalse
     }
 
 }

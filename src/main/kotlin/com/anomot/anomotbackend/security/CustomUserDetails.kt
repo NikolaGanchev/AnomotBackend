@@ -49,7 +49,15 @@ class CustomUserDetails(private val user: User): UserDetails {
         return user.authorities.map { it -> it.authority }.toCollection(mutableListOf())
     }
 
-    private fun getMfaMethodsAsList(): List<String>? {
+    fun getMfaMethodsAsList(): List<String>? {
         return user.mfaMethods?.map { it.method }?.toCollection(mutableListOf())
+    }
+
+    fun isEmailVerified(): Boolean {
+        return user.isEmailVerified
+    }
+
+    fun isMfaEnabled(): Boolean {
+        return user.isMfaActive
     }
 }

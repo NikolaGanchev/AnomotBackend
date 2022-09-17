@@ -126,7 +126,7 @@ class RepositoryTests @Autowired constructor(
     }
 
     @Test
-    fun `When findByUser then return mfaTotpSecret`() {
+    fun `When findByEmail then return mfaTotpSecret`() {
         val authority = Authority(Authorities.USER.roleName)
         val user = User("example@example.com", "password", "Georgi", mutableListOf(authority))
 
@@ -136,7 +136,7 @@ class RepositoryTests @Autowired constructor(
         entityManager.persist(mfaTotpSecret)
         entityManager.flush()
 
-        val result = mfaTotpSecretRepository.findByUser(user)
+        val result = mfaTotpSecretRepository.findByEmail(user.email)
 
         assertThat(result).isEqualTo(mfaTotpSecret)
     }

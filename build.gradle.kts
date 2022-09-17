@@ -7,6 +7,7 @@ plugins {
     kotlin("plugin.spring") version "1.6.21"
     kotlin("plugin.jpa") version "1.6.21"
     kotlin("plugin.allopen") version "1.6.21"
+    java
 }
 
 allOpen {
@@ -41,6 +42,7 @@ dependencies {
     implementation("org.springframework.session:spring-session-jdbc")
     implementation("org.passay:passay:1.6.2")
     implementation("org.bouncycastle:bcprov-jdk15on:1.70")
+    implementation("com.github.bastiaanjansen:otp-java:1.3.2")
     runtimeOnly("com.h2database:h2")
     runtimeOnly("org.postgresql:postgresql")
     testImplementation("org.springframework.boot:spring-boot-starter-test") {

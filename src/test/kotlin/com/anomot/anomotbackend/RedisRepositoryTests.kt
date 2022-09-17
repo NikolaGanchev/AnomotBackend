@@ -1,7 +1,7 @@
 package com.anomot.anomotbackend
 
 import com.anomot.anomotbackend.entities.Authority
-import com.anomot.anomotbackend.entities.MfaEmailCode
+import com.anomot.anomotbackend.entities.MfaEmailToken
 import com.anomot.anomotbackend.entities.User
 import com.anomot.anomotbackend.repositories.MfaEmailCodeRepository
 import com.anomot.anomotbackend.security.Authorities
@@ -20,13 +20,13 @@ class RedisRepositoryTests @Autowired constructor(
         val authority = Authority(Authorities.USER.roleName)
         val user = User("example@example.com", "password", "Georgi", mutableListOf(authority))
         val code = "12ab79"
-        val mfaEmailCode =  MfaEmailCode(code = code, email = user.email)
+        val mfaEmailToken =  MfaEmailToken(code = code, email = user.email)
 
-        mfaEmailCodeRepository.save(mfaEmailCode)
+        mfaEmailCodeRepository.save(mfaEmailToken)
 
         val result = mfaEmailCodeRepository.findById(user.email)
 
-        assertThat(result.get().email).isEqualTo(mfaEmailCode.email)
-        assertThat(result.get().code).isEqualTo(mfaEmailCode.code)
+        assertThat(result.get().email).isEqualTo(mfaEmailToken.email)
+        assertThat(result.get().code).isEqualTo(mfaEmailToken.code)
     }
 }
