@@ -12,7 +12,7 @@ class MfaEmailTokenService @Autowired constructor(
 ) {
 
     private fun generateEmailCode(): String {
-        val dictionary = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+        val dictionary = "0123456789"
         val length = 6
         val random = SecureRandom()
         val code = StringBuilder(length)
@@ -32,7 +32,7 @@ class MfaEmailTokenService @Autowired constructor(
         mfaEmailCodeRepository.save(mfaEmailToken)
     }
 
-    fun sendMfaEmail() {
+    fun sendMfaEmail(mfaEmailToken: MfaEmailToken) {
         //TODO("implement when emails are available")
     }
 

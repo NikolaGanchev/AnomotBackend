@@ -1,5 +1,6 @@
 package com.anomot.anomotbackend.security
 
+import com.anomot.anomotbackend.exceptions.MfaRequiredException
 import com.anomot.anomotbackend.security.filters.CustomJsonReaderFilter
 import com.anomot.anomotbackend.services.UserDetailsServiceImpl
 import com.anomot.anomotbackend.utils.Constants
@@ -7,7 +8,6 @@ import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
@@ -86,13 +86,25 @@ class WebSecurityConfig {
         request, response, authentication ->
         response.status = SC_FORBIDDEN
         response.contentType = "text/plain"
-        response.writer.write("Login error")
+
+        if (authentication is MfaRequiredException && authentication.message != null) {
+            // Refer to CustomAuthenticationProvider.kt
+            val customResponse = mutableMapOf<String, List<String>>()
+            customResponse[Constants.MFA_AVAILABLE_METHODS_PARAMETER] = authentication.message!!.split(",")
+
+            val mapper = ObjectMapper()
+            mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL)
+
+            response.contentType = "application/json"
+            response.writer.write(mapper.writeValueAsString(customResponse))
+        } else {
+            response.writer.write(authentication.message ?: "Login error")
+        }
     }
 
     @Bean
-    fun authenticationProvider(): DaoAuthenticationProvider? {
-        val authProvider = DaoAuthenticationProvider()
-        authProvider.setUserDetailsService(userDetailsService())
+    fun authenticationProvider(): CustomAuthenticationProvider {
+        val authProvider = CustomAuthenticationProvider(userDetailsService())
         authProvider.setPasswordEncoder(passwordEncoder())
         return authProvider
     }

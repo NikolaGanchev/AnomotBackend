@@ -4,14 +4,15 @@ import com.anomot.anomotbackend.controllers.AuthController
 import com.anomot.anomotbackend.dto.EmailVerifyDto
 import com.anomot.anomotbackend.dto.UserDto
 import com.anomot.anomotbackend.dto.UserRegisterDto
-import com.anomot.anomotbackend.entities.Authority
-import com.anomot.anomotbackend.entities.EmailVerificationToken
-import com.anomot.anomotbackend.entities.User
+import com.anomot.anomotbackend.entities.*
 import com.anomot.anomotbackend.exceptions.UserAlreadyExistsException
 import com.anomot.anomotbackend.security.Authorities
 import com.anomot.anomotbackend.security.CustomUserDetails
+import com.anomot.anomotbackend.security.MfaMethodValue
 import com.anomot.anomotbackend.security.WebSecurityConfig
 import com.anomot.anomotbackend.services.EmailVerificationService
+import com.anomot.anomotbackend.services.MfaEmailTokenService
+import com.anomot.anomotbackend.services.MfaTotpService
 import com.anomot.anomotbackend.services.UserDetailsServiceImpl
 import com.anomot.anomotbackend.utils.Constants
 import com.ninjasquad.springmockk.MockkBean
@@ -50,6 +51,13 @@ class AuthenticationWebTests @Autowired constructor(
     private lateinit var userDetailsServiceImpl: UserDetailsServiceImpl
     @MockkBean
     private lateinit var emailVerificationService: EmailVerificationService
+    @MockkBean
+    private lateinit var mfaEmailTokenService: MfaEmailTokenService
+    @MockkBean
+    private lateinit var mfaTotpService: MfaTotpService
+
+    val mfaMethodEmail = MfaMethod(MfaMethodValue.EMAIL.method)
+    val mfaMethodTotp = MfaMethod(MfaMethodValue.TOTP.method)
 
     @BeforeAll
     fun setup() {
@@ -134,7 +142,7 @@ class AuthenticationWebTests @Autowired constructor(
                 .acceptMediaType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isForbidden)
                 .andExpect(content().contentType(MediaType.TEXT_PLAIN))
-                .andExpect(content().string("Login error"))
+                .andExpect(content().string("Bad credentials"))
     }
 
     @Test
@@ -156,7 +164,162 @@ class AuthenticationWebTests @Autowired constructor(
                 .acceptMediaType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isForbidden)
                 .andExpect(content().contentType(MediaType.TEXT_PLAIN))
-                .andExpect(content().string("Login error"))
+                .andExpect(content().string("User is disabled"))
+    }
+
+    @Test
+    fun `When user login without mfa credentials and mfa enabled then return 403 and Mfa methods`() {
+        val authority = Authority(Authorities.USER.roleName)
+        val user = User("example@test.com",
+                "password12$",
+                "Georgi",
+                mutableListOf(authority),
+                true,
+                true,
+                mutableListOf(mfaMethodEmail, mfaMethodTotp))
+
+        val request = mutableMapOf<String, String>()
+        request[Constants.USERNAME_PARAMETER] = user.email
+        request[Constants.PASSWORD_PARAMETER] = user.password
+
+        val dbUser = User(user.email,
+                passwordEncoder.encode("password12$"),
+                user.username,
+                mutableListOf(authority),
+                user.isEmailVerified,
+                user.isMfaActive,
+                user.mfaMethods)
+
+        val expectedUserDetails = CustomUserDetails(dbUser)
+
+        every { userDetailsServiceImpl.loadUserByUsername(any()) } returns expectedUserDetails
+
+        mockMvc.perform(post("/account/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(TestUtils.objectToJSON(request)))
+                .andExpect(status().isForbidden)
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(content().json("{\"mfaMethods\":[\"email\",\"totp\"]}"))
+    }
+
+    @Test
+    fun `When user login with wrong mfa method and mfa enabled then return 403 and Mfa methods`() {
+        val authority = Authority(Authorities.USER.roleName)
+        val user = User("example@test.com",
+                "password12$",
+                "Georgi",
+                mutableListOf(authority),
+                true,
+                true,
+                mutableListOf(mfaMethodTotp))
+
+        val request = mutableMapOf<String, String>()
+        request[Constants.USERNAME_PARAMETER] = user.email
+        request[Constants.PASSWORD_PARAMETER] = user.password
+        request[Constants.MFA_CODE_PARAMETER] = "656565"
+        request[Constants.MFA_METHOD_PARAMETER] = "email"
+
+        val dbUser = User(user.email,
+                passwordEncoder.encode("password12$"),
+                user.username,
+                mutableListOf(authority),
+                user.isEmailVerified,
+                user.isMfaActive,
+                user.mfaMethods)
+
+        val expectedUserDetails = CustomUserDetails(dbUser)
+
+        every { userDetailsServiceImpl.loadUserByUsername(any()) } returns expectedUserDetails
+
+        mockMvc.perform(post("/account/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(TestUtils.objectToJSON(request)))
+                .andExpect(status().isForbidden)
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(content().json("{\"mfaMethods\":[\"totp\"]}"))
+    }
+
+    @Test
+    fun `When user login with invalid mfa credentials and mfa enabled then return 403`() {
+        val authority = Authority(Authorities.USER.roleName)
+        val user = User("example@test.com",
+                "password12$",
+                "Georgi",
+                mutableListOf(authority),
+                true,
+                true,
+                mutableListOf(mfaMethodEmail, mfaMethodTotp))
+
+        val request = mutableMapOf<String, String>()
+        request[Constants.USERNAME_PARAMETER] = user.email
+        request[Constants.PASSWORD_PARAMETER] = user.password
+        request[Constants.MFA_CODE_PARAMETER] = "656565"
+        request[Constants.MFA_METHOD_PARAMETER] = "totp"
+
+        val dbUser = User(user.email,
+                passwordEncoder.encode("password12$"),
+                user.username,
+                mutableListOf(authority),
+                user.isEmailVerified,
+                user.isMfaActive,
+                user.mfaMethods)
+
+        val expectedUserDetails = CustomUserDetails(dbUser)
+
+        every { userDetailsServiceImpl.loadUserByUsername(any()) } returns expectedUserDetails
+        every { mfaTotpService.verifyMfaCode(any(), any()) } returns false
+
+        mockMvc.perform(post("/account/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(TestUtils.objectToJSON(request)))
+                .andExpect(status().isForbidden)
+                .andExpect(content().contentType(MediaType.TEXT_PLAIN))
+                .andExpect(content().string("Bad Multi-factor authentication code"))
+    }
+
+    @Test
+    fun `When user login with send email mfa credentials and mfa enabled then return 403`() {
+        val authority = Authority(Authorities.USER.roleName)
+        val user = User("example@test.com",
+                "password12$",
+                "Georgi",
+                mutableListOf(authority),
+                true,
+                true,
+                mutableListOf(mfaMethodEmail, mfaMethodTotp))
+        val code = "65abv7"
+        val email = "example@example.com"
+        val expectedMfaToken = MfaEmailToken(email, code)
+
+        val request = mutableMapOf<String, String>()
+        request[Constants.USERNAME_PARAMETER] = user.email
+        request[Constants.PASSWORD_PARAMETER] = user.password
+        request[Constants.MFA_CODE_PARAMETER] = "656565"
+        request[Constants.MFA_METHOD_PARAMETER] = "email"
+        request[Constants.MFA_SHOULD_SEND_MFA_EMAIL] = "true"
+
+        val dbUser = User(user.email,
+                passwordEncoder.encode("password12$"),
+                user.username,
+                mutableListOf(authority),
+                user.isEmailVerified,
+                user.isMfaActive,
+                user.mfaMethods)
+
+        val expectedUserDetails = CustomUserDetails(dbUser)
+
+        every { userDetailsServiceImpl.loadUserByUsername(any()) } returns expectedUserDetails
+        every { mfaEmailTokenService.createMfaEmailToken(any()) } returns expectedMfaToken
+        every { mfaEmailTokenService.saveEmailToken(any()) } returns Unit
+        every { mfaEmailTokenService.sendMfaEmail(any()) } returns Unit
+
+
+        mockMvc.perform(post("/account/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(TestUtils.objectToJSON(request)))
+                .andExpect(status().isForbidden)
+                .andExpect(content().contentType(MediaType.TEXT_PLAIN))
+                .andExpect(content().string("Sent mfa email"))
     }
 
     @Test

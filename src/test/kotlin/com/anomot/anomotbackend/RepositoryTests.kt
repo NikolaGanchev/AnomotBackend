@@ -3,7 +3,7 @@ package com.anomot.anomotbackend
 import com.anomot.anomotbackend.entities.*
 import com.anomot.anomotbackend.repositories.*
 import com.anomot.anomotbackend.security.Authorities
-import com.anomot.anomotbackend.security.MfaMethod
+import com.anomot.anomotbackend.security.MfaMethodValue
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -115,14 +115,14 @@ class RepositoryTests @Autowired constructor(
 
     @Test
     fun `When findByMethod then return mfaMethod`() {
-        val mfaMethod = MfaMethod(MfaMethod.TOTP.method)
+        val mfaMethodValue = MfaMethod(MfaMethodValue.TOTP.method)
 
-        entityManager.persist(mfaMethod)
+        entityManager.persist(mfaMethodValue)
         entityManager.flush()
 
-        val result = mfaMethodRepository.findByMethod(MfaMethod.TOTP.method)
+        val result = mfaMethodRepository.findByMethod(MfaMethodValue.TOTP.method)
 
-        assertThat(result).isEqualTo(mfaMethod)
+        assertThat(result).isEqualTo(mfaMethodValue)
     }
 
     @Test

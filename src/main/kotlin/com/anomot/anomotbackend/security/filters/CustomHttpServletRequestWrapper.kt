@@ -15,7 +15,7 @@ class CustomHttpServletRequestWrapper(request: ServletRequest) : HttpServletRequ
     }
 
     override fun getParameter(name: String): String? {
-        val values = parameterMap[name]
+        val values = parameterMap[name] ?: return null
         return Arrays.stream(values)
                 .findFirst()
                 .orElse(super.getParameter(name))
