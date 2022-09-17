@@ -41,6 +41,7 @@ class WebSecurityConfig {
                     .passwordParameter(Constants.PASSWORD_PARAMETER)
                     .successHandler(loginSuccessHandler)
                     .failureHandler(loginFailureHandler)
+                    .authenticationDetailsSource(CustomAuthenticationDetailsSource())
                     .permitAll()
                     .and()
                 .logout()

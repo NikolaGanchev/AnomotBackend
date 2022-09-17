@@ -1,6 +1,6 @@
 package com.anomot.anomotbackend.security
 
-enum class MfaMethods(val method: String) {
-    TOTP("TOTP"),
+enum class MfaMethod(val method: String) {
+    TOTP("totp"),
     EMAIL("email")
 }
