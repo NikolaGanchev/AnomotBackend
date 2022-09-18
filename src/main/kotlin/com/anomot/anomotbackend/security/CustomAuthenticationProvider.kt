@@ -51,7 +51,7 @@ class CustomAuthenticationProvider(userDetailsService: UserDetailsServiceImpl): 
             }
 
             if (shouldSendMfaEmail) {
-                val mfaEmailToken = mfaEmailTokenService.createMfaEmailToken(user.username)
+                val mfaEmailToken = mfaEmailTokenService.createMfaEmailToken(user.id.toString())
                 mfaEmailTokenService.saveEmailToken(mfaEmailToken)
                 mfaEmailTokenService.sendMfaEmail(mfaEmailToken)
                 throw MfaEmailSentException("Sent mfa email")

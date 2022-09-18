@@ -37,12 +37,12 @@ class MfaTests @Autowired constructor(
     @Test
     fun `When email code is valid then return true`() {
         val code = "65abv7"
-        val email = "example@example.com"
-        val expectedMfaToken = MfaEmailToken(email, code)
+        val id = 5
+        val expectedMfaToken = MfaEmailToken(id = id.toString(), code)
 
-        every { mfaEmailCodeRepository.findById(email) } returns Optional.of(expectedMfaToken)
+        every { mfaEmailCodeRepository.findById(id.toString()) } returns Optional.of(expectedMfaToken)
 
-        val isValid = mfaEmailTokenService.verifyMfaCode(email, code)
+        val isValid = mfaEmailTokenService.verifyMfaCode(id.toString(), code)
 
         assertThat(isValid).isTrue
     }
@@ -50,11 +50,11 @@ class MfaTests @Autowired constructor(
     @Test
     fun `When email code doesn't exist then return false`() {
         val code = "65abv7"
-        val email = "example@example.com"
+        val id = 5
 
-        every { mfaEmailCodeRepository.findById(email) } returns Optional.ofNullable(null)
+        every { mfaEmailCodeRepository.findById(id.toString()) } returns Optional.ofNullable(null)
 
-        val isValid = mfaEmailTokenService.verifyMfaCode(email, code)
+        val isValid = mfaEmailTokenService.verifyMfaCode(id.toString(), code)
 
         assertThat(isValid).isFalse
     }
@@ -62,12 +62,12 @@ class MfaTests @Autowired constructor(
     @Test
     fun `When email code is invalid then return false`() {
         val code = "65abv7"
-        val email = "example@example.com"
-        val expectedMfaToken = MfaEmailToken(email, code)
+        val id = 5
+        val expectedMfaToken = MfaEmailToken(id = id.toString(), code)
 
-        every { mfaEmailCodeRepository.findById(email) } returns Optional.of(expectedMfaToken)
+        every { mfaEmailCodeRepository.findById(id.toString()) } returns Optional.of(expectedMfaToken)
 
-        val isValid = mfaEmailTokenService.verifyMfaCode(email, "54bnOt")
+        val isValid = mfaEmailTokenService.verifyMfaCode(id.toString(), "54bnOt")
 
         assertThat(isValid).isFalse
     }

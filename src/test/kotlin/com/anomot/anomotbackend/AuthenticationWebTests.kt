@@ -288,8 +288,8 @@ class AuthenticationWebTests @Autowired constructor(
                 true,
                 mutableListOf(mfaMethodEmail, mfaMethodTotp))
         val code = "65abv7"
-        val email = "example@example.com"
-        val expectedMfaToken = MfaEmailToken(email, code)
+        val id = 5
+        val expectedMfaToken = MfaEmailToken(id = id.toString(), code)
 
         val request = mutableMapOf<String, String>()
         request[Constants.USERNAME_PARAMETER] = user.email

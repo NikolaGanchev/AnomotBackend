@@ -24,8 +24,8 @@ class MfaEmailTokenService @Autowired constructor(
         return code.toString()
     }
 
-    fun createMfaEmailToken(email: String): MfaEmailToken {
-        return MfaEmailToken(email = email, code = generateEmailCode())
+    fun createMfaEmailToken(id: String): MfaEmailToken {
+        return MfaEmailToken(id = id, code = generateEmailCode())
     }
 
     fun saveEmailToken(mfaEmailToken: MfaEmailToken) {
@@ -36,8 +36,8 @@ class MfaEmailTokenService @Autowired constructor(
         //TODO("implement when emails are available")
     }
 
-    fun verifyMfaCode(email: String, codeToVerify: String): Boolean {
-        val foundCode = mfaEmailCodeRepository.findById(email)
+    fun verifyMfaCode(id: String, codeToVerify: String): Boolean {
+        val foundCode = mfaEmailCodeRepository.findById(id)
 
         if (foundCode.isEmpty) return false
 

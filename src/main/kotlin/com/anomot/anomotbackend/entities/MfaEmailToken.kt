@@ -7,6 +7,6 @@ import java.io.Serializable
 
 @RedisHash("MfaEmailCode", timeToLive = Constants.MFA_EMAIL_CODE_LIFETIME)
 class MfaEmailToken(
-        @Id var email: String,
+        @Id var id: String,
         var code: String
 ): Serializable
