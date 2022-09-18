@@ -52,11 +52,7 @@ class WebSecurityConfig {
                     .and()
                 .csrf()
                     .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                    .ignoringAntMatchers("/account/2fa/totp",
-                            "/account/2fa/email",
-                            "/account/new",
-                            "/account/login",
-                            "/account/logout",
+                    .ignoringAntMatchers(
                             "/account/email/verify")
                     .and()
                 .authenticationProvider(authenticationProvider())

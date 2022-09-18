@@ -26,6 +26,7 @@ import org.springframework.http.MediaType
 import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestBuilders.formLogin
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf
 import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
@@ -87,7 +88,8 @@ class AuthenticationWebTests @Autowired constructor(
 
         mockMvc.perform(post("/account/new")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(TestUtils.objectToJSON(user)))
+                .content(TestUtils.objectToJSON(user))
+                .with(csrf()))
                 .andExpect(status().isCreated)
                 .andExpect(jsonPath("\$.email").value(expectedResult.email))
                 .andExpect(jsonPath("\$.username").value(expectedResult.username))
@@ -102,6 +104,7 @@ class AuthenticationWebTests @Autowired constructor(
 
         mockMvc.perform(post("/account/new")
                 .contentType(MediaType.APPLICATION_JSON)
+                .with(csrf())
                 .content(TestUtils.objectToJSON(user)))
                 .andExpect(status().isConflict)
     }
@@ -196,7 +199,8 @@ class AuthenticationWebTests @Autowired constructor(
 
         mockMvc.perform(post("/account/login")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(TestUtils.objectToJSON(request)))
+                .content(TestUtils.objectToJSON(request))
+                .with(csrf()))
                 .andExpect(status().isForbidden)
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(content().json("{\"mfaMethods\":[\"email\",\"totp\"]}"))
@@ -233,7 +237,8 @@ class AuthenticationWebTests @Autowired constructor(
 
         mockMvc.perform(post("/account/login")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(TestUtils.objectToJSON(request)))
+                .content(TestUtils.objectToJSON(request))
+                .with(csrf()))
                 .andExpect(status().isForbidden)
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(content().json("{\"mfaMethods\":[\"totp\"]}"))
@@ -271,7 +276,8 @@ class AuthenticationWebTests @Autowired constructor(
 
         mockMvc.perform(post("/account/login")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(TestUtils.objectToJSON(request)))
+                .content(TestUtils.objectToJSON(request))
+                .with(csrf()))
                 .andExpect(status().isForbidden)
                 .andExpect(content().contentType(MediaType.TEXT_PLAIN))
                 .andExpect(content().string("Bad Multi-factor authentication code"))
@@ -316,7 +322,8 @@ class AuthenticationWebTests @Autowired constructor(
 
         mockMvc.perform(post("/account/login")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(TestUtils.objectToJSON(request)))
+                .content(TestUtils.objectToJSON(request))
+                .with(csrf()))
                 .andExpect(status().isForbidden)
                 .andExpect(content().contentType(MediaType.TEXT_PLAIN))
                 .andExpect(content().string("Sent mfa email"))
