@@ -14,5 +14,7 @@ class Constants {
         const val TOTP_PERIOD: Long = 30
         const val TOTP_PASSWORD_LENGTH = 6
         const val TOTP_CODE_ALLOWED_DELAY = 2
+        const val PASSWORD_MIN_SIZE = 10
+        const val PASSWORD_MAX_SIZE = 512
     }
 }

@@ -61,6 +61,42 @@ class RepositoryTests @Autowired constructor(
     }
 
     @Test
+    fun `When setPassword then return 1`() {
+        val authority = Authority(Authorities.USER.roleName)
+        val user = User("example@example.com", "password", "Georgi", mutableListOf(authority))
+
+        entityManager.persist(user)
+        entityManager.flush()
+        val editedRows = userRepository.setPassword("newPassword", user.id!!)
+
+        assertThat(editedRows).isEqualTo(1)
+    }
+
+    @Test
+    fun `When setEmail then return 1`() {
+        val authority = Authority(Authorities.USER.roleName)
+        val user = User("example@example.com", "password", "Georgi", mutableListOf(authority))
+
+        entityManager.persist(user)
+        entityManager.flush()
+        val editedRows = userRepository.setEmail("example@test.com", user.id!!)
+
+        assertThat(editedRows).isEqualTo(1)
+    }
+
+    @Test
+    fun `When setUsername then return 1`() {
+        val authority = Authority(Authorities.USER.roleName)
+        val user = User("example@example.com", "password", "Georgi", mutableListOf(authority))
+
+        entityManager.persist(user)
+        entityManager.flush()
+        val editedRows = userRepository.setUsername("newUsername", user.id!!)
+
+        assertThat(editedRows).isEqualTo(1)
+    }
+
+    @Test
     fun `When findByVerificationCode then return token`() {
         val authority = Authority(Authorities.USER.roleName)
         val user = User("example@example.com", "password", "Georgi", mutableListOf(authority))
@@ -139,5 +175,21 @@ class RepositoryTests @Autowired constructor(
         val result = mfaTotpSecretRepository.findByEmail(user.email)
 
         assertThat(result).isEqualTo(mfaTotpSecret)
+    }
+
+    @Test
+    fun `When deleteByEmail mfaTotpSecret then delete`() {
+        val authority = Authority(Authorities.USER.roleName)
+        val user = User("example@example.com", "password", "Georgi", mutableListOf(authority))
+
+        val mfaTotpSecret = MfaTotpSecret("secret", user)
+
+        entityManager.persist(user)
+        entityManager.persist(mfaTotpSecret)
+        entityManager.flush()
+
+        mfaTotpSecretRepository.deleteByUserId(user.id!!)
+
+        assertThat(mfaTotpSecretRepository.count()).isEqualTo(0)
     }
 }

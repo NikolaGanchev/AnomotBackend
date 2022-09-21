@@ -6,5 +6,5 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface MfaMethodRepository: JpaRepository<MfaMethod, Long> {
-    fun findByMethod(method: String): MfaMethod
+    fun findByMethod(method: String): MfaMethod?
 }

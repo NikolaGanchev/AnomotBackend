@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.security.authentication.DisabledException
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
@@ -17,8 +18,7 @@ import org.springframework.security.web.authentication.AuthenticationFailureHand
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository
-import javax.servlet.http.HttpServletResponse.SC_FORBIDDEN
-import javax.servlet.http.HttpServletResponse.SC_OK
+import javax.servlet.http.HttpServletResponse.*
 
 
 @Configuration
@@ -80,8 +80,12 @@ class WebSecurityConfig {
 
     private val loginFailureHandler = AuthenticationFailureHandler {
         request, response, authentication ->
-        response.status = SC_FORBIDDEN
+        response.status = SC_UNAUTHORIZED
         response.contentType = "text/plain"
+
+        if (authentication is DisabledException) {
+            response.status = SC_FORBIDDEN
+        }
 
         if (authentication is MfaRequiredException && authentication.message != null) {
             // Refer to CustomAuthenticationProvider.kt
@@ -98,7 +102,7 @@ class WebSecurityConfig {
         }
     }
 
-    @Bean
+    @Bean(name=["authenticationProvider"])
     fun authenticationProvider(): CustomAuthenticationProvider {
         val authProvider = CustomAuthenticationProvider(userDetailsService())
         authProvider.setPasswordEncoder(passwordEncoder())

@@ -7,7 +7,6 @@ import com.bastiaanjansen.otp.SecretGenerator
 import com.bastiaanjansen.otp.TOTP
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
-import java.net.URI
 import java.time.Duration
 
 @Service
@@ -35,12 +34,7 @@ class MfaTotpService @Autowired constructor(
         return totp.verify(codeToVerify, Constants.TOTP_CODE_ALLOWED_DELAY)
     }
 
-    fun getUri(secret: ByteArray, email: String): URI {
-        val totp = TOTP.Builder(secret)
-                .withPasswordLength(Constants.TOTP_PASSWORD_LENGTH)
-                .withPeriod(Duration.ofSeconds(Constants.TOTP_PERIOD))
-                .build()
-
-        return totp.getURI("Anomot $email")
+    fun deleteMfaSecret(userId: Long) {
+        mfaTotpSecretRepository.deleteByUserId(userId)
     }
 }

@@ -1,15 +1,10 @@
 package com.anomot.anomotbackend
 
 import com.anomot.anomotbackend.controllers.AuthController
-import com.anomot.anomotbackend.dto.EmailVerifyDto
-import com.anomot.anomotbackend.dto.UserDto
-import com.anomot.anomotbackend.dto.UserRegisterDto
+import com.anomot.anomotbackend.dto.*
 import com.anomot.anomotbackend.entities.*
 import com.anomot.anomotbackend.exceptions.UserAlreadyExistsException
-import com.anomot.anomotbackend.security.Authorities
-import com.anomot.anomotbackend.security.CustomUserDetails
-import com.anomot.anomotbackend.security.MfaMethodValue
-import com.anomot.anomotbackend.security.WebSecurityConfig
+import com.anomot.anomotbackend.security.*
 import com.anomot.anomotbackend.services.EmailVerificationService
 import com.anomot.anomotbackend.services.MfaEmailTokenService
 import com.anomot.anomotbackend.services.MfaTotpService
@@ -23,6 +18,8 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.context.annotation.Import
 import org.springframework.http.MediaType
+import org.springframework.security.access.AccessDeniedException
+import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestBuilders.formLogin
@@ -30,7 +27,7 @@ import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequ
 import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
-import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
+import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.*
 import org.springframework.test.web.servlet.setup.DefaultMockMvcBuilder
 import org.springframework.test.web.servlet.setup.MockMvcBuilders
@@ -50,10 +47,13 @@ class AuthenticationWebTests @Autowired constructor(
 
     @MockkBean
     private lateinit var userDetailsServiceImpl: UserDetailsServiceImpl
+
     @MockkBean
     private lateinit var emailVerificationService: EmailVerificationService
+
     @MockkBean
     private lateinit var mfaEmailTokenService: MfaEmailTokenService
+
     @MockkBean
     private lateinit var mfaTotpService: MfaTotpService
 
@@ -88,7 +88,7 @@ class AuthenticationWebTests @Autowired constructor(
 
         mockMvc.perform(post("/account/new")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(TestUtils.objectToJSON(user))
+                .content(TestUtils.objectToJson(user))
                 .with(csrf()))
                 .andExpect(status().isCreated)
                 .andExpect(jsonPath("\$.email").value(expectedResult.email))
@@ -105,7 +105,7 @@ class AuthenticationWebTests @Autowired constructor(
         mockMvc.perform(post("/account/new")
                 .contentType(MediaType.APPLICATION_JSON)
                 .with(csrf())
-                .content(TestUtils.objectToJSON(user)))
+                .content(TestUtils.objectToJson(user)))
                 .andExpect(status().isConflict)
     }
 
@@ -134,7 +134,7 @@ class AuthenticationWebTests @Autowired constructor(
     }
 
     @Test
-    fun `When user login with bad credentials then return 403`() {
+    fun `When user login with bad credentials then return 401`() {
         val authority = Authority(Authorities.USER.roleName)
         val user = User("example@test.com", "password12$", "Georgi", mutableListOf(authority), true)
 
@@ -143,7 +143,7 @@ class AuthenticationWebTests @Autowired constructor(
         mockMvc.perform(formLogin("/account/login").user(Constants.USERNAME_PARAMETER, user.email)
                 .password(Constants.PASSWORD_PARAMETER, user.password)
                 .acceptMediaType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isForbidden)
+                .andExpect(status().isUnauthorized)
                 .andExpect(content().contentType(MediaType.TEXT_PLAIN))
                 .andExpect(content().string("Bad credentials"))
     }
@@ -171,7 +171,7 @@ class AuthenticationWebTests @Autowired constructor(
     }
 
     @Test
-    fun `When user login without mfa credentials and mfa enabled then return 403 and Mfa methods`() {
+    fun `When user login without mfa credentials and mfa enabled then return 401 and Mfa methods`() {
         val authority = Authority(Authorities.USER.roleName)
         val user = User("example@test.com",
                 "password12$",
@@ -199,15 +199,15 @@ class AuthenticationWebTests @Autowired constructor(
 
         mockMvc.perform(post("/account/login")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(TestUtils.objectToJSON(request))
+                .content(TestUtils.objectToJson(request))
                 .with(csrf()))
-                .andExpect(status().isForbidden)
+                .andExpect(status().isUnauthorized)
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(content().json("{\"mfaMethods\":[\"email\",\"totp\"]}"))
     }
 
     @Test
-    fun `When user login with wrong mfa method and mfa enabled then return 403 and Mfa methods`() {
+    fun `When user login with wrong mfa method and mfa enabled then return 401 and Mfa methods`() {
         val authority = Authority(Authorities.USER.roleName)
         val user = User("example@test.com",
                 "password12$",
@@ -237,15 +237,15 @@ class AuthenticationWebTests @Autowired constructor(
 
         mockMvc.perform(post("/account/login")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(TestUtils.objectToJSON(request))
+                .content(TestUtils.objectToJson(request))
                 .with(csrf()))
-                .andExpect(status().isForbidden)
+                .andExpect(status().isUnauthorized)
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
                 .andExpect(content().json("{\"mfaMethods\":[\"totp\"]}"))
     }
 
     @Test
-    fun `When user login with invalid mfa credentials and mfa enabled then return 403`() {
+    fun `When user login with invalid mfa credentials and mfa enabled then return 401`() {
         val authority = Authority(Authorities.USER.roleName)
         val user = User("example@test.com",
                 "password12$",
@@ -276,15 +276,15 @@ class AuthenticationWebTests @Autowired constructor(
 
         mockMvc.perform(post("/account/login")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(TestUtils.objectToJSON(request))
+                .content(TestUtils.objectToJson(request))
                 .with(csrf()))
-                .andExpect(status().isForbidden)
+                .andExpect(status().isUnauthorized)
                 .andExpect(content().contentType(MediaType.TEXT_PLAIN))
                 .andExpect(content().string("Bad Multi-factor authentication code"))
     }
 
     @Test
-    fun `When user login with send email mfa credentials and mfa enabled then return 403`() {
+    fun `When user login with send email mfa credentials and mfa enabled then return 401`() {
         val authority = Authority(Authorities.USER.roleName)
         val user = User("example@test.com",
                 "password12$",
@@ -322,9 +322,9 @@ class AuthenticationWebTests @Autowired constructor(
 
         mockMvc.perform(post("/account/login")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(TestUtils.objectToJSON(request))
+                .content(TestUtils.objectToJson(request))
                 .with(csrf()))
-                .andExpect(status().isForbidden)
+                .andExpect(status().isUnauthorized)
                 .andExpect(content().contentType(MediaType.TEXT_PLAIN))
                 .andExpect(content().string("Sent mfa email"))
     }
@@ -337,19 +337,285 @@ class AuthenticationWebTests @Autowired constructor(
 
         mockMvc.perform(post("/account/email/verify")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(TestUtils.objectToJSON(token)))
+                .content(TestUtils.objectToJson(token)))
                 .andExpect(status().isCreated)
     }
 
     @Test
-    fun `When verify email code invalid then return 403`() {
+    fun `When verify email code invalid then return 401`() {
         val token = EmailVerifyDto("code")
 
         every { emailVerificationService.verifyEmail("code", any()) } returns false
 
         mockMvc.perform(post("/account/email/verify")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(TestUtils.objectToJSON(token)))
-                .andExpect(status().isForbidden)
+                .content(TestUtils.objectToJson(token)))
+                .andExpect(status().isUnauthorized)
+    }
+
+    @Test
+    @WithMockCustomUser
+    fun `When change password and successful then return 200`() {
+        val passwordChangeDto = PasswordChangeDto("oldPassword1$", "newPassword1$")
+
+        every { userDetailsServiceImpl.changePassword(any(), any()) } returns Unit
+
+        mockMvc.perform(put("/account/password")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(TestUtils.objectToJson(passwordChangeDto))
+                .with(csrf()))
+                .andExpect(status().isOk)
+    }
+
+    @Test
+    fun `When change password and access denied then return 401`() {
+        val passwordChangeDto = PasswordChangeDto("oldPassword1$", "newPassword1$")
+
+        every { userDetailsServiceImpl.changePassword(any(), any()) } throws AccessDeniedException("No authentication present")
+
+        mockMvc.perform(put("/account/password")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(TestUtils.objectToJson(passwordChangeDto))
+                .with(csrf()))
+                .andExpect(status().isUnauthorized)
+    }
+
+    @Test
+    @WithMockCustomUser
+    fun `When change password and incorrect old password then return 401`() {
+        val passwordChangeDto = PasswordChangeDto("oldPassword1$", "newPassword1$")
+
+        every { userDetailsServiceImpl.changePassword(any(), any()) } throws BadCredentialsException("Bad credentials")
+
+        mockMvc.perform(put("/account/password")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(TestUtils.objectToJson(passwordChangeDto))
+                .with(csrf()))
+                .andExpect(status().isUnauthorized)
+    }
+
+    @Test
+    @WithMockCustomUser
+    fun `When change email and successful then return 200`() {
+        val emailChangeDto = EmailChangeDto("example@example.com", "password1$")
+
+        every { userDetailsServiceImpl.changeEmail(any(), any()) } returns Unit
+
+        mockMvc.perform(put("/account/email")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(TestUtils.objectToJson(emailChangeDto))
+                .with(csrf()))
+                .andExpect(status().isOk)
+    }
+
+    @Test
+    fun `When change email and access denied then return 401`() {
+        val emailChangeDto = EmailChangeDto("example@example.com", "password1$")
+
+        every { userDetailsServiceImpl.changeEmail(any(), any()) } throws AccessDeniedException("No authentication present")
+
+        mockMvc.perform(put("/account/email")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(TestUtils.objectToJson(emailChangeDto))
+                .with(csrf()))
+                .andExpect(status().isUnauthorized)
+    }
+
+    @Test
+    @WithMockCustomUser
+    fun `When change email and incorrect password then return 401`() {
+        val emailChangeDto = EmailChangeDto("example@example.com", "password1$")
+
+        every { userDetailsServiceImpl.changeEmail(any(), any()) } throws BadCredentialsException("Bad credentials")
+
+        mockMvc.perform(put("/account/email")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(TestUtils.objectToJson(emailChangeDto))
+                .with(csrf()))
+                .andExpect(status().isUnauthorized)
+    }
+
+    @Test
+    @WithMockCustomUser
+    fun `When change username and successful then return 200`() {
+        val usernameChangeDto = UsernameChangeDto("Georgi")
+
+        every { userDetailsServiceImpl.changeUsername(any()) } returns Unit
+
+        mockMvc.perform(put("/account/username")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(TestUtils.objectToJson(usernameChangeDto))
+                .with(csrf()))
+                .andExpect(status().isOk)
+    }
+
+    @Test
+    fun `When change username and access denied then return 401`() {
+        val usernameChangeDto = UsernameChangeDto("Georgi")
+
+        every { userDetailsServiceImpl.changeUsername(any()) } throws AccessDeniedException("No authentication present")
+
+        mockMvc.perform(put("/account/username")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(TestUtils.objectToJson(usernameChangeDto))
+                .with(csrf()))
+                .andExpect(status().isUnauthorized)
+    }
+
+    @Test
+    @WithMockCustomUser
+    fun `When activate totp then return 200 and TotpDto`() {
+        every {userDetailsServiceImpl.activateTotpMfa()} returns TotpDto("", "")
+
+        mockMvc.perform(put("/account/mfa/totp")
+                .with(csrf()))
+                .andExpect(status().isOk)
+    }
+
+    @Test
+    @WithMockCustomUser
+    fun `When activate totp and already active then return 409`() {
+        every {userDetailsServiceImpl.activateTotpMfa()} returns null
+
+        mockMvc.perform(put("/account/mfa/totp")
+                .with(csrf()))
+                .andExpect(status().isConflict)
+    }
+
+    @Test
+    fun `When activate totp and access denied then return 401`() {
+        every {userDetailsServiceImpl.activateTotpMfa()} throws AccessDeniedException("No authentication present")
+
+        mockMvc.perform(put("/account/mfa/totp")
+                .with(csrf()))
+                .andExpect(status().isUnauthorized)
+    }
+
+    @Test
+    @WithMockCustomUser
+    fun `When disable totp then return 200`() {
+        every {userDetailsServiceImpl.deactivateTotpMfa()} returns true
+
+        mockMvc.perform(delete("/account/mfa/totp")
+                .with(csrf()))
+                .andExpect(status().isOk)
+    }
+
+    @Test
+    @WithMockCustomUser
+    fun `When disable totp and already disabled then return 409`() {
+        every {userDetailsServiceImpl.deactivateTotpMfa()} returns false
+
+        mockMvc.perform(delete("/account/mfa/totp")
+                .with(csrf()))
+                .andExpect(status().isConflict)
+    }
+
+    @Test
+    fun `When disable totp and access denied then return 401`() {
+        every {userDetailsServiceImpl.deactivateTotpMfa()} throws AccessDeniedException("No authentication present")
+
+        mockMvc.perform(delete("/account/mfa/totp")
+                .with(csrf()))
+                .andExpect(status().isUnauthorized)
+    }
+
+    @Test
+    @WithMockCustomUser()
+    fun `When activate email mfa then return 200`() {
+        every {userDetailsServiceImpl.activateEmailMfa()} returns true
+
+        mockMvc.perform(put("/account/mfa/email")
+                .with(csrf()))
+                .andExpect(status().isOk)
+    }
+
+    @Test
+    @WithMockCustomUser
+    fun `When activate email mfa and already activated then return 409`() {
+        every {userDetailsServiceImpl.activateEmailMfa()} returns false
+
+        mockMvc.perform(put("/account/mfa/email")
+                .with(csrf()))
+                .andExpect(status().isConflict)
+    }
+
+    @Test
+    fun `When activate email mfa and access denied then return 401`() {
+        every {userDetailsServiceImpl.activateEmailMfa()} throws AccessDeniedException("No authentication present")
+
+        mockMvc.perform(put("/account/mfa/email")
+                .with(csrf()))
+                .andExpect(status().isUnauthorized)
+    }
+
+    @Test
+    @WithMockCustomUser
+    fun `When disable email mfa then return 200`() {
+        every {userDetailsServiceImpl.deactivateEmailMfa()} returns true
+
+        mockMvc.perform(delete("/account/mfa/email")
+                .with(csrf()))
+                .andExpect(status().isOk)
+    }
+
+    @Test
+    @WithMockCustomUser
+    fun `When disable email mfa and already disabled then return 409`() {
+        every {userDetailsServiceImpl.deactivateEmailMfa()} returns false
+
+        mockMvc.perform(delete("/account/mfa/email")
+                .with(csrf()))
+                .andExpect(status().isConflict)
+    }
+
+    @Test
+    fun `When disable email mfa and access denied then return 401`() {
+        every {userDetailsServiceImpl.deactivateEmailMfa()} throws AccessDeniedException("No authentication present")
+
+        mockMvc.perform(delete("/account/mfa/email")
+                .with(csrf()))
+                .andExpect(status().isUnauthorized)
+    }
+
+    @Test
+    @WithMockCustomUser
+    fun `When delete account and successful then return 200`() {
+        val accountDeleteDto = AccountDeleteDto("password1$")
+
+        every { userDetailsServiceImpl.deleteUser(any()) } returns Unit
+
+        mockMvc.perform(delete("/account")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(TestUtils.objectToJson(accountDeleteDto))
+                .with(csrf()))
+                .andExpect(status().isOk)
+    }
+
+    @Test
+    fun `When delete account and access denied then return 401`() {
+        val accountDeleteDto = AccountDeleteDto("password1$")
+
+        every { userDetailsServiceImpl.deleteUser(any()) } throws AccessDeniedException("No authentication present")
+
+        mockMvc.perform(delete("/account/")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(TestUtils.objectToJson(accountDeleteDto))
+                .with(csrf()))
+                .andExpect(status().isUnauthorized)
+    }
+
+    @Test
+    @WithMockCustomUser
+    fun `When delete account and incorrect old password then return 401`() {
+        val accountDeleteDto = AccountDeleteDto("password1$")
+
+        every { userDetailsServiceImpl.deleteUser(any()) } throws BadCredentialsException("Bad credentials")
+
+        mockMvc.perform(delete("/account/")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(TestUtils.objectToJson(accountDeleteDto))
+                .with(csrf()))
+                .andExpect(status().isUnauthorized)
     }
 }
