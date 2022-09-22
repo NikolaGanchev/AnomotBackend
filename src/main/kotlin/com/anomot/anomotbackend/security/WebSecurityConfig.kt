@@ -8,6 +8,7 @@ import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.ObjectMapper
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Scope
 import org.springframework.security.authentication.DisabledException
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
@@ -102,7 +103,8 @@ class WebSecurityConfig {
         }
     }
 
-    @Bean(name=["authenticationProvider"])
+    @Bean()
+    @Scope("prototype")
     fun authenticationProvider(): CustomAuthenticationProvider {
         val authProvider = CustomAuthenticationProvider(userDetailsService())
         authProvider.setPasswordEncoder(passwordEncoder())

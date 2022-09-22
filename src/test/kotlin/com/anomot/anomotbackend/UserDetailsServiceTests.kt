@@ -12,6 +12,7 @@ import com.anomot.anomotbackend.repositories.MfaMethodRepository
 import com.anomot.anomotbackend.repositories.UserRepository
 import com.anomot.anomotbackend.security.Authorities
 import com.anomot.anomotbackend.security.MfaMethodValue
+import com.anomot.anomotbackend.services.AuthenticationService
 import com.anomot.anomotbackend.services.EmailVerificationService
 import com.anomot.anomotbackend.services.MfaTotpService
 import com.anomot.anomotbackend.services.UserDetailsServiceImpl
@@ -23,11 +24,9 @@ import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.assertThrows
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.security.authentication.BadCredentialsException
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder
 import java.time.Instant
 import java.util.*
@@ -47,8 +46,7 @@ class UserDetailsServiceTests {
     @MockkBean
     private lateinit var authorityRepository: AuthorityRepository
     @MockkBean
-    @Qualifier(value="internalMfaDisabledAuthProvider")
-    private lateinit var internalAuthenticationProvider: DaoAuthenticationProvider
+    private lateinit var authenticationService: AuthenticationService
     @Autowired
     @InjectMockKs
     private lateinit var userDetailsService: UserDetailsServiceImpl
@@ -67,7 +65,7 @@ class UserDetailsServiceTests {
         every { emailVerificationService.saveEmailVerificationToken(any()) } returns emailVerificationToken
         every { emailVerificationService.generateExpiryDate(any(), any()) } returns  Date.from(Instant.now())
         every { emailVerificationService.sendVerificationEmail(any(), any()) } returns Unit
-        every {userRepository.findByEmail(any())} returns user
+        every { userRepository.findByEmail(any()) } returns user
     }
 
     @Test
@@ -102,26 +100,27 @@ class UserDetailsServiceTests {
 
     @Test
     @WithMockCustomUser(password = "oldPassword", isMfaActive = true, mfaMethods = ["totp", "email"])
-    fun `When change password with correct credentials then don't raise exceptions`() {
+    fun `When change password with correct credentials then don't throw exceptions`() {
         every {passwordEncoder.encode("newPassword")} returns "newPassword"
-        every {internalAuthenticationProvider.authenticate(any())} returns null
         every {userRepository.setPassword(any(), any())} returns 1
+        every { authenticationService.verifyAuthenticationWithoutMfa(any(), any() ) } returns true
+        every { authenticationService.reAuthenticate(any()) } returns Unit
 
         userDetailsService.changePassword("oldPassword", "newPassword")
     }
 
     @Test
-    @WithMockCustomUser(password = "oldPassword", isMfaActive = true, mfaMethods = ["totp", "email"])
-    fun `When change password with incorrect credentials then raise bad credentials exception`() {
-        every {internalAuthenticationProvider.authenticate(any())} throws BadCredentialsException("Bad credentials")
+    @WithMockCustomUser(password = "password", isMfaActive = true, mfaMethods = ["totp", "email"])
+    fun `When change password with incorrect credentials then throw bad credentials exception`() {
+        every { authenticationService.verifyAuthenticationWithoutMfa(any(), any()) } returns false
 
         assertThrows<BadCredentialsException> {
-            userDetailsService.changePassword("oldPassword", "newPassword")
+            userDetailsService.changePassword("wrongPassword", "newPassword")
         }
     }
 
     @Test
-    fun `When change password without authentication then raise AccessDeniedException`() {
+    fun `When change password without authentication then throw AccessDeniedException`() {
         assertThrows<AccessDeniedException> {
             userDetailsService.changePassword("oldPassword", "newPassword")
         }
@@ -129,25 +128,26 @@ class UserDetailsServiceTests {
 
     @Test
     @WithMockCustomUser(password = "password", isMfaActive = true, mfaMethods = ["totp", "email"])
-    fun `When change email with correct credentials then don't raise exceptions`() {
-        every {internalAuthenticationProvider.authenticate(any())} returns null
-        every {userRepository.setEmail(any(), any())} returns 1
+    fun `When change email with correct credentials then don't throw exceptions`() {
+        every { userRepository.setEmail(any(), any()) } returns 1
+        every { authenticationService.verifyAuthenticationWithoutMfa(any(), any() ) } returns true
+        every { authenticationService.reAuthenticate(any()) } returns Unit
 
         userDetailsService.changeEmail("password", "example@test.com")
     }
 
     @Test
     @WithMockCustomUser(password = "password", isMfaActive = true, mfaMethods = ["totp", "email"])
-    fun `When change email with incorrect credentials then raise bad credentials exception`() {
-        every {internalAuthenticationProvider.authenticate(any())} throws BadCredentialsException("Bad credentials")
+    fun `When change email with incorrect credentials then throw bad credentials exception`() {
+        every { authenticationService.verifyAuthenticationWithoutMfa(any(), any()) } returns false
 
         assertThrows<BadCredentialsException> {
-            userDetailsService.changeEmail("password", "example@test.com")
+            userDetailsService.changeEmail("wrongPassword", "example@test.com")
         }
     }
 
     @Test
-    fun `When change email without authentication then raise access denied exception`() {
+    fun `When change email without authentication then throw access denied exception`() {
         assertThrows<AccessDeniedException> {
             userDetailsService.changeEmail("password", "example@test.com")
         }
@@ -155,15 +155,15 @@ class UserDetailsServiceTests {
 
     @Test
     @WithMockCustomUser(password = "password", isMfaActive = true, mfaMethods = ["totp", "email"])
-    fun `When change username with authentication then don't raise exceptions`() {
-        every {internalAuthenticationProvider.authenticate(any())} returns null
+    fun `When change username with authentication then don't throw exceptions`() {
         every {userRepository.setUsername(any(), any())} returns 1
+        every { authenticationService.reAuthenticate(any()) } returns Unit
 
         userDetailsService.changeUsername("Georgi2")
     }
 
     @Test
-    fun `When change username without authentication then raise AccessDeniedException`() {
+    fun `When change username without authentication then throw AccessDeniedException`() {
         assertThrows<AccessDeniedException> {
             userDetailsService.changeUsername("Georgi2")
         }
@@ -181,6 +181,7 @@ class UserDetailsServiceTests {
         every { mfaMethodRepository.findByMethod(MfaMethodValue.TOTP.method) } returns mfaMethod
         every { totpService.generateSecret() } returns secret
         every { totpService.saveCode(any())} returns Unit
+        every { authenticationService.reAuthenticate(any()) } returns Unit
 
         val result = userDetailsService.activateTotpMfa()
 
@@ -206,7 +207,7 @@ class UserDetailsServiceTests {
     }
 
     @Test
-    fun `When activate totp without authentication then raise AccessDeniedException`() {
+    fun `When activate totp without authentication then throw AccessDeniedException`() {
         assertThrows<AccessDeniedException> {
             userDetailsService.activateTotpMfa()
         }
@@ -222,6 +223,7 @@ class UserDetailsServiceTests {
 
         every { userRepository.findByEmail(any()) } returns user
         every { mfaMethodRepository.findByMethod(MfaMethodValue.TOTP.method) } returns mfaMethod
+        every { authenticationService.reAuthenticate(any()) } returns Unit
 
         val result = userDetailsService.deactivateTotpMfa()
 
@@ -244,7 +246,7 @@ class UserDetailsServiceTests {
     }
 
     @Test
-    fun `When deactivate totp then raise AccessDeniedException`() {
+    fun `When deactivate totp then throw AccessDeniedException`() {
         assertThrows<AccessDeniedException> {
             userDetailsService.deactivateTotpMfa()
         }
@@ -259,6 +261,7 @@ class UserDetailsServiceTests {
 
         every { userRepository.findByEmail(any()) } returns user
         every { mfaMethodRepository.findByMethod(MfaMethodValue.EMAIL.method) } returns mfaMethod
+        every { authenticationService.reAuthenticate(any()) } returns Unit
 
         val result = userDetailsService.activateEmailMfa()
 
@@ -281,7 +284,7 @@ class UserDetailsServiceTests {
     }
 
     @Test
-    fun `When activate email mfa then raise AccessDeniedException`() {
+    fun `When activate email mfa then throw AccessDeniedException`() {
         assertThrows<AccessDeniedException> {
             userDetailsService.activateEmailMfa()
         }
@@ -297,6 +300,7 @@ class UserDetailsServiceTests {
 
         every { userRepository.findByEmail(any()) } returns user
         every { mfaMethodRepository.findByMethod(MfaMethodValue.EMAIL.method) } returns mfaMethod
+        every { authenticationService.reAuthenticate(any()) } returns Unit
 
         val result = userDetailsService.deactivateEmailMfa()
 
@@ -319,7 +323,7 @@ class UserDetailsServiceTests {
     }
 
     @Test
-    fun `When deactivate email mfa then raise AccessDeniedException`() {
+    fun `When deactivate email mfa then throw AccessDeniedException`() {
         assertThrows<AccessDeniedException> {
             userDetailsService.deactivateEmailMfa()
         }
@@ -327,26 +331,26 @@ class UserDetailsServiceTests {
 
     @Test
     @WithMockCustomUser(password = "password", isMfaActive = true, mfaMethods = ["totp", "email"])
-    fun `When delete user with correct credentials then don't raise exceptions`() {
-        every {internalAuthenticationProvider.authenticate(any())} returns null
+    fun `When delete user with correct credentials then don't throw exceptions`() {
         every {userRepository.deleteById(any())} returns Unit
         every {totpService.deleteMfaSecret(any())} returns Unit
+        every { authenticationService.verifyAuthenticationWithoutMfa(any(), any() ) } returns true
 
         userDetailsService.deleteUser("password")
     }
 
     @Test
     @WithMockCustomUser(password = "password", isMfaActive = true, mfaMethods = ["totp", "email"])
-    fun `When delete user with incorrect credentials then raise bad credentials exception`() {
-        every {internalAuthenticationProvider.authenticate(any())} throws BadCredentialsException("Bad credentials")
+    fun `When delete user with incorrect credentials then throw bad credentials exception`() {
+        every { authenticationService.verifyAuthenticationWithoutMfa(any(), any()) } throws BadCredentialsException("Bad credentials")
 
         assertThrows<BadCredentialsException> {
-            userDetailsService.deleteUser("password")
+            userDetailsService.deleteUser("wrongPassword")
         }
     }
 
     @Test
-    fun `When delete user without authentication then raise access denied exception`() {
+    fun `When delete user without authentication then throw access denied exception`() {
         assertThrows<AccessDeniedException> {
             userDetailsService.deleteUser("password")
         }

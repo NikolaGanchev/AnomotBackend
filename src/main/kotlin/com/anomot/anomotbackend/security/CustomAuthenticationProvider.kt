@@ -25,8 +25,16 @@ class CustomAuthenticationProvider(userDetailsService: UserDetailsServiceImpl): 
     @Autowired
     private lateinit var mfaTotpService: MfaTotpService
 
+    /*
+    Only set to false for internal checks that require credentials and not for login
+    Also onyl use if the bean scope is prototype
+     */
+    var shouldUseMfa: Boolean = true
+
     override fun additionalAuthenticationChecks(userDetails: UserDetails, authentication: UsernamePasswordAuthenticationToken) {
         super.additionalAuthenticationChecks(userDetails, authentication)
+
+        if (!shouldUseMfa) return
 
         val authenticationDetails = authentication.details as CustomAuthenticationDetails
         val user: CustomUserDetails = userDetails as CustomUserDetails

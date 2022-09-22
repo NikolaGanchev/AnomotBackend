@@ -18,15 +18,9 @@ import com.anomot.anomotbackend.utils.Constants
 import com.bastiaanjansen.otp.TOTP
 import org.hibernate.Hibernate
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Qualifier
-import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Lazy
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.security.authentication.BadCredentialsException
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
-import org.springframework.security.authentication.dao.DaoAuthenticationProvider
-import org.springframework.security.core.Authentication
-import org.springframework.security.core.AuthenticationException
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.core.userdetails.UserDetailsService
@@ -53,9 +47,8 @@ class UserDetailsServiceImpl: UserDetailsService {
     @Autowired
     private lateinit var totpService: MfaTotpService
     @Autowired
-    @Qualifier(value="internalMfaDisabledAuthProvider")
     @Lazy
-    private lateinit var internalAuthenticationProvider: DaoAuthenticationProvider
+    private lateinit var authenticationService: AuthenticationService
 
     @Transactional
     override fun loadUserByUsername(email: String?): UserDetails {
@@ -96,7 +89,7 @@ class UserDetailsServiceImpl: UserDetailsService {
         val user = SecurityContextHolder.getContext().authentication
                 ?: throw AccessDeniedException("No authentication present")
 
-        if (!verifyAuthentication(user, oldPassword)) {
+        if (!authenticationService.verifyAuthenticationWithoutMfa(user, oldPassword)) {
             throw BadCredentialsException("Bad credentials")
         }
 
@@ -104,7 +97,7 @@ class UserDetailsServiceImpl: UserDetailsService {
 
         userRepository.setPassword(hashedPassword, (user.principal as CustomUserDetails).id!!)
 
-        reAuthenticate(user)
+        authenticationService.reAuthenticate(user)
     }
 
     fun changeUsername(newUsername: String) {
@@ -113,20 +106,20 @@ class UserDetailsServiceImpl: UserDetailsService {
 
         userRepository.setUsername(newUsername, (user.principal as CustomUserDetails).id!!)
 
-        reAuthenticate(user)
+        authenticationService.reAuthenticate(user)
     }
 
     fun changeEmail(password: String, newEmail: String) {
         val user = SecurityContextHolder.getContext().authentication
                 ?: throw AccessDeniedException("No authentication present")
 
-        if (!verifyAuthentication(user, password)) {
+        if (!authenticationService.verifyAuthenticationWithoutMfa(user, password)) {
             throw BadCredentialsException("Bad credentials")
         }
 
         userRepository.setEmail(newEmail, (user.principal as CustomUserDetails).id!!)
 
-        reAuthenticate(user)
+        authenticationService.reAuthenticate(user)
     }
 
     fun activateTotpMfa(): TotpDto? {
@@ -150,7 +143,7 @@ class UserDetailsServiceImpl: UserDetailsService {
                     .withPeriod(Duration.ofSeconds(Constants.TOTP_PERIOD))
                     .build()
 
-            reAuthenticate(userAuth)
+            authenticationService.reAuthenticate(userAuth)
 
             return TotpDto(totp.secret.toString(), totp.getURI("Anomot%20${user.email}").toString())
         } else {
@@ -169,7 +162,7 @@ class UserDetailsServiceImpl: UserDetailsService {
                 mfaMethodRepository.save(MfaMethod(MfaMethodValue.TOTP.method))
 
             deactivateMfa(user, mfaMethod)
-            reAuthenticate(userAuth)
+            authenticationService.reAuthenticate(userAuth)
             return true
         }
         return false
@@ -186,7 +179,7 @@ class UserDetailsServiceImpl: UserDetailsService {
                 mfaMethodRepository.save(MfaMethod(MfaMethodValue.EMAIL.method))
 
             activateMfa(user, mfaMethod)
-            reAuthenticate(userAuth)
+            authenticationService.reAuthenticate(userAuth)
             return true
         }
         return false
@@ -203,7 +196,7 @@ class UserDetailsServiceImpl: UserDetailsService {
                 mfaMethodRepository.save(MfaMethod(MfaMethodValue.EMAIL.method))
 
             deactivateMfa(user, mfaMethod)
-            reAuthenticate(userAuth)
+            authenticationService.reAuthenticate(userAuth)
             return true
         }
         return false
@@ -235,7 +228,7 @@ class UserDetailsServiceImpl: UserDetailsService {
         val user = SecurityContextHolder.getContext().authentication
                 ?: throw AccessDeniedException("No authentication present")
 
-        if (!verifyAuthentication(user, password)) {
+        if (!authenticationService.verifyAuthenticationWithoutMfa(user, password)) {
             throw BadCredentialsException("Bad credentials")
         }
 
@@ -245,38 +238,6 @@ class UserDetailsServiceImpl: UserDetailsService {
 
     fun requestData(password: String) {
         //TODO("implement when other systems are done")
-    }
-
-    fun verifyAuthentication(user: Authentication, password: String): Boolean {
-        return try {
-            internalAuthenticationProvider
-                    .authenticate(UsernamePasswordAuthenticationToken.unauthenticated(user.name, password))
-            true
-        } catch (authenticationException: AuthenticationException) {
-            false
-        }
-    }
-
-    fun reAuthenticate(currentAuthentication: Authentication) {
-        val user = loadUserByUsername(currentAuthentication.name)
-        val newAuthentication = UsernamePasswordAuthenticationToken.authenticated(user, user.password, user.authorities)
-        newAuthentication.details = currentAuthentication.details
-
-        val context = SecurityContextHolder.createEmptyContext()
-        context.authentication = newAuthentication
-        SecurityContextHolder.setContext(context)
-    }
-
-    /*
-    Only to be used for internal password checks that do not require Multi-factor authentication such as when changing
-    user email
-     */
-    @Bean(name=["internalMfaDisabledAuthProvider"])
-    fun internalAuthenticationProvider(): DaoAuthenticationProvider {
-        val authProvider = DaoAuthenticationProvider()
-        authProvider.setUserDetailsService(this)
-        authProvider.setPasswordEncoder(passwordEncoder)
-        return authProvider
     }
 
     fun sendVerificationEmail(user: User) {
