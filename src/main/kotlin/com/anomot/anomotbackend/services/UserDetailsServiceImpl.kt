@@ -89,7 +89,7 @@ class UserDetailsServiceImpl: UserDetailsService {
         val user = SecurityContextHolder.getContext().authentication
                 ?: throw AccessDeniedException("No authentication present")
 
-        if (!authenticationService.verifyAuthenticationWithoutMfa(user, oldPassword)) {
+        if (authenticationService.verifyAuthenticationWithoutMfa(user, oldPassword) == null) {
             throw BadCredentialsException("Bad credentials")
         }
 
@@ -113,7 +113,7 @@ class UserDetailsServiceImpl: UserDetailsService {
         val user = SecurityContextHolder.getContext().authentication
                 ?: throw AccessDeniedException("No authentication present")
 
-        if (!authenticationService.verifyAuthenticationWithoutMfa(user, password)) {
+        if (authenticationService.verifyAuthenticationWithoutMfa(user, password) == null) {
             throw BadCredentialsException("Bad credentials")
         }
 
@@ -228,7 +228,7 @@ class UserDetailsServiceImpl: UserDetailsService {
         val user = SecurityContextHolder.getContext().authentication
                 ?: throw AccessDeniedException("No authentication present")
 
-        if (!authenticationService.verifyAuthenticationWithoutMfa(user, password)) {
+        if (authenticationService.verifyAuthenticationWithoutMfa(user, password) == null) {
             throw BadCredentialsException("Bad credentials")
         }
 

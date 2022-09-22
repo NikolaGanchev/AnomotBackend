@@ -54,6 +54,10 @@ class CustomUserDetails(private val user: User): UserDetails {
         return user.mfaMethods?.map { it.method }?.toCollection(mutableListOf())
     }
 
+    fun hasMfaMethod(mfaMethodValue: MfaMethodValue): Boolean {
+        return user.mfaMethods != null && getMfaMethodsAsList()!!.contains(mfaMethodValue.method)
+    }
+
     fun isEmailVerified(): Boolean {
         return user.isEmailVerified
     }

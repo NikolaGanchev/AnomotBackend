@@ -27,6 +27,8 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.security.authentication.BadCredentialsException
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
+import org.springframework.security.core.Authentication
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder
 import java.time.Instant
 import java.util.*
@@ -103,7 +105,8 @@ class UserDetailsServiceTests {
     fun `When change password with correct credentials then don't throw exceptions`() {
         every {passwordEncoder.encode("newPassword")} returns "newPassword"
         every {userRepository.setPassword(any(), any())} returns 1
-        every { authenticationService.verifyAuthenticationWithoutMfa(any(), any() ) } returns true
+        every { authenticationService.verifyAuthenticationWithoutMfa(any<Authentication>(), any() ) } returns
+                UsernamePasswordAuthenticationToken.authenticated(null, null, null)
         every { authenticationService.reAuthenticate(any()) } returns Unit
 
         userDetailsService.changePassword("oldPassword", "newPassword")
@@ -112,7 +115,7 @@ class UserDetailsServiceTests {
     @Test
     @WithMockCustomUser(password = "password", isMfaActive = true, mfaMethods = ["totp", "email"])
     fun `When change password with incorrect credentials then throw bad credentials exception`() {
-        every { authenticationService.verifyAuthenticationWithoutMfa(any(), any()) } returns false
+        every { authenticationService.verifyAuthenticationWithoutMfa(any<Authentication>(), any()) } returns null
 
         assertThrows<BadCredentialsException> {
             userDetailsService.changePassword("wrongPassword", "newPassword")
@@ -130,7 +133,8 @@ class UserDetailsServiceTests {
     @WithMockCustomUser(password = "password", isMfaActive = true, mfaMethods = ["totp", "email"])
     fun `When change email with correct credentials then don't throw exceptions`() {
         every { userRepository.setEmail(any(), any()) } returns 1
-        every { authenticationService.verifyAuthenticationWithoutMfa(any(), any() ) } returns true
+        every { authenticationService.verifyAuthenticationWithoutMfa(any<Authentication>(), any() ) } returns
+                UsernamePasswordAuthenticationToken.authenticated(null, null, null)
         every { authenticationService.reAuthenticate(any()) } returns Unit
 
         userDetailsService.changeEmail("password", "example@test.com")
@@ -139,7 +143,7 @@ class UserDetailsServiceTests {
     @Test
     @WithMockCustomUser(password = "password", isMfaActive = true, mfaMethods = ["totp", "email"])
     fun `When change email with incorrect credentials then throw bad credentials exception`() {
-        every { authenticationService.verifyAuthenticationWithoutMfa(any(), any()) } returns false
+        every { authenticationService.verifyAuthenticationWithoutMfa(any<Authentication>(), any()) } returns null
 
         assertThrows<BadCredentialsException> {
             userDetailsService.changeEmail("wrongPassword", "example@test.com")
@@ -334,7 +338,8 @@ class UserDetailsServiceTests {
     fun `When delete user with correct credentials then don't throw exceptions`() {
         every {userRepository.deleteById(any())} returns Unit
         every {totpService.deleteMfaSecret(any())} returns Unit
-        every { authenticationService.verifyAuthenticationWithoutMfa(any(), any() ) } returns true
+        every { authenticationService.verifyAuthenticationWithoutMfa(any<Authentication>(), any() ) } returns
+                UsernamePasswordAuthenticationToken.authenticated(null, null, null)
 
         userDetailsService.deleteUser("password")
     }
@@ -342,7 +347,7 @@ class UserDetailsServiceTests {
     @Test
     @WithMockCustomUser(password = "password", isMfaActive = true, mfaMethods = ["totp", "email"])
     fun `When delete user with incorrect credentials then throw bad credentials exception`() {
-        every { authenticationService.verifyAuthenticationWithoutMfa(any(), any()) } throws BadCredentialsException("Bad credentials")
+        every { authenticationService.verifyAuthenticationWithoutMfa(any<Authentication>(), any()) } throws BadCredentialsException("Bad credentials")
 
         assertThrows<BadCredentialsException> {
             userDetailsService.deleteUser("wrongPassword")

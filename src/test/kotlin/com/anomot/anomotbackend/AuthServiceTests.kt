@@ -29,7 +29,7 @@ class AuthServiceTests {
     private lateinit var authenticationService: AuthenticationService
 
     @Test
-    fun `When verifyAuthenticationWithoutMfa and correct credentials then return true`() {
+    fun `When verifyAuthenticationWithoutMfa and correct credentials then return Authentication`() {
         val authentication = UsernamePasswordAuthenticationToken.authenticated("username",
                 "password",
                 mutableListOf())
@@ -40,11 +40,11 @@ class AuthServiceTests {
         val result = authenticationService.verifyAuthenticationWithoutMfa(authentication,
                 authentication.credentials.toString())
 
-        assertThat(result).isTrue
+        assertThat(result).isNotNull
     }
 
     @Test
-    fun `When verifyAuthenticationWithoutMfa and incorrect credentials then return false`() {
+    fun `When verifyAuthenticationWithoutMfa and incorrect credentials then return null`() {
         val authentication = UsernamePasswordAuthenticationToken.authenticated("email",
                 "password",
                 mutableListOf())
@@ -55,7 +55,7 @@ class AuthServiceTests {
         val result = authenticationService.verifyAuthenticationWithoutMfa(authentication,
                 authentication.credentials.toString())
 
-        assertThat(result).isFalse
+        assertThat(result).isNull()
     }
 
     @Test

@@ -1,6 +1,5 @@
 package com.anomot.anomotbackend.security
 
-import com.anomot.anomotbackend.exceptions.MfaRequiredException
 import com.anomot.anomotbackend.security.filters.CustomJsonReaderFilter
 import com.anomot.anomotbackend.services.UserDetailsServiceImpl
 import com.anomot.anomotbackend.utils.Constants
@@ -33,7 +32,11 @@ class WebSecurityConfig {
     @Bean
     fun filterChain(http: HttpSecurity): SecurityFilterChain {
         http.authorizeRequests()
-                    .antMatchers("/account/new", "/account/email/verify").permitAll()
+                    .antMatchers("/account/new",
+                            "/account/email/verify",
+                            "/account/mfa/email/methods",
+                            "/account/mfa/email/send",
+                            "/account/mfa/status").permitAll()
                     .anyRequest().authenticated()
                     .and()
                 .formLogin()
@@ -88,19 +91,7 @@ class WebSecurityConfig {
             response.status = SC_FORBIDDEN
         }
 
-        if (authentication is MfaRequiredException && authentication.message != null) {
-            // Refer to CustomAuthenticationProvider.kt
-            val customResponse = mutableMapOf<String, List<String>>()
-            customResponse[Constants.MFA_AVAILABLE_METHODS_PARAMETER] = authentication.message!!.split(",")
-
-            val mapper = ObjectMapper()
-            mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL)
-
-            response.contentType = "application/json"
-            response.writer.write(mapper.writeValueAsString(customResponse))
-        } else {
-            response.writer.write(authentication.message ?: "Login error")
-        }
+        response.writer.write(authentication.message ?: "Login error")
     }
 
     @Bean()

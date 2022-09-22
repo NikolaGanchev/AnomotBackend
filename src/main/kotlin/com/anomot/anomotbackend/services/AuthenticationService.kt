@@ -15,18 +15,32 @@ class AuthenticationService {
     @Autowired
     private lateinit var authenticationProvider: CustomAuthenticationProvider
 
-    /*
-    Only use for credentials checks and never for login
-    */
-    fun verifyAuthenticationWithoutMfa(user: Authentication, password: String): Boolean {
+    /**
+     * Verifies the user credentials are correct without using Multi-factor authentication.
+     * Should not be used for login.
+     * @param user The current authentication object
+     * @param password The password to check
+     * @return Authentication object if credentials are correct, else null
+     */
+    fun verifyAuthenticationWithoutMfa(user: Authentication, password: String): Authentication? {
+        return verifyAuthenticationWithoutMfa(user.name, password)
+    }
+
+    /**
+     * Verifies the user credentials are correct without using Multi-factor authentication.
+     * Should not be used for login.
+     * @param email The user email
+     * @param password The password to check
+     * @return Authentication object if credentials are correct, else null
+     */
+    fun verifyAuthenticationWithoutMfa(email: String, password: String): Authentication? {
         authenticationProvider.shouldUseMfa = false
 
         return try {
             authenticationProvider
-                    .authenticate(UsernamePasswordAuthenticationToken.unauthenticated(user.name, password))
-            true
+                    .authenticate(UsernamePasswordAuthenticationToken.unauthenticated(email, password))
         } catch (authenticationException: AuthenticationException) {
-            false
+            null
         }
     }
 
