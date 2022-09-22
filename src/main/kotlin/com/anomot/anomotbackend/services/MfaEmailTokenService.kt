@@ -45,4 +45,8 @@ class MfaEmailTokenService @Autowired constructor(
 
         return false
     }
+
+    fun deleteMfaCode(id: String, codeToDelete: String) {
+        mfaEmailCodeRepository.deleteById(id)
+    }
 }
