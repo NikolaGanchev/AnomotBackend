@@ -32,6 +32,12 @@ class MfaEmailTokenService @Autowired constructor(
         mfaEmailCodeRepository.save(mfaEmailToken)
     }
 
+    fun generateAndSendMfaEmail(userId: String) {
+        val mfaEmailToken = createMfaEmailToken(userId)
+        saveEmailToken(mfaEmailToken)
+        sendMfaEmail(mfaEmailToken)
+    }
+
     fun sendMfaEmail(mfaEmailToken: MfaEmailToken) {
         //TODO("implement when emails are available")
     }

@@ -172,9 +172,7 @@ class AuthController(private val userDetailsService: UserDetailsServiceImpl,
             val user = (authentication.principal) as CustomUserDetails
 
             if (user.isMfaEnabled() && user.hasMfaMethod(MfaMethodValue.EMAIL)) {
-                val mfaEmailToken = mfaEmailTokenService.createMfaEmailToken(user.id.toString())
-                mfaEmailTokenService.saveEmailToken(mfaEmailToken)
-                mfaEmailTokenService.sendMfaEmail(mfaEmailToken)
+                mfaEmailTokenService.generateAndSendMfaEmail(user.id.toString())
                 ResponseEntity(HttpStatus.OK)
             } else {
                 ResponseEntity(HttpStatus.CONFLICT)
