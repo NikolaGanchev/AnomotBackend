@@ -2,6 +2,7 @@ package com.anomot.anomotbackend.services
 
 import com.anomot.anomotbackend.entities.MfaEmailToken
 import com.anomot.anomotbackend.repositories.MfaEmailCodeRepository
+import com.anomot.anomotbackend.utils.Constants
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import java.security.SecureRandom
@@ -13,7 +14,7 @@ class MfaEmailTokenService @Autowired constructor(
 
     private fun generateEmailCode(): String {
         val dictionary = "0123456789"
-        val length = 6
+        val length = Constants.MFA_PASSWORD_LENGTH
         val random = SecureRandom()
         val code = StringBuilder(length)
 

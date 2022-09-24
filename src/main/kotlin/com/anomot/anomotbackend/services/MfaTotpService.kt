@@ -27,7 +27,7 @@ class MfaTotpService @Autowired constructor(
         if (injectedTotp != null) return injectedTotp.verify(codeToVerify)
 
         val totp = TOTP.Builder(secret.secret.toByteArray())
-                .withPasswordLength(Constants.TOTP_PASSWORD_LENGTH)
+                .withPasswordLength(Constants.MFA_PASSWORD_LENGTH)
                 .withPeriod(Duration.ofSeconds(Constants.TOTP_PERIOD))
                 .build()
 

@@ -139,7 +139,7 @@ class UserDetailsServiceImpl: UserDetailsService {
             totpService.saveCode(token)
 
             val totp = TOTP.Builder(secret)
-                    .withPasswordLength(Constants.TOTP_PASSWORD_LENGTH)
+                    .withPasswordLength(Constants.MFA_PASSWORD_LENGTH)
                     .withPeriod(Duration.ofSeconds(Constants.TOTP_PERIOD))
                     .build()
 
