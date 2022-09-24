@@ -706,9 +706,13 @@ class AuthenticationWebTests @Autowired constructor(
     @Test
     @WithMockCustomUser
     fun `When activate totp then return 200 and TotpDto`() {
+        val mfaEnabledDto = MfaEnabledDto(true)
+
         every {userDetailsServiceImpl.activateTotpMfa()} returns TotpDto("", "")
 
         mockMvc.perform(put("/account/mfa/totp")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(TestUtils.objectToJson(mfaEnabledDto))
                 .with(csrf()))
                 .andExpect(status().isOk)
     }
@@ -716,107 +720,125 @@ class AuthenticationWebTests @Autowired constructor(
     @Test
     @WithMockCustomUser
     fun `When activate totp and already active then return 409`() {
+        val mfaEnabledDto = MfaEnabledDto(true)
+
         every {userDetailsServiceImpl.activateTotpMfa()} returns null
 
         mockMvc.perform(put("/account/mfa/totp")
-                .with(csrf()))
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(TestUtils.objectToJson(mfaEnabledDto)))
                 .andExpect(status().isConflict)
     }
 
     @Test
-    fun `When activate totp and access denied then return 401`() {
+    fun `When update totp and access denied then return 401`() {
+        val mfaEnabledDto = MfaEnabledDto(true)
+
         every {userDetailsServiceImpl.activateTotpMfa()} throws AccessDeniedException("No authentication present")
 
         mockMvc.perform(put("/account/mfa/totp")
-                .with(csrf()))
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(TestUtils.objectToJson(mfaEnabledDto)))
                 .andExpect(status().isUnauthorized)
     }
 
     @Test
     @WithMockCustomUser
     fun `When disable totp then return 200`() {
+        val mfaEnabledDto = MfaEnabledDto(false)
+
         every {userDetailsServiceImpl.deactivateTotpMfa()} returns true
 
-        mockMvc.perform(delete("/account/mfa/totp")
-                .with(csrf()))
+        mockMvc.perform(put("/account/mfa/totp")
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(TestUtils.objectToJson(mfaEnabledDto)))
                 .andExpect(status().isOk)
     }
 
     @Test
     @WithMockCustomUser
     fun `When disable totp and already disabled then return 409`() {
+        val mfaEnabledDto = MfaEnabledDto(false)
+
         every {userDetailsServiceImpl.deactivateTotpMfa()} returns false
 
-        mockMvc.perform(delete("/account/mfa/totp")
-                .with(csrf()))
+        mockMvc.perform(put("/account/mfa/totp")
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(TestUtils.objectToJson(mfaEnabledDto)))
                 .andExpect(status().isConflict)
-    }
-
-    @Test
-    fun `When disable totp and access denied then return 401`() {
-        every {userDetailsServiceImpl.deactivateTotpMfa()} throws AccessDeniedException("No authentication present")
-
-        mockMvc.perform(delete("/account/mfa/totp")
-                .with(csrf()))
-                .andExpect(status().isUnauthorized)
     }
 
     @Test
     @WithMockCustomUser()
     fun `When activate email mfa then return 200`() {
+        val mfaEnabledDto = MfaEnabledDto(true)
+
         every {userDetailsServiceImpl.activateEmailMfa()} returns true
 
         mockMvc.perform(put("/account/mfa/email")
-                .with(csrf()))
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(TestUtils.objectToJson(mfaEnabledDto)))
                 .andExpect(status().isOk)
     }
 
     @Test
     @WithMockCustomUser
     fun `When activate email mfa and already activated then return 409`() {
+        val mfaEnabledDto = MfaEnabledDto(true)
+
         every {userDetailsServiceImpl.activateEmailMfa()} returns false
 
         mockMvc.perform(put("/account/mfa/email")
-                .with(csrf()))
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(TestUtils.objectToJson(mfaEnabledDto)))
                 .andExpect(status().isConflict)
     }
 
     @Test
-    fun `When activate email mfa and access denied then return 401`() {
+    fun `When update email mfa and access denied then return 401`() {
+        val mfaEnabledDto = MfaEnabledDto(true)
+
         every {userDetailsServiceImpl.activateEmailMfa()} throws AccessDeniedException("No authentication present")
 
         mockMvc.perform(put("/account/mfa/email")
-                .with(csrf()))
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(TestUtils.objectToJson(mfaEnabledDto)))
                 .andExpect(status().isUnauthorized)
     }
 
     @Test
     @WithMockCustomUser
     fun `When disable email mfa then return 200`() {
+        val mfaEnabledDto = MfaEnabledDto(false)
+
         every {userDetailsServiceImpl.deactivateEmailMfa()} returns true
 
-        mockMvc.perform(delete("/account/mfa/email")
-                .with(csrf()))
+        mockMvc.perform(put("/account/mfa/email")
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(TestUtils.objectToJson(mfaEnabledDto)))
                 .andExpect(status().isOk)
     }
 
     @Test
     @WithMockCustomUser
     fun `When disable email mfa and already disabled then return 409`() {
+        val mfaEnabledDto = MfaEnabledDto(false)
+
         every {userDetailsServiceImpl.deactivateEmailMfa()} returns false
 
-        mockMvc.perform(delete("/account/mfa/email")
-                .with(csrf()))
+        mockMvc.perform(put("/account/mfa/email")
+                .with(csrf())
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(TestUtils.objectToJson(mfaEnabledDto)))
                 .andExpect(status().isConflict)
-    }
-
-    @Test
-    fun `When disable email mfa and access denied then return 401`() {
-        every {userDetailsServiceImpl.deactivateEmailMfa()} throws AccessDeniedException("No authentication present")
-
-        mockMvc.perform(delete("/account/mfa/email")
-                .with(csrf()))
-                .andExpect(status().isUnauthorized)
     }
 
     @Test

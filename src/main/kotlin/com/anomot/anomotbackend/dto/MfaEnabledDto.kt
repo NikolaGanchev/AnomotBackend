@@ -1,5 +1,8 @@
 package com.anomot.anomotbackend.dto
 
+import com.fasterxml.jackson.annotation.JsonProperty
+
 data class MfaEnabledDto(
-        val isMfaEnabled: Boolean
+        @get:JsonProperty("isMfaEnabled") // This annotation is needed for Jackson to properly map the json value
+        var isMfaEnabled: Boolean
 )

@@ -81,39 +81,29 @@ class AuthController(private val userDetailsService: UserDetailsServiceImpl,
     }
 
     @PutMapping("/mfa/totp")
-    fun activateTotp(): ResponseEntity<TotpDto> {
+    fun updateTotpStatus(@RequestBody @Valid mfaEnabledDto: MfaEnabledDto): ResponseEntity<TotpDto> {
         return try {
-            val totpDto = userDetailsService.activateTotpMfa()
-            ResponseEntity(totpDto, if (totpDto == null) HttpStatus.CONFLICT else HttpStatus.OK)
-        } catch (exception: AuthenticationException) {
-            ResponseEntity(HttpStatus.UNAUTHORIZED)
-        }
-    }
-
-    @DeleteMapping("/mfa/totp")
-    fun disableTotp(): ResponseEntity<String> {
-        return try {
-            val success = userDetailsService.deactivateTotpMfa()
-            ResponseEntity(if (success) HttpStatus.OK else HttpStatus.CONFLICT)
+            if (mfaEnabledDto.isMfaEnabled) {
+                val totpDto = userDetailsService.activateTotpMfa()
+                ResponseEntity(totpDto, if (totpDto == null) HttpStatus.CONFLICT else HttpStatus.OK)
+            } else {
+                val success = userDetailsService.deactivateTotpMfa()
+                ResponseEntity(if (success) HttpStatus.OK else HttpStatus.CONFLICT)
+            }
         } catch (exception: AuthenticationException) {
             ResponseEntity(HttpStatus.UNAUTHORIZED)
         }
     }
 
     @PutMapping("/mfa/email")
-    fun activateEmailMfa(): ResponseEntity<String> {
+    fun updateEmailMfaStatus(@RequestBody @Valid mfaEnabledDto: MfaEnabledDto): ResponseEntity<String> {
         return try {
-            val success = userDetailsService.activateEmailMfa()
-            ResponseEntity(if (success) HttpStatus.OK else HttpStatus.CONFLICT)
-        } catch (exception: AuthenticationException) {
-            ResponseEntity(HttpStatus.UNAUTHORIZED)
-        }
-    }
+            val success = if (mfaEnabledDto.isMfaEnabled) {
+                userDetailsService.activateEmailMfa()
+            } else {
+                userDetailsService.deactivateEmailMfa()
+            }
 
-    @DeleteMapping("/mfa/email")
-    fun disableEmailMfa(): ResponseEntity<String> {
-        return try {
-            val success = userDetailsService.deactivateEmailMfa()
             ResponseEntity(if (success) HttpStatus.OK else HttpStatus.CONFLICT)
         } catch (exception: AuthenticationException) {
             ResponseEntity(HttpStatus.UNAUTHORIZED)
