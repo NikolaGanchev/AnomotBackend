@@ -4,13 +4,11 @@ import com.anomot.anomotbackend.dto.*
 import com.anomot.anomotbackend.exceptions.UserAlreadyExistsException
 import com.anomot.anomotbackend.security.CustomUserDetails
 import com.anomot.anomotbackend.security.MfaMethodValue
-import com.anomot.anomotbackend.services.AuthenticationService
-import com.anomot.anomotbackend.services.EmailVerificationService
-import com.anomot.anomotbackend.services.MfaEmailTokenService
-import com.anomot.anomotbackend.services.UserDetailsServiceImpl
+import com.anomot.anomotbackend.services.*
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.authentication.BadCredentialsException
+import org.springframework.security.core.Authentication
 import org.springframework.security.core.AuthenticationException
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.PostMapping
@@ -26,7 +24,8 @@ import javax.validation.Valid
 class AuthController(private val userDetailsService: UserDetailsServiceImpl,
                     private val emailVerificationService: EmailVerificationService,
                     private val authenticationService: AuthenticationService,
-                    private val mfaEmailTokenService: MfaEmailTokenService) {
+                    private val mfaEmailTokenService: MfaEmailTokenService,
+                    private val mfaRecoveryService: MfaRecoveryService) {
 
     @PostMapping("/new")
     fun registerUser(@RequestBody @Valid userRegisterDTO: UserRegisterDto): ResponseEntity<UserDto> {
@@ -178,6 +177,37 @@ class AuthController(private val userDetailsService: UserDetailsServiceImpl,
                 ResponseEntity(HttpStatus.CONFLICT)
             }
         } catch (exception: AuthenticationException) {
+            ResponseEntity(HttpStatus.UNAUTHORIZED)
+        }
+    }
+
+    @PutMapping("/mfa/recovery/codes")
+    fun generateCodes(authentication: Authentication?): ResponseEntity<MfaRecoveryCodesDto> {
+        return if (authentication != null && authentication.principal != null) {
+            val user = (authentication.principal) as CustomUserDetails
+
+            if (!user.isMfaEnabled()) {
+                return ResponseEntity(HttpStatus.CONFLICT)
+            }
+
+            val codes = mfaRecoveryService.updateRecoveryCodes(user.id!!)
+
+            ResponseEntity(MfaRecoveryCodesDto(codes), HttpStatus.CREATED)
+        } else {
+            ResponseEntity(HttpStatus.UNAUTHORIZED)
+        }
+    }
+
+    // Can also be accessed even if mfa is disabled in case recovery codes fail to be deleted on disabling mfa
+    @DeleteMapping("/mfa/recovery/codes")
+    fun deleteCodes(authentication: Authentication?): ResponseEntity<String> {
+        return if (authentication != null && authentication.principal != null) {
+            val user = (authentication.principal) as CustomUserDetails
+
+            mfaRecoveryService.deleteRecoveryCodes(user.id!!)
+
+            ResponseEntity(HttpStatus.OK)
+        } else {
             ResponseEntity(HttpStatus.UNAUTHORIZED)
         }
     }

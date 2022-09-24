@@ -58,6 +58,9 @@ class AuthenticationWebTests @Autowired constructor(
     @MockkBean
     private lateinit var authenticationService: AuthenticationService
 
+    @MockkBean
+    private lateinit var mfaRecoveryService: MfaRecoveryService
+
     val mfaMethodEmail = MfaMethod(MfaMethodValue.EMAIL.method)
     val mfaMethodTotp = MfaMethod(MfaMethodValue.TOTP.method)
 
@@ -807,6 +810,53 @@ class AuthenticationWebTests @Autowired constructor(
         mockMvc.perform(delete("/account/")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(TestUtils.objectToJson(accountDeleteDto))
+                .with(csrf()))
+                .andExpect(status().isUnauthorized)
+    }
+
+    @Test
+    @WithMockCustomUser(isMfaActive = true)
+    fun `When generate recovery codes and mfa enabled return 201`() {
+        every { mfaRecoveryService.updateRecoveryCodes(5) } returns List(6) {
+            it.toString().padEnd(6, it.toString().first())
+        }
+
+        mockMvc.perform(put("/account/mfa/recovery/codes")
+                .with(csrf()))
+                .andExpect(status().isCreated)
+                .andExpect(jsonPath("\$.codes[0]").value("000000"))
+                .andExpect(jsonPath("\$.codes[2]").value("222222"))
+                .andExpect(jsonPath("\$.codes[5]").value("555555"))
+    }
+
+    @Test
+    @WithMockCustomUser(isMfaActive = false)
+    fun `When generate recovery codes and mfa disabled return 409`() {
+        mockMvc.perform(put("/account/mfa/recovery/codes")
+                .with(csrf()))
+                .andExpect(status().isConflict)
+    }
+
+    @Test
+    fun `When generate recovery codes without authentication then return 401`() {
+        mockMvc.perform(put("/account/mfa/recovery/codes")
+                .with(csrf()))
+                .andExpect(status().isUnauthorized)
+    }
+
+    @Test
+    @WithMockCustomUser
+    fun `When delete recovery codes and then return 200`() {
+        every { mfaRecoveryService.deleteRecoveryCodes(any()) } returns 6
+
+        mockMvc.perform(delete("/account/mfa/recovery/codes")
+                .with(csrf()))
+                .andExpect(status().isOk)
+    }
+
+    @Test
+    fun `When delete recovery codes without authentication then return 401`() {
+        mockMvc.perform(delete("/account/mfa/recovery/codes")
                 .with(csrf()))
                 .andExpect(status().isUnauthorized)
     }

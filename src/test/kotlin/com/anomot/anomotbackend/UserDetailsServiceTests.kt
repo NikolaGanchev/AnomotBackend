@@ -12,10 +12,7 @@ import com.anomot.anomotbackend.repositories.MfaMethodRepository
 import com.anomot.anomotbackend.repositories.UserRepository
 import com.anomot.anomotbackend.security.Authorities
 import com.anomot.anomotbackend.security.MfaMethodValue
-import com.anomot.anomotbackend.services.AuthenticationService
-import com.anomot.anomotbackend.services.EmailVerificationService
-import com.anomot.anomotbackend.services.MfaTotpService
-import com.anomot.anomotbackend.services.UserDetailsServiceImpl
+import com.anomot.anomotbackend.services.*
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
@@ -49,6 +46,8 @@ class UserDetailsServiceTests {
     private lateinit var authorityRepository: AuthorityRepository
     @MockkBean
     private lateinit var authenticationService: AuthenticationService
+    @MockkBean
+    private lateinit var mfaRecoveryService: MfaRecoveryService
     @Autowired
     @InjectMockKs
     private lateinit var userDetailsService: UserDetailsServiceImpl

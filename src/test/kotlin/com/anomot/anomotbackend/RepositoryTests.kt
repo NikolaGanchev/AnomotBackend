@@ -22,7 +22,8 @@ class RepositoryTests @Autowired constructor(
         val authorityRepository: AuthorityRepository,
         val emailVerificationTokenRepository: EmailVerificationTokenRepository,
         val mfaMethodRepository: MfaMethodRepository,
-        val mfaTotpSecretRepository: MfaTotpSecretRepository
+        val mfaTotpSecretRepository: MfaTotpSecretRepository,
+        val mfaRecoveryCodeRepository: MfaRecoveryCodeRepository
 ) {
 
     @Test
@@ -178,7 +179,7 @@ class RepositoryTests @Autowired constructor(
     }
 
     @Test
-    fun `When deleteByEmail mfaTotpSecret then delete`() {
+    fun `When deleteByEmail mfaTotpSecret then have 0 elements`() {
         val authority = Authority(Authorities.USER.roleName)
         val user = User("example@example.com", "password", "Georgi", mutableListOf(authority))
 
@@ -190,6 +191,78 @@ class RepositoryTests @Autowired constructor(
 
         mfaTotpSecretRepository.deleteByUserId(user.id!!)
 
+        assertThat(mfaTotpSecretRepository.count()).isEqualTo(0)
+    }
+
+    @Test
+    fun `When existsByUserAndCode and does exist then return true`() {
+        val authority = Authority(Authorities.USER.roleName)
+        val user = User("example@example.com", "password", "Georgi", mutableListOf(authority))
+        val code = "9m96n5"
+
+        val mfaRecoveryCode = MfaRecoveryCode(code, user)
+
+        entityManager.persist(user)
+        entityManager.persist(mfaRecoveryCode)
+        entityManager.flush()
+
+        val exists = mfaRecoveryCodeRepository.existsByUserAndCode(user, code)
+
+        assertThat(exists).isTrue
+    }
+
+    @Test
+    fun `When existsByUserAndCode and doesn't exist then return true`() {
+        val authority = Authority(Authorities.USER.roleName)
+        val user = User("example@example.com", "password", "Georgi", mutableListOf(authority))
+        val code = "9m96n5"
+
+        val mfaRecoveryCode = MfaRecoveryCode(code, user)
+
+        entityManager.persist(user)
+        entityManager.persist(mfaRecoveryCode)
+        entityManager.flush()
+
+        val exists = mfaRecoveryCodeRepository.existsByUserAndCode(user,"9b76i5")
+
+        assertThat(exists).isFalse
+    }
+
+    @Test
+    fun `When delete by user and code then return 1`() {
+        val authority = Authority(Authorities.USER.roleName)
+        val user = User("example@example.com", "password", "Georgi", mutableListOf(authority))
+        val code = "9m96n5"
+
+        val mfaRecoveryCode = MfaRecoveryCode(code, user)
+
+        entityManager.persist(user)
+        entityManager.persist(mfaRecoveryCode)
+        entityManager.flush()
+
+        val deletedRows = mfaRecoveryCodeRepository.deleteByUserAndCode(user, code)
+
+        assertThat(deletedRows).isEqualTo(1)
+    }
+
+    @Test
+    fun `When delete all by user then have 0 elements`() {
+        val authority = Authority(Authorities.USER.roleName)
+        val user = User("example@example.com", "password", "Georgi", mutableListOf(authority))
+        val code = "9896y5"
+        val code1 = "3475w4"
+
+        val mfaRecoveryCode = MfaRecoveryCode(code, user)
+        val mfaRecoveryCode1 = MfaRecoveryCode(code1, user)
+
+        entityManager.persist(user)
+        entityManager.persist(mfaRecoveryCode)
+        entityManager.persist(mfaRecoveryCode1)
+        entityManager.flush()
+
+        val deletedRows = mfaRecoveryCodeRepository.deleteAllByUser(user)
+
+        assertThat(deletedRows).isEqualTo(2)
         assertThat(mfaTotpSecretRepository.count()).isEqualTo(0)
     }
 }

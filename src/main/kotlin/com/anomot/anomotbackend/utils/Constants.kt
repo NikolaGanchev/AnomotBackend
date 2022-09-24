@@ -15,5 +15,7 @@ class Constants {
         const val TOTP_CODE_ALLOWED_DELAY = 2
         const val PASSWORD_MIN_SIZE = 10
         const val PASSWORD_MAX_SIZE = 512
+        const val MFA_RECOVERY_CODE_LENGTH = 8
+        const val MFA_RECOVERY_CODE_AMOUNT = 6
     }
 }

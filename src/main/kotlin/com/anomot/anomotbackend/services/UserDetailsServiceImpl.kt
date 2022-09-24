@@ -47,6 +47,8 @@ class UserDetailsServiceImpl: UserDetailsService {
     @Autowired
     private lateinit var totpService: MfaTotpService
     @Autowired
+    private lateinit var mfaRecoveryService: MfaRecoveryService
+    @Autowired
     @Lazy
     private lateinit var authenticationService: AuthenticationService
 
@@ -212,6 +214,7 @@ class UserDetailsServiceImpl: UserDetailsService {
 
         if (user.mfaMethods!!.isEmpty()) {
             user.isMfaActive = false
+            mfaRecoveryService.deleteRecoveryCodes(user.id!!)
         }
     }
 
