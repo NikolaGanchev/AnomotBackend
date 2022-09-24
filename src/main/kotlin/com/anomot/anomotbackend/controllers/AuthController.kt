@@ -125,16 +125,18 @@ class AuthController(private val userDetailsService: UserDetailsServiceImpl,
     @PostMapping("/mfa/email/methods")
     fun getMfaMethods(@RequestBody @Valid loginDto: LoginDto): ResponseEntity<MfaMethodsDto> {
         return try {
-            if (authenticationService.verifyAuthenticationWithoutMfa(loginDto.email, loginDto.password) != null) {
-                val user = userDetailsService.loadUserByUsername(loginDto.email) as CustomUserDetails
+            val authentication = authenticationService.verifyAuthenticationWithoutMfa(loginDto.email, loginDto.password)
 
-                if (user.isMfaEnabled() && user.getMfaMethodsAsList() != null) {
-                    ResponseEntity(MfaMethodsDto(user.getMfaMethodsAsList()!!), HttpStatus.OK)
-                } else {
-                    ResponseEntity(HttpStatus.CONFLICT)
-                }
+            if (authentication == null || authentication.principal == null) {
+                return ResponseEntity(HttpStatus.UNAUTHORIZED)
+            }
+
+            val user = (authentication.principal) as CustomUserDetails
+
+            if (user.isMfaEnabled() && user.getMfaMethodsAsList() != null) {
+                ResponseEntity(MfaMethodsDto(user.getMfaMethodsAsList()!!), HttpStatus.OK)
             } else {
-                ResponseEntity(HttpStatus.UNAUTHORIZED)
+                ResponseEntity(HttpStatus.CONFLICT)
             }
         } catch (exception: AuthenticationException) {
             ResponseEntity(HttpStatus.UNAUTHORIZED)
@@ -144,13 +146,15 @@ class AuthController(private val userDetailsService: UserDetailsServiceImpl,
     @PostMapping("/mfa/status")
     fun getMfaEnabled(@RequestBody @Valid loginDto: LoginDto): ResponseEntity<MfaEnabledDto> {
         return try {
-            if (authenticationService.verifyAuthenticationWithoutMfa(loginDto.email, loginDto.password) != null) {
-                val user = userDetailsService.loadUserByUsername(loginDto.email) as CustomUserDetails
+            val authentication = authenticationService.verifyAuthenticationWithoutMfa(loginDto.email, loginDto.password)
 
-                ResponseEntity(MfaEnabledDto(user.isMfaEnabled()), HttpStatus.OK)
-            } else {
-                ResponseEntity(HttpStatus.UNAUTHORIZED)
+            if (authentication == null || authentication.principal == null) {
+                return ResponseEntity(HttpStatus.UNAUTHORIZED)
             }
+
+            val user = (authentication.principal) as CustomUserDetails
+
+            ResponseEntity(MfaEnabledDto(user.isMfaEnabled()), HttpStatus.OK)
         } catch (exception: AuthenticationException) {
             ResponseEntity(HttpStatus.UNAUTHORIZED)
         }
@@ -159,19 +163,21 @@ class AuthController(private val userDetailsService: UserDetailsServiceImpl,
     @PostMapping("/mfa/email/send")
     fun sendMfaEmail(@RequestBody @Valid loginDto: LoginDto): ResponseEntity<String> {
         return try {
-            if (authenticationService.verifyAuthenticationWithoutMfa(loginDto.email, loginDto.password) != null) {
-                val user = userDetailsService.loadUserByUsername(loginDto.email) as CustomUserDetails
+            val authentication = authenticationService.verifyAuthenticationWithoutMfa(loginDto.email, loginDto.password)
 
-                if (user.isMfaEnabled() && user.hasMfaMethod(MfaMethodValue.EMAIL)) {
-                    val mfaEmailToken = mfaEmailTokenService.createMfaEmailToken(user.id.toString())
-                    mfaEmailTokenService.saveEmailToken(mfaEmailToken)
-                    mfaEmailTokenService.sendMfaEmail(mfaEmailToken)
-                    ResponseEntity(HttpStatus.OK)
-                } else {
-                    ResponseEntity(HttpStatus.CONFLICT)
-                }
+            if (authentication == null || authentication.principal == null) {
+                return ResponseEntity<String>(HttpStatus.UNAUTHORIZED)
+            }
+
+            val user = (authentication.principal) as CustomUserDetails
+
+            if (user.isMfaEnabled() && user.hasMfaMethod(MfaMethodValue.EMAIL)) {
+                val mfaEmailToken = mfaEmailTokenService.createMfaEmailToken(user.id.toString())
+                mfaEmailTokenService.saveEmailToken(mfaEmailToken)
+                mfaEmailTokenService.sendMfaEmail(mfaEmailToken)
+                ResponseEntity(HttpStatus.OK)
             } else {
-                ResponseEntity(HttpStatus.UNAUTHORIZED)
+                ResponseEntity(HttpStatus.CONFLICT)
             }
         } catch (exception: AuthenticationException) {
             ResponseEntity(HttpStatus.UNAUTHORIZED)

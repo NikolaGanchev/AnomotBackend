@@ -9,7 +9,6 @@ import com.anomot.anomotbackend.services.*
 import com.anomot.anomotbackend.utils.Constants
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
-import io.mockk.mockk
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -18,6 +17,7 @@ import org.springframework.context.annotation.Import
 import org.springframework.http.MediaType
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.security.authentication.BadCredentialsException
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestBuilders.formLogin
@@ -229,9 +229,10 @@ class AuthenticationWebTests @Autowired constructor(
                 user.mfaMethods)
 
         val expectedUserDetails = CustomUserDetails(dbUser)
+        val authentication = UsernamePasswordAuthenticationToken.authenticated(expectedUserDetails,
+                "password", mutableListOf())
 
-        every { userDetailsServiceImpl.loadUserByUsername(any()) } returns expectedUserDetails
-        every { authenticationService.verifyAuthenticationWithoutMfa(any<String>(), any()) } returns mockk()
+        every { authenticationService.verifyAuthenticationWithoutMfa(any<String>(), any()) } returns authentication
 
         mockMvc.perform(post("/account/mfa/email/methods")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -244,28 +245,8 @@ class AuthenticationWebTests @Autowired constructor(
 
     @Test
     fun `When get mfa methods with incorrect credentials then return 401`() {
-        val authority = Authority(Authorities.USER.roleName)
-        val user = User("example@test.com",
-                "password12$",
-                "Georgi",
-                mutableListOf(authority),
-                true,
-                true,
-                mutableListOf(mfaMethodTotp))
-
         val loginDto = LoginDto("example@example.com", "password12$")
 
-        val dbUser = User(user.email,
-                passwordEncoder.encode("password12$"),
-                user.username,
-                mutableListOf(authority),
-                user.isEmailVerified,
-                user.isMfaActive,
-                user.mfaMethods)
-
-        val expectedUserDetails = CustomUserDetails(dbUser)
-
-        every { userDetailsServiceImpl.loadUserByUsername(any()) } returns expectedUserDetails
         every { authenticationService.verifyAuthenticationWithoutMfa(any<String>(), any()) } returns null
 
         mockMvc.perform(post("/account/mfa/email/methods")
@@ -297,9 +278,10 @@ class AuthenticationWebTests @Autowired constructor(
                 user.mfaMethods)
 
         val expectedUserDetails = CustomUserDetails(dbUser)
+        val authentication = UsernamePasswordAuthenticationToken.authenticated(expectedUserDetails,
+                "password", mutableListOf())
 
-        every { userDetailsServiceImpl.loadUserByUsername(any()) } returns expectedUserDetails
-        every { authenticationService.verifyAuthenticationWithoutMfa(any<String>(), any()) } returns mockk()
+        every { authenticationService.verifyAuthenticationWithoutMfa(any<String>(), any()) } returns authentication
 
         mockMvc.perform(post("/account/mfa/email/methods")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -330,9 +312,10 @@ class AuthenticationWebTests @Autowired constructor(
                 user.mfaMethods)
 
         val expectedUserDetails = CustomUserDetails(dbUser)
+        val authentication = UsernamePasswordAuthenticationToken.authenticated(expectedUserDetails,
+                "password", mutableListOf())
 
-        every { userDetailsServiceImpl.loadUserByUsername(any()) } returns expectedUserDetails
-        every { authenticationService.verifyAuthenticationWithoutMfa(any<String>(), any()) } returns mockk()
+        every { authenticationService.verifyAuthenticationWithoutMfa(any<String>(), any()) } returns authentication
 
         mockMvc.perform(post("/account/mfa/status")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -365,9 +348,10 @@ class AuthenticationWebTests @Autowired constructor(
                 user.mfaMethods)
 
         val expectedUserDetails = CustomUserDetails(dbUser)
+        val authentication = UsernamePasswordAuthenticationToken.authenticated(expectedUserDetails,
+                "password", mutableListOf())
 
-        every { userDetailsServiceImpl.loadUserByUsername(any()) } returns expectedUserDetails
-        every { authenticationService.verifyAuthenticationWithoutMfa(any<String>(), any()) } returns mockk()
+        every { authenticationService.verifyAuthenticationWithoutMfa(any<String>(), any()) } returns authentication
 
         mockMvc.perform(post("/account/mfa/status")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -380,28 +364,8 @@ class AuthenticationWebTests @Autowired constructor(
 
     @Test
     fun `When get mfa status with incorrect credentials then return 401`() {
-        val authority = Authority(Authorities.USER.roleName)
-        val user = User("example@test.com",
-                "password12$",
-                "Georgi",
-                mutableListOf(authority),
-                true,
-                true,
-                mutableListOf(mfaMethodTotp))
-
         val loginDto = LoginDto("example@example.com", "password12$")
 
-        val dbUser = User(user.email,
-                passwordEncoder.encode("password12$"),
-                user.username,
-                mutableListOf(authority),
-                user.isEmailVerified,
-                user.isMfaActive,
-                user.mfaMethods)
-
-        val expectedUserDetails = CustomUserDetails(dbUser)
-
-        every { userDetailsServiceImpl.loadUserByUsername(any()) } returns expectedUserDetails
         every { authenticationService.verifyAuthenticationWithoutMfa(any<String>(), any()) } returns null
 
         mockMvc.perform(post("/account/mfa/status")
@@ -475,12 +439,13 @@ class AuthenticationWebTests @Autowired constructor(
                 user.mfaMethods)
 
         val expectedUserDetails = CustomUserDetails(dbUser)
+        val authentication = UsernamePasswordAuthenticationToken.authenticated(expectedUserDetails,
+                "password", mutableListOf())
 
-        every { userDetailsServiceImpl.loadUserByUsername(any()) } returns expectedUserDetails
+        every { authenticationService.verifyAuthenticationWithoutMfa(any<String>(), any()) } returns authentication
         every { mfaEmailTokenService.createMfaEmailToken(any()) } returns expectedMfaToken
         every { mfaEmailTokenService.saveEmailToken(any()) } returns Unit
         every { mfaEmailTokenService.sendMfaEmail(any()) } returns Unit
-        every { authenticationService.verifyAuthenticationWithoutMfa(any<String>(), any()) } returns mockk()
 
 
         mockMvc.perform(post("/account/mfa/email/send")
@@ -515,12 +480,13 @@ class AuthenticationWebTests @Autowired constructor(
                 user.mfaMethods)
 
         val expectedUserDetails = CustomUserDetails(dbUser)
+        val authentication = UsernamePasswordAuthenticationToken.authenticated(expectedUserDetails,
+                "password", mutableListOf())
 
-        every { userDetailsServiceImpl.loadUserByUsername(any()) } returns expectedUserDetails
+        every { authenticationService.verifyAuthenticationWithoutMfa(any<String>(), any()) } returns authentication
         every { mfaEmailTokenService.createMfaEmailToken(any()) } returns expectedMfaToken
         every { mfaEmailTokenService.saveEmailToken(any()) } returns Unit
         every { mfaEmailTokenService.sendMfaEmail(any()) } returns Unit
-        every { authenticationService.verifyAuthenticationWithoutMfa(any<String>(), any()) } returns mockk()
 
 
         mockMvc.perform(post("/account/mfa/email/send")
@@ -532,31 +498,12 @@ class AuthenticationWebTests @Autowired constructor(
 
     @Test
     fun `When request mfa email with incorrect credentials then return 401`() {
-        val authority = Authority(Authorities.USER.roleName)
-        val user = User("example@test.com",
-                "password12$",
-                "Georgi",
-                mutableListOf(authority),
-                true,
-                false,
-                mutableListOf(mfaMethodEmail, mfaMethodTotp))
         val code = "65abv7"
         val id = 5
         val expectedMfaToken = MfaEmailToken(id = id.toString(), code)
 
         val loginDto = LoginDto("example@example.com", "password12$")
 
-        val dbUser = User(user.email,
-                passwordEncoder.encode("password12$"),
-                user.username,
-                mutableListOf(authority),
-                user.isEmailVerified,
-                user.isMfaActive,
-                user.mfaMethods)
-
-        val expectedUserDetails = CustomUserDetails(dbUser)
-
-        every { userDetailsServiceImpl.loadUserByUsername(any()) } returns expectedUserDetails
         every { mfaEmailTokenService.createMfaEmailToken(any()) } returns expectedMfaToken
         every { mfaEmailTokenService.saveEmailToken(any()) } returns Unit
         every { mfaEmailTokenService.sendMfaEmail(any()) } returns Unit
