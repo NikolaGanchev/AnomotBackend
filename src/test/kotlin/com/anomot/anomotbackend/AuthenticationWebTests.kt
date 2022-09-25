@@ -418,6 +418,91 @@ class AuthenticationWebTests @Autowired constructor(
     }
 
     @Test
+    fun `When user login with valid recovery code then return 200`() {
+        val authority = Authority(Authorities.USER.roleName)
+        val user = User("example@test.com",
+                "password12$",
+                "Georgi",
+                mutableListOf(authority),
+                true,
+                true,
+                mutableListOf(mfaMethodEmail, mfaMethodTotp))
+
+        val request = mutableMapOf<String, String>()
+        request[Constants.USERNAME_PARAMETER] = user.email
+        request[Constants.PASSWORD_PARAMETER] = user.password
+        request[Constants.MFA_RECOVERY_CODE_PARAMETER] = "65dsfg67"
+
+        val dbUser = User(user.email,
+                passwordEncoder.encode("password12$"),
+                user.username,
+                mutableListOf(authority),
+                user.isEmailVerified,
+                user.isMfaActive,
+                user.mfaMethods,
+            5)
+
+        val expectedUserDetails = CustomUserDetails(dbUser)
+
+        every { userDetailsServiceImpl.loadUserByUsername(any()) } returns expectedUserDetails
+        every { mfaRecoveryService.verifyRecoveryCode(any(), any()) } returns true
+        every { mfaRecoveryService.deleteRecoveryCode(any(), any()) } returns 1
+
+        mockMvc.perform(post("/account/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(TestUtils.objectToJson(request))
+                .with(csrf()))
+                .andExpect(status().isOk)
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(jsonPath("\$.email").value(user.email))
+                .andExpect(jsonPath("\$.username").value(user.username))
+                .andExpect(jsonPath("\$.roles").value(
+                        user.authorities.map { it.authority }.toCollection(mutableListOf())))
+    }
+
+    @Test
+    fun `When user login with invalid recovery code then return 200`() {
+        val authority = Authority(Authorities.USER.roleName)
+        val user = User("example@test.com",
+                "password12$",
+                "Georgi",
+                mutableListOf(authority),
+                true,
+                true,
+                mutableListOf(mfaMethodEmail, mfaMethodTotp))
+
+        val request = mutableMapOf<String, String>()
+        request[Constants.USERNAME_PARAMETER] = user.email
+        request[Constants.PASSWORD_PARAMETER] = user.password
+        request[Constants.MFA_RECOVERY_CODE_PARAMETER] = "65dsfg67"
+
+        val dbUser = User(user.email,
+                passwordEncoder.encode("password12$"),
+                user.username,
+                mutableListOf(authority),
+                user.isEmailVerified,
+                user.isMfaActive,
+                user.mfaMethods,
+                5)
+
+        val expectedUserDetails = CustomUserDetails(dbUser)
+
+        every { userDetailsServiceImpl.loadUserByUsername(any()) } returns expectedUserDetails
+        every { mfaRecoveryService.verifyRecoveryCode(any(), any()) } returns false
+        every { mfaRecoveryService.deleteRecoveryCode(any(), any()) } returns 1
+
+        mockMvc.perform(post("/account/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(TestUtils.objectToJson(request))
+                .with(csrf()))
+                .andExpect(status().isUnauthorized)
+                .andExpect(content().contentType(MediaType.TEXT_PLAIN))
+                .andExpect(content().string("Bad recovery code"))
+    }
+
+
+
+    @Test
     fun `When request mfa email with mfa enabled then return 200`() {
         val authority = Authority(Authorities.USER.roleName)
         val user = User("example@test.com",

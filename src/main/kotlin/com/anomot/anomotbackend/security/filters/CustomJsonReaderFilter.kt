@@ -44,9 +44,9 @@ class CustomJsonReaderFilter:
                 mutableRequestWrapper.setParameter(Constants.MFA_METHOD_PARAMETER, mfaMethod!!)
             }
 
-            if (requestMap.contains(Constants.MFA_SHOULD_SEND_MFA_EMAIL)) {
-                val mfaShouldSendEmail = requestMap[Constants.MFA_SHOULD_SEND_MFA_EMAIL]
-                mutableRequestWrapper.setParameter(Constants.MFA_SHOULD_SEND_MFA_EMAIL, mfaShouldSendEmail!!)
+            if (requestMap.contains(Constants.MFA_RECOVERY_CODE_PARAMETER)) {
+                val mfaRecoveryCode = requestMap[Constants.MFA_RECOVERY_CODE_PARAMETER]
+                mutableRequestWrapper.setParameter(Constants.MFA_RECOVERY_CODE_PARAMETER, mfaRecoveryCode!!)
             }
 
             chain.doFilter(mutableRequestWrapper, response)

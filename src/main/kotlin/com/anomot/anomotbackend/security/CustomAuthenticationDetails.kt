@@ -6,10 +6,9 @@ import java.util.*
 import javax.servlet.http.HttpServletRequest
 
 class CustomAuthenticationDetails(request: HttpServletRequest): WebAuthenticationDetails(request) {
-    var mfaCode: String?
-        private set
-    var mfaMethodValue: MfaMethodValue? = null
-        private set
+    val mfaCode: String?
+    val mfaMethodValue: MfaMethodValue?
+    val recoveryCode: String?
 
     init {
         mfaCode = request.getParameter(Constants.MFA_CODE_PARAMETER)
@@ -17,7 +16,11 @@ class CustomAuthenticationDetails(request: HttpServletRequest): WebAuthenticatio
 
         if (mfaMethodString != null) {
             mfaMethodValue = MfaMethodValue.valueOf(mfaMethodString.uppercase(Locale.ENGLISH))
+        } else {
+            mfaMethodValue = null
         }
+
+        recoveryCode = request.getParameter(Constants.MFA_RECOVERY_CODE_PARAMETER)
     }
 
 }

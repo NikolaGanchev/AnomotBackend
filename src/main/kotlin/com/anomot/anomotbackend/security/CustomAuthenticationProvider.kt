@@ -2,7 +2,9 @@ package com.anomot.anomotbackend.security
 
 import com.anomot.anomotbackend.exceptions.MfaRequiredException
 import com.anomot.anomotbackend.exceptions.BadMfaCodeException
+import com.anomot.anomotbackend.exceptions.BadRecoveryCodeException
 import com.anomot.anomotbackend.services.MfaEmailTokenService
+import com.anomot.anomotbackend.services.MfaRecoveryService
 import com.anomot.anomotbackend.services.MfaTotpService
 import com.anomot.anomotbackend.services.UserDetailsServiceImpl
 import org.springframework.beans.factory.annotation.Autowired
@@ -23,10 +25,12 @@ class CustomAuthenticationProvider(userDetailsService: UserDetailsServiceImpl): 
     private lateinit var mfaEmailTokenService: MfaEmailTokenService
     @Autowired
     private lateinit var mfaTotpService: MfaTotpService
+    @Autowired
+    private lateinit var recoveryService: MfaRecoveryService
 
     /*
     Only set to false for internal checks that require credentials and not for login
-    Also onyl use if the bean scope is prototype
+    Also only use if the bean scope is prototype
      */
     var shouldUseMfa: Boolean = true
 
@@ -39,6 +43,17 @@ class CustomAuthenticationProvider(userDetailsService: UserDetailsServiceImpl): 
         val user: CustomUserDetails = userDetails as CustomUserDetails
 
         if (user.isMfaEnabled()) {
+            if (!authenticationDetails.recoveryCode.isNullOrEmpty() && user.id != null) {
+                val verified = recoveryService.verifyRecoveryCode(user.id, authenticationDetails.recoveryCode)
+
+                if (verified) {
+                    recoveryService.deleteRecoveryCode(user.id, authenticationDetails.recoveryCode)
+                    return
+                } else {
+                    throw BadRecoveryCodeException("Bad recovery code")
+                }
+            }
+
             val mfaCode = authenticationDetails.mfaCode
             val mfaMethod = authenticationDetails.mfaMethodValue
 
