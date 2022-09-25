@@ -11,6 +11,7 @@ import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.AuthenticationException
 import org.springframework.web.bind.annotation.DeleteMapping
+import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
@@ -207,6 +208,17 @@ class AuthController(private val userDetailsService: UserDetailsServiceImpl,
             mfaRecoveryService.deleteRecoveryCodes(user.id!!)
 
             ResponseEntity(HttpStatus.OK)
+        } else {
+            ResponseEntity(HttpStatus.UNAUTHORIZED)
+        }
+    }
+
+    @GetMapping("/user")
+    fun getUser(authentication: Authentication?): ResponseEntity<UserDto> {
+        return if (authentication != null && authentication.principal != null) {
+            val userDto = ((authentication.principal) as CustomUserDetails).getAsDto()
+
+            ResponseEntity(userDto, HttpStatus.OK)
         } else {
             ResponseEntity(HttpStatus.UNAUTHORIZED)
         }

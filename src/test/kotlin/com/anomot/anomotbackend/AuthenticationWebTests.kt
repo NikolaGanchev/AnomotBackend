@@ -595,7 +595,8 @@ class AuthenticationWebTests @Autowired constructor(
 
         mockMvc.perform(post("/account/email/verify")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(TestUtils.objectToJson(token)))
+                .content(TestUtils.objectToJson(token))
+                .with(csrf()))
                 .andExpect(status().isCreated)
     }
 
@@ -607,7 +608,8 @@ class AuthenticationWebTests @Autowired constructor(
 
         mockMvc.perform(post("/account/email/verify")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content(TestUtils.objectToJson(token)))
+                .content(TestUtils.objectToJson(token))
+                .with(csrf()))
                 .andExpect(status().isUnauthorized)
     }
 
@@ -942,6 +944,25 @@ class AuthenticationWebTests @Autowired constructor(
     @Test
     fun `When delete recovery codes without authentication then return 401`() {
         mockMvc.perform(delete("/account/mfa/recovery/codes")
+                .with(csrf()))
+                .andExpect(status().isUnauthorized)
+    }
+
+    @Test
+    @WithMockCustomUser
+    fun `When get user and authenticated then return 200 and user`() {
+        mockMvc.perform(get("/account/user")
+                .with(csrf()))
+                .andExpect(status().isOk)
+                .andExpect(jsonPath("\$.email").value("example@example.com"))
+                .andExpect(jsonPath("\$.username").value("default"))
+                .andExpect(jsonPath("\$.roles[0]").value("ROLE_USER"))
+                .andExpect(jsonPath("\$.isMfaActive").value(false))
+    }
+
+    @Test
+    fun `When get user and unauthenticated then return 401`() {
+        mockMvc.perform(get("/account/user")
                 .with(csrf()))
                 .andExpect(status().isUnauthorized)
     }

@@ -56,8 +56,6 @@ class WebSecurityConfig {
                     .and()
                 .csrf()
                     .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
-                    .ignoringAntMatchers(
-                            "/account/email/verify")
                     .and()
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(CustomJsonReaderFilter(), UsernamePasswordAuthenticationFilter::class.java)
