@@ -71,14 +71,15 @@ class UserDetailsServiceTests {
 
     @Test
     fun `When create user then return User`() {
-        val authority = Authority(Authorities.USER.roleName)
+        val authority = Authority(Authorities.USER.roleName, users = null, 5)
         val user = User("example@test.com", "password12$", "Georgi", mutableListOf(authority))
         val expectedResult = UserDto("example@test.com", "Georgi", mutableListOf(authority.authority), false)
 
         every { passwordEncoder.encode(user.password) } returns user.password
         every { userRepository.save(any()) } returns user
         every { userRepository.findByEmail(any()) } returns null
-        every { authorityRepository.findByAuthority(any()) } returns Authority(Authorities.USER.roleName)
+        every { authorityRepository.findByAuthority(any()) } returns authority
+        every { authorityRepository.getReferenceById(any()) } returns authority
 
         val result = userDetailsService.createUser(UserRegisterDto(user.email, user.password, user.username))
 
@@ -175,8 +176,8 @@ class UserDetailsServiceTests {
     @Test
     @WithMockCustomUser(password = "password", isMfaActive = false, mfaMethods = [])
     fun `When activate totp with authentication and inactive mfa then return TotpDto`() {
-        val mfaMethod = MfaMethod(MfaMethodValue.TOTP.method)
-        val authority = Authority(Authorities.USER.roleName)
+        val mfaMethod = MfaMethod(MfaMethodValue.TOTP.method, users = null, 5)
+        val authority = Authority(Authorities.USER.roleName, users = null, 5)
         val user = User("example@test.com", "password12$", "Georgi", mutableListOf(authority))
         val secret = "secret".toByteArray()
 
@@ -185,6 +186,7 @@ class UserDetailsServiceTests {
         every { totpService.generateSecret() } returns secret
         every { totpService.saveCode(any())} returns Unit
         every { authenticationService.reAuthenticate(any()) } returns Unit
+        every { mfaMethodRepository.getReferenceById(any()) } returns mfaMethod
 
         val result = userDetailsService.activateTotpMfa()
 
@@ -219,14 +221,15 @@ class UserDetailsServiceTests {
     @Test
     @WithMockCustomUser(password = "password", isMfaActive = true)
     fun `When deactivate totp with authentication and active mfa then return true`() {
-        val mfaMethod = MfaMethod(MfaMethodValue.TOTP.method)
-        val authority = Authority(Authorities.USER.roleName)
+        val mfaMethod = MfaMethod(MfaMethodValue.TOTP.method, users = null, 5)
+        val authority = Authority(Authorities.USER.roleName, users = null, 5)
         val user = User("example@test.com", "password12$", "Georgi", mutableListOf(authority),
                         mfaMethods = mutableListOf(MfaMethod(MfaMethodValue.TOTP.method)))
 
         every { userRepository.findByEmail(any()) } returns user
         every { mfaMethodRepository.findByMethod(MfaMethodValue.TOTP.method) } returns mfaMethod
         every { authenticationService.reAuthenticate(any()) } returns Unit
+        every { mfaMethodRepository.getReferenceById(any()) } returns mfaMethod
 
         val result = userDetailsService.deactivateTotpMfa()
 
@@ -258,13 +261,14 @@ class UserDetailsServiceTests {
     @Test
     @WithMockCustomUser(password = "password", isMfaActive = false)
     fun `When activate email mfa with authentication and inactive mfa then return true`() {
-        val mfaMethod = MfaMethod(MfaMethodValue.EMAIL.method)
-        val authority = Authority(Authorities.USER.roleName)
+        val mfaMethod = MfaMethod(MfaMethodValue.EMAIL.method,  users = null, 5)
+        val authority = Authority(Authorities.USER.roleName, users = null, 5)
         val user = User("example@test.com", "password12$", "Georgi", mutableListOf(authority))
 
         every { userRepository.findByEmail(any()) } returns user
         every { mfaMethodRepository.findByMethod(MfaMethodValue.EMAIL.method) } returns mfaMethod
         every { authenticationService.reAuthenticate(any()) } returns Unit
+        every { mfaMethodRepository.getReferenceById(any()) } returns mfaMethod
 
         val result = userDetailsService.activateEmailMfa()
 
@@ -296,7 +300,7 @@ class UserDetailsServiceTests {
     @Test
     @WithMockCustomUser(password = "password", isMfaActive = true)
     fun `When deactivate email mfa with authentication and active mfa then return true`() {
-        val mfaMethod = MfaMethod(MfaMethodValue.EMAIL.method)
+        val mfaMethod = MfaMethod(MfaMethodValue.EMAIL.method, users = null, 5)
         val authority = Authority(Authorities.USER.roleName)
         val user = User("example@test.com", "password12$", "Georgi", mutableListOf(authority),
                 mfaMethods = mutableListOf(MfaMethod(MfaMethodValue.EMAIL.method)))
@@ -304,6 +308,7 @@ class UserDetailsServiceTests {
         every { userRepository.findByEmail(any()) } returns user
         every { mfaMethodRepository.findByMethod(MfaMethodValue.EMAIL.method) } returns mfaMethod
         every { authenticationService.reAuthenticate(any()) } returns Unit
+        every { mfaMethodRepository.getReferenceById(any()) } returns mfaMethod
 
         val result = userDetailsService.deactivateEmailMfa()
 

@@ -52,6 +52,8 @@ class UserDetailsServiceImpl: UserDetailsService {
     @Lazy
     private lateinit var authenticationService: AuthenticationService
 
+    val entityIdCache = mutableMapOf<String, Long>()
+
     @Transactional
     override fun loadUserByUsername(email: String?): UserDetails {
         if (email == null) {
@@ -72,8 +74,7 @@ class UserDetailsServiceImpl: UserDetailsService {
 
         val hashedPassword = passwordEncoder.encode(userRegisterDto.password)
 
-        val userAuthority = authorityRepository.findByAuthority(Authorities.USER.roleName)
-                ?: authorityRepository.save(Authority(Authorities.USER.roleName))
+        val userAuthority = getRoleEntityReference(Authorities.USER)
 
         val user = User(email = userRegisterDto.email,
                 password = hashedPassword,
@@ -131,8 +132,7 @@ class UserDetailsServiceImpl: UserDetailsService {
         if (!(userAuth.principal as CustomUserDetails).isMfaEnabled()) {
             val user = userRepository.findByEmail(userAuth.name) ?: throw UsernameNotFoundException("Email not found")
 
-            val mfaMethod = mfaMethodRepository.findByMethod(MfaMethodValue.TOTP.method) ?:
-                mfaMethodRepository.save(MfaMethod(MfaMethodValue.TOTP.method))
+            val mfaMethod = getMfaEntityReference(MfaMethodValue.TOTP)
 
             activateMfa(user, mfaMethod)
 
@@ -160,8 +160,7 @@ class UserDetailsServiceImpl: UserDetailsService {
         if ((userAuth.principal as CustomUserDetails).isMfaEnabled()) {
             val user = userRepository.findByEmail(userAuth.name) ?: throw UsernameNotFoundException("Email not found")
 
-            val mfaMethod = mfaMethodRepository.findByMethod(MfaMethodValue.TOTP.method) ?:
-                mfaMethodRepository.save(MfaMethod(MfaMethodValue.TOTP.method))
+            val mfaMethod = getMfaEntityReference(MfaMethodValue.TOTP)
 
             deactivateMfa(user, mfaMethod)
             authenticationService.reAuthenticate(userAuth)
@@ -177,8 +176,7 @@ class UserDetailsServiceImpl: UserDetailsService {
         if (!(userAuth.principal as CustomUserDetails).isMfaEnabled()) {
             val user = userRepository.findByEmail(userAuth.name) ?: throw UsernameNotFoundException("Email not found")
 
-            val mfaMethod = mfaMethodRepository.findByMethod(MfaMethodValue.EMAIL.method) ?:
-                mfaMethodRepository.save(MfaMethod(MfaMethodValue.EMAIL.method))
+            val mfaMethod = getMfaEntityReference(MfaMethodValue.EMAIL)
 
             activateMfa(user, mfaMethod)
             authenticationService.reAuthenticate(userAuth)
@@ -194,8 +192,7 @@ class UserDetailsServiceImpl: UserDetailsService {
         if ((userAuth.principal as CustomUserDetails).isMfaEnabled()) {
             val user = userRepository.findByEmail(userAuth.name) ?: throw UsernameNotFoundException("Email not found")
 
-            val mfaMethod = mfaMethodRepository.findByMethod(MfaMethodValue.EMAIL.method) ?:
-                mfaMethodRepository.save(MfaMethod(MfaMethodValue.EMAIL.method))
+            val mfaMethod = getMfaEntityReference(MfaMethodValue.EMAIL)
 
             deactivateMfa(user, mfaMethod)
             authenticationService.reAuthenticate(userAuth)
@@ -225,6 +222,34 @@ class UserDetailsServiceImpl: UserDetailsService {
         }
 
         user.mfaMethods!!.add(mfaMethod)
+    }
+
+    private fun getMfaEntityReference(mfaMethodValue: MfaMethodValue): MfaMethod {
+        if (!entityIdCache.contains(mfaMethodValue.method)) {
+            var mfaMethod = mfaMethodRepository.findByMethod(mfaMethodValue.method)
+
+            if (mfaMethod == null) {
+                mfaMethod = mfaMethodRepository.save(MfaMethod(mfaMethodValue.method))
+            }
+
+            entityIdCache[mfaMethodValue.method] = mfaMethod.id!!
+        }
+
+        return mfaMethodRepository.getReferenceById(entityIdCache[mfaMethodValue.method]!!)
+    }
+
+    private fun getRoleEntityReference(authorities: Authorities): Authority {
+        if (!entityIdCache.contains(authorities.roleName)) {
+            var authority = authorityRepository.findByAuthority(authorities.roleName)
+
+            if (authority == null) {
+                authority = authorityRepository.save(Authority(authorities.roleName))
+            }
+
+            entityIdCache[authorities.roleName] = authority.id!!
+        }
+
+        return authorityRepository.getReferenceById(entityIdCache[authorities.roleName]!!)
     }
 
     fun deleteUser(password: String) {
