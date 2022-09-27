@@ -1,6 +1,7 @@
 package com.anomot.anomotbackend.security
 
 import com.anomot.anomotbackend.security.filters.CustomJsonReaderFilter
+import com.anomot.anomotbackend.security.filters.LoginArgumentValidationFilter
 import com.anomot.anomotbackend.services.UserDetailsServiceImpl
 import com.anomot.anomotbackend.utils.Constants
 import com.fasterxml.jackson.annotation.JsonInclude
@@ -59,6 +60,7 @@ class WebSecurityConfig {
                     .and()
                 .authenticationProvider(authenticationProvider())
                 .addFilterBefore(CustomJsonReaderFilter(), UsernamePasswordAuthenticationFilter::class.java)
+                .addFilterAfter(LoginArgumentValidationFilter(), CustomJsonReaderFilter::class.java)
                 .httpBasic()
 
 

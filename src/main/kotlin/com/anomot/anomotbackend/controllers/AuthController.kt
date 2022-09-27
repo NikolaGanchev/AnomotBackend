@@ -125,7 +125,7 @@ class AuthController(private val userDetailsService: UserDetailsServiceImpl,
     @PostMapping("/mfa/email/methods")
     fun getMfaMethods(@RequestBody @Valid loginDto: LoginDto): ResponseEntity<MfaMethodsDto> {
         return try {
-            val authentication = authenticationService.verifyAuthenticationWithoutMfa(loginDto.email, loginDto.password)
+            val authentication = authenticationService.verifyAuthenticationWithoutMfa(loginDto.email!!, loginDto.password!!)
 
             if (authentication == null || authentication.principal == null) {
                 return ResponseEntity(HttpStatus.UNAUTHORIZED)
@@ -146,7 +146,7 @@ class AuthController(private val userDetailsService: UserDetailsServiceImpl,
     @PostMapping("/mfa/status")
     fun getMfaEnabled(@RequestBody @Valid loginDto: LoginDto): ResponseEntity<MfaEnabledDto> {
         return try {
-            val authentication = authenticationService.verifyAuthenticationWithoutMfa(loginDto.email, loginDto.password)
+            val authentication = authenticationService.verifyAuthenticationWithoutMfa(loginDto.email!!, loginDto.password!!)
 
             if (authentication == null || authentication.principal == null) {
                 return ResponseEntity(HttpStatus.UNAUTHORIZED)
@@ -163,7 +163,7 @@ class AuthController(private val userDetailsService: UserDetailsServiceImpl,
     @PostMapping("/mfa/email/send")
     fun sendMfaEmail(@RequestBody @Valid loginDto: LoginDto): ResponseEntity<String> {
         return try {
-            val authentication = authenticationService.verifyAuthenticationWithoutMfa(loginDto.email, loginDto.password)
+            val authentication = authenticationService.verifyAuthenticationWithoutMfa(loginDto.email!!, loginDto.password!!)
 
             if (authentication == null || authentication.principal == null) {
                 return ResponseEntity<String>(HttpStatus.UNAUTHORIZED)
