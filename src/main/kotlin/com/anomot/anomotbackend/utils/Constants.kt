@@ -17,5 +17,6 @@ class Constants {
         const val PASSWORD_MAX_SIZE = 512
         const val MFA_RECOVERY_CODE_LENGTH = 8
         const val MFA_RECOVERY_CODE_AMOUNT = 6
+        const val EMAIL_VERIFICATION_TOKEN_LENGTH = 32
     }
 }

@@ -4,6 +4,8 @@ import com.anomot.anomotbackend.entities.EmailVerificationToken
 import com.anomot.anomotbackend.entities.User
 import com.anomot.anomotbackend.repositories.EmailVerificationTokenRepository
 import com.anomot.anomotbackend.repositories.UserRepository
+import com.anomot.anomotbackend.utils.Constants
+import com.anomot.anomotbackend.utils.SecureRandomStringGenerator
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import java.time.Instant
@@ -20,7 +22,9 @@ class EmailVerificationService @Autowired constructor(
 
 
     fun generateVerificationCode(): String {
-        return UUID.randomUUID().toString()
+        val stringGenerator = SecureRandomStringGenerator(SecureRandomStringGenerator.NUMERIC)
+
+        return stringGenerator.generate(Constants.EMAIL_VERIFICATION_TOKEN_LENGTH)
     }
 
     fun createEmailVerificationToken(verificationCode: String, user: User, date: Date): EmailVerificationToken {

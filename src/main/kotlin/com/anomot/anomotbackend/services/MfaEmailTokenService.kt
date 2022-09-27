@@ -3,9 +3,10 @@ package com.anomot.anomotbackend.services
 import com.anomot.anomotbackend.entities.MfaEmailToken
 import com.anomot.anomotbackend.repositories.MfaEmailCodeRepository
 import com.anomot.anomotbackend.utils.Constants
+import com.anomot.anomotbackend.utils.SecureRandomStringGenerator
+import com.anomot.anomotbackend.utils.secureEquals
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
-import java.security.SecureRandom
 
 @Service
 class MfaEmailTokenService @Autowired constructor(
@@ -13,16 +14,9 @@ class MfaEmailTokenService @Autowired constructor(
 ) {
 
     private fun generateEmailCode(): String {
-        val dictionary = "0123456789"
-        val length = Constants.MFA_PASSWORD_LENGTH
-        val random = SecureRandom()
-        val code = StringBuilder(length)
+        val stringGenerator = SecureRandomStringGenerator(SecureRandomStringGenerator.ALPHANUMERIC)
 
-        for (i in 1..length) {
-            code.append(dictionary[random.nextInt(dictionary.length)])
-        }
-
-        return code.toString()
+        return stringGenerator.generate(Constants.MFA_PASSWORD_LENGTH)
     }
 
     fun createMfaEmailToken(id: String): MfaEmailToken {
@@ -48,7 +42,7 @@ class MfaEmailTokenService @Autowired constructor(
 
         if (foundCode.isEmpty) return false
 
-        if (foundCode.get().code == codeToVerify) return true
+        if (foundCode.get().code.secureEquals(codeToVerify)) return true
 
         return false
     }
