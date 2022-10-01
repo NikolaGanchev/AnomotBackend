@@ -14,7 +14,7 @@ class MfaEmailTokenService @Autowired constructor(
 ) {
 
     private fun generateEmailCode(): String {
-        val stringGenerator = SecureRandomStringGenerator(SecureRandomStringGenerator.ALPHANUMERIC)
+        val stringGenerator = SecureRandomStringGenerator(SecureRandomStringGenerator.NUMERIC)
 
         return stringGenerator.generate(Constants.MFA_PASSWORD_LENGTH)
     }

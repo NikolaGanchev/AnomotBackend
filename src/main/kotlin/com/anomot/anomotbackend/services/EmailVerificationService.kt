@@ -22,7 +22,7 @@ class EmailVerificationService @Autowired constructor(
 
 
     fun generateVerificationCode(): String {
-        val stringGenerator = SecureRandomStringGenerator(SecureRandomStringGenerator.NUMERIC)
+        val stringGenerator = SecureRandomStringGenerator(SecureRandomStringGenerator.ALPHANUMERIC)
 
         return stringGenerator.generate(Constants.EMAIL_VERIFICATION_TOKEN_LENGTH)
     }
