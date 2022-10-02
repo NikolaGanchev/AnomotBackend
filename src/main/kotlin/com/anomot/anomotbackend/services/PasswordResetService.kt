@@ -39,6 +39,10 @@ class PasswordResetService @Autowired constructor(
         return TimeUtils.generateFutureAfterMinutes(tokenLifeDurationMinutes)
     }
 
+    fun sendPasswordResetTokenEmail(passwordResetToken: PasswordResetToken) {
+        // TODO("implement when emails are available")
+    }
+
     fun sendPasswordResetEmail(passwordResetToken: PasswordResetToken) {
         // TODO("implement when emails are available")
     }
@@ -58,7 +62,7 @@ class PasswordResetService @Autowired constructor(
 
         passwordResetTokenRepository.save(passwordResetToken)
 
-        sendPasswordResetEmail(passwordResetToken)
+        sendPasswordResetTokenEmail(passwordResetToken)
 
         return CompletableFuture.completedFuture(true)
     }
@@ -72,6 +76,7 @@ class PasswordResetService @Autowired constructor(
 
             if (isValidCode && isNotExpired(passwordResetToken, now)) {
                 resetPassword(newPassword, passwordResetToken.user.id)
+                sendPasswordResetEmail(passwordResetToken)
                 return true
             }
         } else {
