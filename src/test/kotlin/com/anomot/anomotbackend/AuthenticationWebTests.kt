@@ -32,6 +32,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders
 import org.springframework.web.context.WebApplicationContext
 import java.time.Instant
 import java.util.*
+import java.util.concurrent.CompletableFuture
 
 @ContextConfiguration(classes = [WebSecurityConfig::class])
 @Import(AuthController::class)
@@ -60,6 +61,9 @@ class AuthenticationWebTests @Autowired constructor(
 
     @MockkBean
     private lateinit var mfaRecoveryService: MfaRecoveryService
+
+    @MockkBean
+    private lateinit var passwordResetService: PasswordResetService
 
     val mfaMethodEmail = MfaMethod(MfaMethodValue.EMAIL.method)
     val mfaMethodTotp = MfaMethod(MfaMethodValue.TOTP.method)
@@ -963,6 +967,46 @@ class AuthenticationWebTests @Autowired constructor(
     @Test
     fun `When get user and unauthenticated then return 401`() {
         mockMvc.perform(get("/account/user")
+                .with(csrf()))
+                .andExpect(status().isUnauthorized)
+    }
+
+    @Test
+    fun `When request password token reset then return 200`() {
+        val passwordResetRequestDto = PasswordResetRequestDto("example@example.com")
+
+        every { passwordResetService.handlePasswordResetCreation(any(), any()) } returns CompletableFuture()
+        every { passwordResetService.generateExpiryDate(any(), any()) } returns Date()
+
+        mockMvc.perform(post("/account/password/reset/new")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(TestUtils.objectToJson(passwordResetRequestDto))
+                .with(csrf()))
+                .andExpect(status().isOk)
+    }
+
+    @Test
+    fun `When reset password and successful then return 200`() {
+        val passwordResetDto = PasswordResetDto("e".repeat(64), UUID.randomUUID().toString(), "password12$")
+
+        every { passwordResetService.resetPasswordIfValidCode(any(), any(), any(), any()) } returns true
+
+        mockMvc.perform(put("/account/password/reset")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(TestUtils.objectToJson(passwordResetDto))
+                .with(csrf()))
+                .andExpect(status().isOk)
+    }
+
+    @Test
+    fun `When reset password and not successful then return 401`() {
+        val passwordResetDto = PasswordResetDto("e".repeat(64), UUID.randomUUID().toString(), "password12$")
+
+        every { passwordResetService.resetPasswordIfValidCode(any(), any(), any(), any()) } returns false
+
+        mockMvc.perform(put("/account/password/reset")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(TestUtils.objectToJson(passwordResetDto))
                 .with(csrf()))
                 .andExpect(status().isUnauthorized)
     }

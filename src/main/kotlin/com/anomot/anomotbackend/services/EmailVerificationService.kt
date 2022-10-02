@@ -6,11 +6,10 @@ import com.anomot.anomotbackend.repositories.EmailVerificationTokenRepository
 import com.anomot.anomotbackend.repositories.UserRepository
 import com.anomot.anomotbackend.utils.Constants
 import com.anomot.anomotbackend.utils.SecureRandomStringGenerator
+import com.anomot.anomotbackend.utils.TimeUtils
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
 import java.time.Instant
-import java.time.OffsetDateTime
-import java.time.ZoneOffset
 import java.util.*
 import javax.transaction.Transactional
 
@@ -35,9 +34,7 @@ class EmailVerificationService @Autowired constructor(
     }
 
     fun generateExpiryDate(tokenLifeDurationDays: Int, now: Instant): Date {
-        val expiryDate = OffsetDateTime.now( ZoneOffset.UTC )
-               .plusDays(tokenLifeDurationDays.toLong())
-        return Date.from(expiryDate.toInstant())
+        return TimeUtils.generateFutureDate(tokenLifeDurationDays)
     }
 
     fun saveEmailVerificationToken(emailVerificationToken: EmailVerificationToken): EmailVerificationToken {

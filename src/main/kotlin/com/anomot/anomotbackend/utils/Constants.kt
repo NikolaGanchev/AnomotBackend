@@ -18,5 +18,7 @@ class Constants {
         const val MFA_RECOVERY_CODE_LENGTH = 8
         const val MFA_RECOVERY_CODE_AMOUNT = 6
         const val EMAIL_VERIFICATION_TOKEN_LENGTH = 32
+        const val PASSWORD_RESET_CODE_LENGTH = 64
+        const val PASSWORD_RESET_TOKEN_LIFETIME = 60 // minutes
     }
 }

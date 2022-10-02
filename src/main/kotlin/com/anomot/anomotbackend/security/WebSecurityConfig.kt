@@ -37,7 +37,9 @@ class WebSecurityConfig {
                             "/account/email/verify",
                             "/account/mfa/email/methods",
                             "/account/mfa/email/send",
-                            "/account/mfa/status").permitAll()
+                            "/account/mfa/status",
+                            "/account/password/reset/new",
+                            "/account/password/reset").permitAll()
                     .anyRequest().authenticated()
                     .and()
                 .formLogin()

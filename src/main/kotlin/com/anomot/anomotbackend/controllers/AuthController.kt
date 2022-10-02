@@ -5,6 +5,7 @@ import com.anomot.anomotbackend.exceptions.UserAlreadyExistsException
 import com.anomot.anomotbackend.security.CustomUserDetails
 import com.anomot.anomotbackend.security.MfaMethodValue
 import com.anomot.anomotbackend.services.*
+import com.anomot.anomotbackend.utils.Constants
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.authentication.BadCredentialsException
@@ -26,7 +27,8 @@ class AuthController(private val userDetailsService: UserDetailsServiceImpl,
                     private val emailVerificationService: EmailVerificationService,
                     private val authenticationService: AuthenticationService,
                     private val mfaEmailTokenService: MfaEmailTokenService,
-                    private val mfaRecoveryService: MfaRecoveryService) {
+                    private val mfaRecoveryService: MfaRecoveryService,
+                    private val passwordResetService: PasswordResetService) {
 
     @PostMapping("/new")
     fun registerUser(@RequestBody @Valid userRegisterDTO: UserRegisterDto): ResponseEntity<UserDto> {
@@ -222,5 +224,26 @@ class AuthController(private val userDetailsService: UserDetailsServiceImpl,
         } else {
             ResponseEntity(HttpStatus.UNAUTHORIZED)
         }
+    }
+
+    @PostMapping("/password/reset/new")
+    fun requestPasswordReset(@RequestBody @Valid passwordResetRequestDto: PasswordResetRequestDto): ResponseEntity<String> {
+        passwordResetService.handlePasswordResetCreation(
+                passwordResetRequestDto.email,
+                passwordResetService.generateExpiryDate(Constants.PASSWORD_RESET_TOKEN_LIFETIME, Instant.now()))
+
+        return ResponseEntity(HttpStatus.OK)
+    }
+
+    @PutMapping("/password/reset")
+    fun resetPassword(@RequestBody @Valid passwordResetDto: PasswordResetDto): ResponseEntity<String> {
+        val successful = passwordResetService.resetPasswordIfValidCode(
+                passwordResetDto.code,
+                passwordResetDto.identifier,
+                passwordResetDto.newPassword,
+                Instant.now()
+        )
+
+        return ResponseEntity(if (successful) HttpStatus.OK else HttpStatus.UNAUTHORIZED)
     }
 }

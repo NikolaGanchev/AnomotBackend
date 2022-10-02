@@ -4,6 +4,7 @@ import com.anomot.anomotbackend.entities.*
 import com.anomot.anomotbackend.repositories.*
 import com.anomot.anomotbackend.security.Authorities
 import com.anomot.anomotbackend.security.MfaMethodValue
+import com.anomot.anomotbackend.utils.TimeUtils
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
@@ -23,7 +24,8 @@ class RepositoryTests @Autowired constructor(
         val emailVerificationTokenRepository: EmailVerificationTokenRepository,
         val mfaMethodRepository: MfaMethodRepository,
         val mfaTotpSecretRepository: MfaTotpSecretRepository,
-        val mfaRecoveryCodeRepository: MfaRecoveryCodeRepository
+        val mfaRecoveryCodeRepository: MfaRecoveryCodeRepository,
+        val passwordResetTokenRepository: PasswordResetTokenRepository
 ) {
 
     @Test
@@ -264,5 +266,58 @@ class RepositoryTests @Autowired constructor(
 
         assertThat(deletedRows).isEqualTo(2)
         assertThat(mfaTotpSecretRepository.count()).isEqualTo(0)
+    }
+
+    @Test
+    fun `When findByIdentifier then return token`() {
+        val authority = Authority(Authorities.USER.roleName)
+        val user = User("example@example.com", "password", "Georgi", mutableListOf(authority))
+
+        entityManager.persist(user)
+        entityManager.flush()
+
+        val expiryDate = TimeUtils.generateFutureAfterMinutes(60)
+        val identifier = UUID.randomUUID().toString()
+        val token = PasswordResetToken("test", identifier, user, expiryDate)
+
+        entityManager.persist(token)
+        entityManager.flush()
+
+        val result = passwordResetTokenRepository.findByIdentifier(identifier)
+
+        assertThat(result).isEqualTo(token)
+    }
+
+    @Test
+    fun `When delete old password reset tokens then remove`() {
+        val authority = Authority(Authorities.USER.roleName)
+        val user1 = User("example@example1.com", "password", "Georgi", mutableListOf(authority))
+        val user2 = User("example@example2.com", "password", "Georgi", mutableListOf(authority))
+        val user3 = User("example@example3.com", "password", "Georgi", mutableListOf(authority))
+
+        entityManager.persist(user1)
+        entityManager.persist(user2)
+        entityManager.persist(user3)
+        entityManager.flush()
+
+        val expiryDate = Date.from(Instant.now())
+
+        val token1 = PasswordResetToken("test1", "id1", user1, expiryDate)
+        val token2 = PasswordResetToken("test2", "id2", user2, expiryDate)
+        val token3 = PasswordResetToken("test3", "id3", user3, expiryDate)
+
+        entityManager.persist(token1)
+        entityManager.persist(token2)
+        entityManager.persist(token3)
+        entityManager.flush()
+
+        val currentDateForward = Date.from(OffsetDateTime.now( ZoneOffset.UTC )
+                .plusDays(1).toInstant())
+
+        val editedRows = passwordResetTokenRepository.deleteOldTokens(currentDateForward)
+        val numberOfRows = passwordResetTokenRepository.count()
+
+        assertThat(editedRows).isEqualTo(3)
+        assertThat(numberOfRows).isEqualTo(0)
     }
 }
