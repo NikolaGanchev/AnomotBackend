@@ -6,6 +6,8 @@ import com.anomot.anomotbackend.services.UserDetailsServiceImpl
 import com.anomot.anomotbackend.utils.Constants
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.ObjectMapper
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Scope
@@ -18,6 +20,7 @@ import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.AuthenticationFailureHandler
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
+import org.springframework.security.web.authentication.rememberme.PersistentTokenBasedRememberMeServices
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository
 import javax.servlet.http.HttpServletResponse.*
 
@@ -29,6 +32,11 @@ import javax.servlet.http.HttpServletResponse.*
         securedEnabled = true,
         jsr250Enabled = true)
 class WebSecurityConfig {
+    @Value("\${remember-me.key}")
+    private val rememberKey: String? = null
+
+    @Autowired
+    private lateinit var customRememberMeTokenRepository: CustomRememberMeTokenRepository
 
     @Bean
     fun filterChain(http: HttpSecurity): SecurityFilterChain {
@@ -61,6 +69,14 @@ class WebSecurityConfig {
                     .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                     .and()
                 .authenticationProvider(authenticationProvider())
+                .rememberMe()
+                    .useSecureCookie(true)
+                    .tokenValiditySeconds(Constants.REMEMBER_ME_VALIDITY_DURATION)
+                    .rememberMeCookieDomain(Constants.REMEMBER_ME_COOKIE_DOMAIN)
+                    .rememberMeServices(PersistentTokenBasedRememberMeServices(
+                            rememberKey, userDetailsService(), customRememberMeTokenRepository
+                    ))
+                .and()
                 .addFilterBefore(CustomJsonReaderFilter(), UsernamePasswordAuthenticationFilter::class.java)
                 .addFilterAfter(LoginArgumentValidationFilter(), CustomJsonReaderFilter::class.java)
                 .httpBasic()

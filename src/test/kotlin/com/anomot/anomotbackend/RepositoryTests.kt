@@ -4,6 +4,7 @@ import com.anomot.anomotbackend.entities.*
 import com.anomot.anomotbackend.repositories.*
 import com.anomot.anomotbackend.security.Authorities
 import com.anomot.anomotbackend.security.MfaMethodValue
+import com.anomot.anomotbackend.utils.Constants
 import com.anomot.anomotbackend.utils.TimeUtils
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -25,7 +26,8 @@ class RepositoryTests @Autowired constructor(
         val mfaMethodRepository: MfaMethodRepository,
         val mfaTotpSecretRepository: MfaTotpSecretRepository,
         val mfaRecoveryCodeRepository: MfaRecoveryCodeRepository,
-        val passwordResetTokenRepository: PasswordResetTokenRepository
+        val passwordResetTokenRepository: PasswordResetTokenRepository,
+        val rememberMeTokenRepository: RememberMeTokenRepository
 ) {
 
     @Test
@@ -319,5 +321,65 @@ class RepositoryTests @Autowired constructor(
 
         assertThat(editedRows).isEqualTo(3)
         assertThat(numberOfRows).isEqualTo(0)
+    }
+
+    @Test
+    fun `When findBySeries then return rememberMeToken`() {
+        val rememberMeToken = RememberMeToken("egge", "sdgsgd", "example@example.com", Date())
+
+        entityManager.persist(rememberMeToken)
+        entityManager.flush()
+
+        val result = rememberMeTokenRepository.findBySeries(rememberMeToken.series)
+
+        assertThat(result).isEqualTo(rememberMeToken)
+    }
+
+    @Test
+    fun `When updateBySeries then update`() {
+        val rememberMeToken = RememberMeToken("egge", "sdgsgd", "example@example.com", Date())
+        val newValue = "sdfgsf"
+        val newDate = Date()
+
+        entityManager.persist(rememberMeToken)
+        entityManager.flush()
+
+        val editedRows = rememberMeTokenRepository.updateBySeries(rememberMeToken.series, newValue, newDate)
+
+        assertThat(editedRows).isEqualTo(1)
+    }
+
+    @Test
+    fun `When deleteAllByEmail then delete`() {
+        val email = "example@example.com"
+        val rememberMeToken = RememberMeToken("egge", "sdgsgd", email, Date())
+        val rememberMeToken1 = RememberMeToken("egge1", "sdgsgd1", email, Date())
+        val rememberMeToken2 = RememberMeToken("egge2", "sdgsgd2", email, Date())
+
+        entityManager.persist(rememberMeToken)
+        entityManager.persist(rememberMeToken1)
+        entityManager.persist(rememberMeToken2)
+        entityManager.flush()
+
+        val deletedRows = rememberMeTokenRepository.deleteAllByEmail(email)
+        val rows = rememberMeTokenRepository.count()
+
+        assertThat(deletedRows).isEqualTo(3)
+        assertThat(rows).isEqualTo(0)
+    }
+
+    @Test
+    fun `When deleteOldTokens then delete`() {
+        val oldDate = TimeUtils.generatePastMinutesAgo(Constants.REMEMBER_ME_VALIDITY_DURATION / 60 + 5)
+        val rememberMeToken = RememberMeToken("egge", "sdgsgd", "example@example.com", oldDate)
+
+        entityManager.persist(rememberMeToken)
+        entityManager.flush()
+
+        val deletedRows = rememberMeTokenRepository.deleteOldTokens(Date())
+        val rows = rememberMeTokenRepository.count()
+
+        assertThat(deletedRows).isEqualTo(1)
+        assertThat(rows).isEqualTo(0)
     }
 }
