@@ -7,7 +7,5 @@ import org.springframework.data.jpa.repository.JpaRepository
 interface MfaRecoveryCodeRepository: JpaRepository<MfaRecoveryCode, Long> {
     fun deleteAllByUser(user: User): Long
 
-    fun deleteByUserAndCode(user: User, code: String): Long
-
-    fun existsByUserAndCode(user: User, code: String): Boolean
+    fun getAllByUser(user: User): List<MfaRecoveryCode>?
 }

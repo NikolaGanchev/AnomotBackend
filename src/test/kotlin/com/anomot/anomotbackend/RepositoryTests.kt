@@ -199,54 +199,28 @@ class RepositoryTests @Autowired constructor(
     }
 
     @Test
-    fun `When existsByUserAndCode and does exist then return true`() {
+    fun `When getAllByUser then return all codes`() {
         val authority = Authority(Authorities.USER.roleName)
         val user = User("example@example.com", "password", "Georgi", mutableListOf(authority))
-        val code = "9m96n5"
+        val code = "9896y5"
+        val code1 = "3475w4"
 
         val mfaRecoveryCode = MfaRecoveryCode(code, user)
+        val mfaRecoveryCode1 = MfaRecoveryCode(code1, user)
 
         entityManager.persist(user)
         entityManager.persist(mfaRecoveryCode)
+        entityManager.persist(mfaRecoveryCode1)
         entityManager.flush()
 
-        val exists = mfaRecoveryCodeRepository.existsByUserAndCode(user, code)
+        val codes = mfaRecoveryCodeRepository.getAllByUser(user)
+        val codeStrings = codes?.map {
+            it.code
+        }
 
-        assertThat(exists).isTrue
-    }
-
-    @Test
-    fun `When existsByUserAndCode and doesn't exist then return true`() {
-        val authority = Authority(Authorities.USER.roleName)
-        val user = User("example@example.com", "password", "Georgi", mutableListOf(authority))
-        val code = "9m96n5"
-
-        val mfaRecoveryCode = MfaRecoveryCode(code, user)
-
-        entityManager.persist(user)
-        entityManager.persist(mfaRecoveryCode)
-        entityManager.flush()
-
-        val exists = mfaRecoveryCodeRepository.existsByUserAndCode(user,"9b76i5")
-
-        assertThat(exists).isFalse
-    }
-
-    @Test
-    fun `When delete by user and code then return 1`() {
-        val authority = Authority(Authorities.USER.roleName)
-        val user = User("example@example.com", "password", "Georgi", mutableListOf(authority))
-        val code = "9m96n5"
-
-        val mfaRecoveryCode = MfaRecoveryCode(code, user)
-
-        entityManager.persist(user)
-        entityManager.persist(mfaRecoveryCode)
-        entityManager.flush()
-
-        val deletedRows = mfaRecoveryCodeRepository.deleteByUserAndCode(user, code)
-
-        assertThat(deletedRows).isEqualTo(1)
+        assertThat(codes).isNotNull
+        assertThat(codeStrings!!.contains(code)).isTrue
+        assertThat(codeStrings.contains(code1)).isTrue
     }
 
     @Test

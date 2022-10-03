@@ -6,13 +6,19 @@ import com.anomot.anomotbackend.repositories.UserRepository
 import com.anomot.anomotbackend.utils.Constants
 import com.anomot.anomotbackend.utils.SecureRandomStringGenerator
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.security.crypto.argon2.Argon2PasswordEncoder
 import org.springframework.stereotype.Service
 
 @Service
 class MfaRecoveryService @Autowired constructor(
         private val mfaRecoveryCodeRepository: MfaRecoveryCodeRepository,
-        private val userRepository: UserRepository
+        private val userRepository: UserRepository,
+        private val passwordEncoder: Argon2PasswordEncoder
 ) {
+
+    private val TIMING_ATTACK_MITIGATION_CODE = "a".repeat(Constants.MFA_RECOVERY_CODE_LENGTH)
+    private var encryptedTimingAttackMitigationCode: String? = null
+
     private fun generateRecoveryCode(): String {
         val stringGenerator = SecureRandomStringGenerator(SecureRandomStringGenerator.ALPHANUMERIC)
 
@@ -27,40 +33,58 @@ class MfaRecoveryService @Autowired constructor(
         return codes
     }
 
-    private fun generateRecoveryCodes(): List<String> {
+    fun generateRecoveryCodes(): List<String> {
         return List(Constants.MFA_RECOVERY_CODE_AMOUNT) {
             generateRecoveryCode()
         }
     }
 
-    fun saveRecoveryCodes(userId: Long, codes: List<String>) {
+    fun saveRecoveryCodes(userId: Long, codes: List<String>): List<MfaRecoveryCode> {
         val user = userRepository.getReferenceById(userId)
         val recoveryCodes = codes.map {
-            MfaRecoveryCode(it, user)
+            MfaRecoveryCode(passwordEncoder.encode(it), user)
         }
 
-        mfaRecoveryCodeRepository.saveAll(recoveryCodes)
+        return mfaRecoveryCodeRepository.saveAll(recoveryCodes)
     }
 
     fun handleVerification(userId: Long, code: String): Boolean {
-        return if (verifyRecoveryCode(userId, code)) {
-            deleteRecoveryCode(userId, code)
-            true
-        } else {
-            false
+        val user = userRepository.getReferenceById(userId)
+        val codes = mfaRecoveryCodeRepository.getAllByUser(user)
+
+        if (codes == null) {
+            mitigateTimingAttack(Constants.MFA_RECOVERY_CODE_AMOUNT)
+            return false
         }
+
+        if (codes.size < Constants.MFA_RECOVERY_CODE_AMOUNT) {
+            mitigateTimingAttack(Constants.MFA_RECOVERY_CODE_AMOUNT - codes.size)
+        }
+
+        var isSuccessful = false
+        var successfulIndex = -1
+
+        for (i in codes.indices) {
+            if (passwordEncoder.matches(code, codes[i].code)) {
+                isSuccessful = true
+                successfulIndex = i
+            }
+        }
+
+        if (isSuccessful) {
+            mfaRecoveryCodeRepository.delete(codes[successfulIndex])
+        }
+
+        return isSuccessful
     }
 
-    fun verifyRecoveryCode(userId: Long, code: String): Boolean {
-        val user = userRepository.getReferenceById(userId)
-
-        return mfaRecoveryCodeRepository.existsByUserAndCode(user, code)
-    }
-
-    fun deleteRecoveryCode(userId: Long, code: String): Long {
-        val user = userRepository.getReferenceById(userId)
-
-        return mfaRecoveryCodeRepository.deleteByUserAndCode(user, code)
+    fun mitigateTimingAttack(timesToRun: Int) {
+        if (encryptedTimingAttackMitigationCode == null) {
+            encryptedTimingAttackMitigationCode = passwordEncoder.encode(TIMING_ATTACK_MITIGATION_CODE)
+        }
+        for (i in 0 until timesToRun) {
+            passwordEncoder.matches("a".repeat(Constants.MFA_RECOVERY_CODE_LENGTH), encryptedTimingAttackMitigationCode)
+        }
     }
 
     fun deleteRecoveryCodes(userId: Long): Long {

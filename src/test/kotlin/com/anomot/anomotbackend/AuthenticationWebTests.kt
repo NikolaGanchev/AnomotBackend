@@ -65,6 +65,9 @@ class AuthenticationWebTests @Autowired constructor(
     @MockkBean
     private lateinit var passwordResetService: PasswordResetService
 
+    @MockkBean
+    private lateinit var customRememberMeTokenRepository: CustomRememberMeTokenRepository
+
     val mfaMethodEmail = MfaMethod(MfaMethodValue.EMAIL.method)
     val mfaMethodTotp = MfaMethod(MfaMethodValue.TOTP.method)
 
@@ -449,8 +452,7 @@ class AuthenticationWebTests @Autowired constructor(
         val expectedUserDetails = CustomUserDetails(dbUser)
 
         every { userDetailsServiceImpl.loadUserByUsername(any()) } returns expectedUserDetails
-        every { mfaRecoveryService.verifyRecoveryCode(any(), any()) } returns true
-        every { mfaRecoveryService.deleteRecoveryCode(any(), any()) } returns 1
+        every { mfaRecoveryService.handleVerification(any(), any()) } returns true
 
         mockMvc.perform(post("/account/login")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -492,8 +494,7 @@ class AuthenticationWebTests @Autowired constructor(
         val expectedUserDetails = CustomUserDetails(dbUser)
 
         every { userDetailsServiceImpl.loadUserByUsername(any()) } returns expectedUserDetails
-        every { mfaRecoveryService.verifyRecoveryCode(any(), any()) } returns false
-        every { mfaRecoveryService.deleteRecoveryCode(any(), any()) } returns 1
+        every { mfaRecoveryService.handleVerification(any(), any()) } returns false
 
         mockMvc.perform(post("/account/login")
                 .contentType(MediaType.APPLICATION_JSON)

@@ -1,13 +1,13 @@
 package com.anomot.anomotbackend
 
-import com.anomot.anomotbackend.entities.Authority
-import com.anomot.anomotbackend.entities.MfaEmailToken
-import com.anomot.anomotbackend.entities.MfaTotpSecret
-import com.anomot.anomotbackend.entities.User
+import com.anomot.anomotbackend.entities.*
 import com.anomot.anomotbackend.repositories.MfaEmailCodeRepository
+import com.anomot.anomotbackend.repositories.MfaRecoveryCodeRepository
 import com.anomot.anomotbackend.repositories.MfaTotpSecretRepository
+import com.anomot.anomotbackend.repositories.UserRepository
 import com.anomot.anomotbackend.security.Authorities
 import com.anomot.anomotbackend.services.MfaEmailTokenService
+import com.anomot.anomotbackend.services.MfaRecoveryService
 import com.anomot.anomotbackend.services.MfaTotpService
 import com.bastiaanjansen.otp.TOTP
 import com.ninjasquad.springmockk.MockkBean
@@ -18,6 +18,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
+import org.springframework.security.crypto.argon2.Argon2PasswordEncoder
 import java.util.*
 
 @SpringBootTest
@@ -25,12 +26,19 @@ class MfaTests @Autowired constructor(
         @InjectMockKs
         val mfaEmailTokenService: MfaEmailTokenService,
         @InjectMockKs
-        val mfaTotpService: MfaTotpService
+        val mfaTotpService: MfaTotpService,
+        @InjectMockKs
+        val mfaRecoveryService: MfaRecoveryService,
+        val passwordEncoder: Argon2PasswordEncoder
 ){
     @MockkBean
     private lateinit var mfaEmailCodeRepository: MfaEmailCodeRepository
     @MockkBean
     private lateinit var mfaTotpSecretRepository: MfaTotpSecretRepository
+    @MockkBean
+    private lateinit var mfaRecoveryCodeRepository: MfaRecoveryCodeRepository
+    @MockkBean
+    private lateinit var userRepository: UserRepository
     @MockK
     private lateinit var totp: TOTP
 
@@ -113,4 +121,43 @@ class MfaTests @Autowired constructor(
         assertThat(isValid).isFalse
     }
 
+    @Test
+    fun `When recovery code is valid then return true`() {
+        val authority = Authority(Authorities.USER.roleName)
+        val user = User("example@example.com", "password", "Georgi", mutableListOf(authority))
+        user.id = 5
+
+        every { userRepository.getReferenceById(5) } returns user
+        every { mfaRecoveryCodeRepository.saveAll(any<List<MfaRecoveryCode>>()) } returnsArgument 0
+
+        val rawCodes = mfaRecoveryService.generateRecoveryCodes()
+        val codes = mfaRecoveryService.saveRecoveryCodes(user.id!!, rawCodes)
+
+        every { mfaRecoveryCodeRepository.getAllByUser(any()) } returns codes
+        every { mfaRecoveryCodeRepository.delete(any()) } returns Unit
+
+        val result = mfaRecoveryService.handleVerification(user.id!!, rawCodes[0])
+
+        assertThat(result).isTrue
+    }
+
+    @Test
+    fun `When recovery code is invalid then return false`() {
+        val authority = Authority(Authorities.USER.roleName)
+        val user = User("example@example.com", "password", "Georgi", mutableListOf(authority))
+        user.id = 5
+
+        every { userRepository.getReferenceById(5) } returns user
+        every { mfaRecoveryCodeRepository.saveAll(any<List<MfaRecoveryCode>>()) } returnsArgument 0
+
+        val rawCodes = mfaRecoveryService.generateRecoveryCodes()
+        val codes = mfaRecoveryService.saveRecoveryCodes(user.id!!, rawCodes)
+
+        every { mfaRecoveryCodeRepository.getAllByUser(any()) } returns codes
+        every { mfaRecoveryCodeRepository.delete(any()) } returns Unit
+
+        val result = mfaRecoveryService.handleVerification(user.id!!, "_".repeat(6))
+
+        assertThat(result).isFalse
+    }
 }

@@ -44,10 +44,9 @@ class CustomAuthenticationProvider(userDetailsService: UserDetailsServiceImpl): 
 
         if (user.isMfaEnabled()) {
             if (!authenticationDetails.recoveryCode.isNullOrEmpty() && user.id != null) {
-                val verified = recoveryService.verifyRecoveryCode(user.id, authenticationDetails.recoveryCode)
+                val verified = recoveryService.handleVerification(user.id, authenticationDetails.recoveryCode)
 
                 if (verified) {
-                    recoveryService.deleteRecoveryCode(user.id, authenticationDetails.recoveryCode)
                     return
                 } else {
                     throw BadRecoveryCodeException("Bad recovery code")
