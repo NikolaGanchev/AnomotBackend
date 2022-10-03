@@ -120,6 +120,10 @@ class UserDetailsServiceImpl: UserDetailsService {
             throw BadCredentialsException("Bad credentials")
         }
 
+        if (userRepository.existsByEmail(newEmail)) {
+            throw UserAlreadyExistsException("User already exists")
+        }
+
         userRepository.setEmail(newEmail, (user.principal as CustomUserDetails).id!!)
 
         authenticationService.reAuthenticate(user)

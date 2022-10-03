@@ -102,6 +102,19 @@ class RepositoryTests @Autowired constructor(
     }
 
     @Test
+    fun `When existsByEmail then return true`() {
+        val authority = Authority(Authorities.USER.roleName)
+        val user = User("example@example.com", "password", "Georgi", mutableListOf(authority))
+
+        entityManager.persist(user)
+        entityManager.flush()
+
+        val result = userRepository.existsByEmail(user.email)
+
+        assertThat(result).isTrue
+    }
+
+    @Test
     fun `When findByVerificationCode then return token`() {
         val authority = Authority(Authorities.USER.roleName)
         val user = User("example@example.com", "password", "Georgi", mutableListOf(authority))

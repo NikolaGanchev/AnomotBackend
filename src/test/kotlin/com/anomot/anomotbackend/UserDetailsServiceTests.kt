@@ -136,8 +136,21 @@ class UserDetailsServiceTests {
         every { authenticationService.verifyAuthenticationWithoutMfa(any<Authentication>(), any() ) } returns
                 UsernamePasswordAuthenticationToken.authenticated(null, null, null)
         every { authenticationService.reAuthenticate(any()) } returns Unit
+        every { userRepository.existsByEmail(any()) } returns false
 
         userDetailsService.changeEmail("password", "example@test.com")
+    }
+
+    @Test
+    @WithMockCustomUser(password = "password", isMfaActive = true, mfaMethods = ["totp", "email"])
+    fun `When change email and user exists then throw user already exists`() {
+        every { userRepository.existsByEmail(any()) } returns true
+        every { authenticationService.verifyAuthenticationWithoutMfa(any<Authentication>(), any() ) } returns
+                UsernamePasswordAuthenticationToken.authenticated(null, null, null)
+
+        assertThrows<UserAlreadyExistsException> {
+            userDetailsService.changeEmail("password", "example@test.com")
+        }
     }
 
     @Test

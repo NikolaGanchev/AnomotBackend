@@ -69,6 +69,8 @@ class AuthController(private val userDetailsService: UserDetailsServiceImpl,
             ResponseEntity(HttpStatus.UNAUTHORIZED)
         } catch (exception: BadCredentialsException) {
             ResponseEntity(HttpStatus.UNAUTHORIZED)
+        } catch (exception: UserAlreadyExistsException) {
+            ResponseEntity(HttpStatus.CONFLICT)
         }
     }
 

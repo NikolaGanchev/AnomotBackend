@@ -702,6 +702,20 @@ class AuthenticationWebTests @Autowired constructor(
 
     @Test
     @WithMockCustomUser
+    fun `When change email and user already exists then return 409`() {
+        val emailChangeDto = EmailChangeDto("example@example.com", "password1$")
+
+        every { userDetailsServiceImpl.changeEmail(any(), any()) } throws UserAlreadyExistsException("User already exists")
+
+        mockMvc.perform(put("/account/email")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(TestUtils.objectToJson(emailChangeDto))
+                .with(csrf()))
+                .andExpect(status().isConflict)
+    }
+
+    @Test
+    @WithMockCustomUser
     fun `When change username and successful then return 200`() {
         val usernameChangeDto = UsernameChangeDto("Georgi")
 
