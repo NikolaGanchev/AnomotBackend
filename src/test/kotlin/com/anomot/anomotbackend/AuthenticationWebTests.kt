@@ -10,6 +10,7 @@ import com.anomot.anomotbackend.utils.Constants
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
 import org.junit.jupiter.api.BeforeAll
+import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
@@ -68,6 +69,9 @@ class AuthenticationWebTests @Autowired constructor(
     @MockkBean
     private lateinit var customRememberMeTokenRepository: CustomRememberMeTokenRepository
 
+    @MockkBean
+    private lateinit var loginInfoExtractorService: LoginInfoExtractorService
+
     val mfaMethodEmail = MfaMethod(MfaMethodValue.EMAIL.method)
     val mfaMethodTotp = MfaMethod(MfaMethodValue.TOTP.method)
 
@@ -77,6 +81,21 @@ class AuthenticationWebTests @Autowired constructor(
                 .webAppContextSetup(context)
                 .apply<DefaultMockMvcBuilder>(springSecurity())
                 .build()
+    }
+
+    @BeforeEach
+    fun beforeEach() {
+        every { loginInfoExtractorService.getInfo(any(), any()) } returns SuccessfulLogin(
+                "",
+                "",
+                "",
+                "",
+                "",
+                "",
+                "")
+
+        every { loginInfoExtractorService.saveLogin(any(), any()) } returns Unit
+        every { loginInfoExtractorService.getByUser(any(), any()) } returns listOf()
     }
 
     @Test
@@ -134,7 +153,8 @@ class AuthenticationWebTests @Autowired constructor(
 
         every { userDetailsServiceImpl.loadUserByUsername(any()) } returns expectedUserDetails
 
-        mockMvc.perform(formLogin("/account/login").user(Constants.USERNAME_PARAMETER, user.email)
+        mockMvc.perform(formLogin("/account/login")
+                .user(Constants.USERNAME_PARAMETER, user.email)
                 .password(Constants.PASSWORD_PARAMETER, user.password)
                 .acceptMediaType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk)

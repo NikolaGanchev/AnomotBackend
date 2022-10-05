@@ -6,6 +6,8 @@ import com.anomot.anomotbackend.security.CustomUserDetails
 import com.anomot.anomotbackend.security.MfaMethodValue
 import com.anomot.anomotbackend.services.*
 import com.anomot.anomotbackend.utils.Constants
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.authentication.BadCredentialsException
@@ -17,6 +19,7 @@ import org.springframework.web.bind.annotation.PostMapping
 import org.springframework.web.bind.annotation.PutMapping
 import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
+import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import java.time.Instant
 import javax.validation.Valid
@@ -28,7 +31,8 @@ class AuthController(private val userDetailsService: UserDetailsServiceImpl,
                     private val authenticationService: AuthenticationService,
                     private val mfaEmailTokenService: MfaEmailTokenService,
                     private val mfaRecoveryService: MfaRecoveryService,
-                    private val passwordResetService: PasswordResetService) {
+                    private val passwordResetService: PasswordResetService,
+                    private val loginInfoExtractorService: LoginInfoExtractorService) {
 
     @PostMapping("/new")
     fun registerUser(@RequestBody @Valid userRegisterDTO: UserRegisterDto): ResponseEntity<UserDto> {
@@ -247,5 +251,17 @@ class AuthController(private val userDetailsService: UserDetailsServiceImpl,
         )
 
         return ResponseEntity(if (successful) HttpStatus.OK else HttpStatus.UNAUTHORIZED)
+    }
+
+    @GetMapping("/security/logins")
+    fun getLogins(@RequestParam("page") page: Int, authentication: Authentication?): ResponseEntity<List<LoginInfoDto>> {
+        return if (authentication != null && authentication.principal != null) {
+            val pageRequest = PageRequest.of(page, Constants.LOGINS_PER_PAGE, Sort.by("date").descending())
+            val user = (authentication.principal) as CustomUserDetails
+
+            ResponseEntity(loginInfoExtractorService.getByUser(user, pageRequest), HttpStatus.OK)
+        } else {
+            ResponseEntity(HttpStatus.UNAUTHORIZED)
+        }
     }
 }

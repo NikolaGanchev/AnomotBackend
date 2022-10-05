@@ -11,6 +11,8 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
@@ -27,7 +29,8 @@ class RepositoryTests @Autowired constructor(
         val mfaTotpSecretRepository: MfaTotpSecretRepository,
         val mfaRecoveryCodeRepository: MfaRecoveryCodeRepository,
         val passwordResetTokenRepository: PasswordResetTokenRepository,
-        val rememberMeTokenRepository: RememberMeTokenRepository
+        val rememberMeTokenRepository: RememberMeTokenRepository,
+        val successfulLoginRepository: SuccessfulLoginRepository
 ) {
 
     @Test
@@ -368,5 +371,23 @@ class RepositoryTests @Autowired constructor(
 
         assertThat(deletedRows).isEqualTo(1)
         assertThat(rows).isEqualTo(0)
+    }
+
+    @Test
+    fun `When findAllByUser return successful logins`() {
+        val authority = Authority(Authorities.USER.roleName)
+        val user = User("example@example.com", "password", "Georgi", mutableListOf(authority))
+        val login = SuccessfulLogin("l", "", "", "", "", "", "", Date.from(Instant.EPOCH), user)
+        val login1 = SuccessfulLogin("l1", "", "", "", "", "", "", Date.from(Instant.now()), user)
+
+        entityManager.persist(user)
+        entityManager.persist(login)
+        entityManager.persist(login1)
+
+        val pageRequest = PageRequest.of(0, 20, Sort.by("date").descending())
+        val result = successfulLoginRepository.findAllByUser(user, pageRequest)
+
+        assertThat(result[0].city).isEqualTo("l1")
+        assertThat(result[1].city).isEqualTo("l")
     }
 }

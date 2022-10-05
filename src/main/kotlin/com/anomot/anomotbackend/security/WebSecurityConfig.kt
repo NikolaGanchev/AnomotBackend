@@ -2,6 +2,7 @@ package com.anomot.anomotbackend.security
 
 import com.anomot.anomotbackend.security.filters.CustomJsonReaderFilter
 import com.anomot.anomotbackend.security.filters.LoginArgumentValidationFilter
+import com.anomot.anomotbackend.services.LoginInfoExtractorService
 import com.anomot.anomotbackend.services.UserDetailsServiceImpl
 import com.anomot.anomotbackend.utils.Constants
 import com.fasterxml.jackson.annotation.JsonInclude
@@ -37,6 +38,8 @@ class WebSecurityConfig {
 
     @Autowired
     private lateinit var customRememberMeTokenRepository: CustomRememberMeTokenRepository
+    @Autowired
+    private lateinit var loginInfoExtractorService: LoginInfoExtractorService
 
     @Bean
     fun filterChain(http: HttpSecurity): SecurityFilterChain {
@@ -89,6 +92,10 @@ class WebSecurityConfig {
         request, response, authentication ->
         // Get user
         val userDto = (authentication.principal as CustomUserDetails).getAsDto()
+
+        // Store login info
+        val successfulLogin = loginInfoExtractorService.getInfo(request.remoteAddr, request.getHeader("User-Agent"))
+        loginInfoExtractorService.saveLogin((authentication.principal as CustomUserDetails), successfulLogin)
 
         // Set up mapper
         val mapper = ObjectMapper()

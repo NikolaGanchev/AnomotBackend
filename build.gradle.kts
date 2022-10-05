@@ -43,6 +43,8 @@ dependencies {
     implementation("org.passay:passay:1.6.2")
     implementation("org.bouncycastle:bcprov-jdk15on:1.70")
     implementation("com.github.bastiaanjansen:otp-java:1.3.2")
+    implementation("com.maxmind.geoip2:geoip2:3.0.1")
+    implementation("com.blueconic:browscap-java:1.3.13")
     runtimeOnly("com.h2database:h2")
     runtimeOnly("org.postgresql:postgresql")
     testImplementation("org.springframework.boot:spring-boot-starter-test") {
