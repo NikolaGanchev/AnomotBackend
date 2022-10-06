@@ -23,6 +23,8 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 import org.springframework.security.web.authentication.rememberme.PersistentTokenBasedRememberMeServices
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository
+import org.springframework.web.servlet.config.annotation.CorsRegistry
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 import javax.servlet.http.HttpServletResponse.*
 
 
@@ -35,6 +37,8 @@ import javax.servlet.http.HttpServletResponse.*
 class WebSecurityConfig {
     @Value("\${remember-me.key}")
     private val rememberKey: String? = null
+    @Value("client.domain")
+    private val clientDomain: String? = null
 
     @Autowired
     private lateinit var customRememberMeTokenRepository: CustomRememberMeTokenRepository
@@ -81,6 +85,8 @@ class WebSecurityConfig {
                             rememberKey, userDetailsService(), customRememberMeTokenRepository
                     ))
                 .and()
+                .cors()
+                .and()
                 .addFilterBefore(CustomJsonReaderFilter(), UsernamePasswordAuthenticationFilter::class.java)
                 .addFilterAfter(LoginArgumentValidationFilter(), CustomJsonReaderFilter::class.java)
                 .httpBasic()
@@ -118,6 +124,18 @@ class WebSecurityConfig {
         }
 
         response.writer.write(authentication.message ?: "Login error")
+    }
+
+    @Bean
+    fun corsMappingConfigurer(): WebMvcConfigurer {
+        return object : WebMvcConfigurer {
+            override fun addCorsMappings(registry: CorsRegistry) {
+                registry.addMapping("/**")
+                        .allowedOrigins(clientDomain)
+                        .allowedMethods("POST", "GET", "DELETE", "PUT", "OPTIONS")
+                        .allowCredentials(true)
+            }
+        }
     }
 
     @Bean()
