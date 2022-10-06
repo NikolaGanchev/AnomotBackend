@@ -23,5 +23,6 @@ class Constants {
         const val REMEMBER_ME_VALIDITY_DURATION = 60 * 60 * 24 * 14 // two weeks
         const val REMEMBER_ME_COOKIE_DOMAIN = "domain"
         const val LOGINS_PER_PAGE = 20
+        const val REMEMBER_ME_PARAMETER = "remember-me"
     }
 }

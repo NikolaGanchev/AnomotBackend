@@ -6,6 +6,7 @@ import com.anomot.anomotbackend.repositories.MfaRecoveryCodeRepository
 import com.anomot.anomotbackend.repositories.MfaTotpSecretRepository
 import com.anomot.anomotbackend.repositories.UserRepository
 import com.anomot.anomotbackend.security.Authorities
+import com.anomot.anomotbackend.security.CustomUserDetails
 import com.anomot.anomotbackend.services.MfaEmailTokenService
 import com.anomot.anomotbackend.services.MfaRecoveryService
 import com.anomot.anomotbackend.services.MfaTotpService
@@ -136,7 +137,7 @@ class MfaTests @Autowired constructor(
         every { mfaRecoveryCodeRepository.getAllByUser(any()) } returns codes
         every { mfaRecoveryCodeRepository.delete(any()) } returns Unit
 
-        val result = mfaRecoveryService.handleVerification(user.id!!, rawCodes[0])
+        val result = mfaRecoveryService.handleVerification(CustomUserDetails(user), rawCodes[0])
 
         assertThat(result).isTrue
     }
@@ -156,7 +157,7 @@ class MfaTests @Autowired constructor(
         every { mfaRecoveryCodeRepository.getAllByUser(any()) } returns codes
         every { mfaRecoveryCodeRepository.delete(any()) } returns Unit
 
-        val result = mfaRecoveryService.handleVerification(user.id!!, "_".repeat(6))
+        val result = mfaRecoveryService.handleVerification(CustomUserDetails(user), "_".repeat(6))
 
         assertThat(result).isFalse
     }

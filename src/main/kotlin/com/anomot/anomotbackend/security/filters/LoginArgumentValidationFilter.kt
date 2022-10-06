@@ -15,7 +15,8 @@ class LoginArgumentValidationFilter: OncePerRequestFilter() {
     override fun doFilterInternal(request: HttpServletRequest, response: HttpServletResponse, filterChain: FilterChain) {
         val isValidUsernameAndPassword = validateUsernameAndPassword(
                 request.getParameter(Constants.PASSWORD_PARAMETER),
-                request.getParameter(Constants.USERNAME_PARAMETER))
+                request.getParameter(Constants.USERNAME_PARAMETER),
+                request.getParameter(Constants.REMEMBER_ME_PARAMETER))
 
         val isValidMfa = validateMfaArguments(
                 request.getParameter(Constants.MFA_CODE_PARAMETER),
@@ -26,12 +27,10 @@ class LoginArgumentValidationFilter: OncePerRequestFilter() {
         else response.sendError(HttpServletResponse.SC_FORBIDDEN)
     }
 
-    private fun validateUsernameAndPassword(username: String?, password: String?): Boolean {
-        val loginDto = LoginDto(username, password)
+    private fun validateUsernameAndPassword(username: String?, password: String?, rememberMe: String?): Boolean {
+        val loginDto = LoginDto(username, password, rememberMe?.toBoolean())
 
         val violations = validator.validate(loginDto)
-
-        println(violations.toString())
 
         return violations.isEmpty()
     }
@@ -40,8 +39,6 @@ class LoginArgumentValidationFilter: OncePerRequestFilter() {
         val mfaDto = MfaDto(code, method, recoveryCode)
 
         val violations = validator.validate(mfaDto)
-
-        println(violations.toString())
 
         return violations.isEmpty()
     }

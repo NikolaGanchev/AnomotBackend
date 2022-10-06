@@ -24,6 +24,7 @@ import org.springframework.security.crypto.argon2.Argon2PasswordEncoder
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestBuilders.formLogin
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf
 import org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity
+import org.springframework.security.web.authentication.rememberme.PersistentRememberMeToken
 import org.springframework.test.context.ContextConfiguration
 import org.springframework.test.web.servlet.MockMvc
 import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*
@@ -248,7 +249,7 @@ class AuthenticationWebTests @Autowired constructor(
                 true,
                 mutableListOf(mfaMethodEmail, mfaMethodTotp))
 
-        val loginDto = LoginDto("example@example.com", "password12$")
+        val loginDto = LoginDto("example@example.com", "password12$", null)
 
         val dbUser = User(user.email,
                 passwordEncoder.encode("password12$"),
@@ -275,7 +276,7 @@ class AuthenticationWebTests @Autowired constructor(
 
     @Test
     fun `When get mfa methods with incorrect credentials then return 401`() {
-        val loginDto = LoginDto("example@example.com", "password12$")
+        val loginDto = LoginDto("example@example.com", "password12$", null)
 
         every { authenticationService.verifyAuthenticationWithoutMfa(any<String>(), any()) } returns null
 
@@ -297,7 +298,7 @@ class AuthenticationWebTests @Autowired constructor(
                 false,
                 mutableListOf(mfaMethodTotp))
 
-        val loginDto = LoginDto("example@example.com", "password12$")
+        val loginDto = LoginDto("example@example.com", "password12$", null)
 
         val dbUser = User(user.email,
                 passwordEncoder.encode("password12$"),
@@ -331,7 +332,7 @@ class AuthenticationWebTests @Autowired constructor(
                 true,
                 mutableListOf(mfaMethodEmail, mfaMethodTotp))
 
-        val loginDto = LoginDto("example@example.com", "password12$")
+        val loginDto = LoginDto("example@example.com", "password12$", null)
 
         val dbUser = User(user.email,
                 passwordEncoder.encode("password12$"),
@@ -367,7 +368,7 @@ class AuthenticationWebTests @Autowired constructor(
                 false,
                 mutableListOf(mfaMethodEmail, mfaMethodTotp))
 
-        val loginDto = LoginDto("example@example.com", "password12$")
+        val loginDto = LoginDto("example@example.com", "password12$", null)
 
         val dbUser = User(user.email,
                 passwordEncoder.encode("password12$"),
@@ -394,7 +395,7 @@ class AuthenticationWebTests @Autowired constructor(
 
     @Test
     fun `When get mfa status with incorrect credentials then return 401`() {
-        val loginDto = LoginDto("example@example.com", "password12$")
+        val loginDto = LoginDto("example@example.com", "password12$", null)
 
         every { authenticationService.verifyAuthenticationWithoutMfa(any<String>(), any()) } returns null
 
@@ -538,7 +539,7 @@ class AuthenticationWebTests @Autowired constructor(
                 true,
                 mutableListOf(mfaMethodEmail, mfaMethodTotp))
 
-        val loginDto = LoginDto("example@example.com", "password12$")
+        val loginDto = LoginDto("example@example.com", "password12$", null)
 
         val dbUser = User(user.email,
                 passwordEncoder.encode("password12$"),
@@ -574,7 +575,7 @@ class AuthenticationWebTests @Autowired constructor(
                 false,
                 mutableListOf(mfaMethodEmail, mfaMethodTotp))
 
-        val loginDto = LoginDto("example@example.com", "password12$")
+        val loginDto = LoginDto("example@example.com", "password12$", null)
 
         val dbUser = User(user.email,
                 passwordEncoder.encode("password12$"),
@@ -600,7 +601,7 @@ class AuthenticationWebTests @Autowired constructor(
 
     @Test
     fun `When request mfa email with incorrect credentials then return 401`() {
-        val loginDto = LoginDto("example@example.com", "password12$")
+        val loginDto = LoginDto("example@example.com", "password12$", null)
 
         every { mfaEmailTokenService.generateAndSendMfaEmail(any()) } returns Unit
         every { authenticationService.verifyAuthenticationWithoutMfa(any<String>(), any()) } returns null
@@ -1044,5 +1045,87 @@ class AuthenticationWebTests @Autowired constructor(
                 .content(TestUtils.objectToJson(passwordResetDto))
                 .with(csrf()))
                 .andExpect(status().isUnauthorized)
+    }
+
+    @Test
+    fun `When login with remember me return remember me cookie`() {
+        val authority = Authority(Authorities.USER.roleName)
+        val user = User("example@test.com",
+                "password12$",
+                "Georgi",
+                mutableListOf(authority),
+                true,
+                false,
+                mutableListOf(mfaMethodTotp))
+
+
+        val request = mutableMapOf<String, String>()
+        request[Constants.USERNAME_PARAMETER] = user.email
+        request[Constants.PASSWORD_PARAMETER] = user.password
+        request[Constants.REMEMBER_ME_PARAMETER] = true.toString()
+
+        val dbUser = User(user.email,
+                passwordEncoder.encode("password12$"),
+                user.username,
+                mutableListOf(authority),
+                user.isEmailVerified,
+                user.isMfaActive,
+                user.mfaMethods,
+            5)
+
+        val expectedUserDetails = CustomUserDetails(dbUser)
+
+        every { userDetailsServiceImpl.loadUserByUsername(any()) } returns expectedUserDetails
+        every { customRememberMeTokenRepository.createNewToken(any()) } returns Unit
+        every { customRememberMeTokenRepository.getTokenForSeries(any()) } returns PersistentRememberMeToken(
+                "", "", "", Date())
+
+        mockMvc.perform(post("/account/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(TestUtils.objectToJson(request))
+                .with(csrf()))
+                .andExpect(status().isOk)
+                .andExpect(cookie().exists("remember-me"))
+    }
+
+    @Test
+    fun `When login without remember me not return remember me cookie`() {
+        val authority = Authority(Authorities.USER.roleName)
+        val user = User("example@test.com",
+                "password12$",
+                "Georgi",
+                mutableListOf(authority),
+                true,
+                false,
+                mutableListOf(mfaMethodTotp))
+
+
+        val request = mutableMapOf<String, String>()
+        request[Constants.USERNAME_PARAMETER] = user.email
+        request[Constants.PASSWORD_PARAMETER] = user.password
+        request[Constants.REMEMBER_ME_PARAMETER] = false.toString()
+
+        val dbUser = User(user.email,
+                passwordEncoder.encode("password12$"),
+                user.username,
+                mutableListOf(authority),
+                user.isEmailVerified,
+                user.isMfaActive,
+                user.mfaMethods,
+                5)
+
+        val expectedUserDetails = CustomUserDetails(dbUser)
+
+        every { userDetailsServiceImpl.loadUserByUsername(any()) } returns expectedUserDetails
+        every { customRememberMeTokenRepository.createNewToken(any()) } returns Unit
+        every { customRememberMeTokenRepository.getTokenForSeries(any()) } returns PersistentRememberMeToken(
+                "", "", "", Date())
+
+        mockMvc.perform(post("/account/login")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(TestUtils.objectToJson(request))
+                .with(csrf()))
+                .andExpect(status().isOk)
+                .andExpect(cookie().doesNotExist("remember-me"))
     }
 }

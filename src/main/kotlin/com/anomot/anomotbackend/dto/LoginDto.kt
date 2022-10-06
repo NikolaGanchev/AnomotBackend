@@ -15,4 +15,5 @@ data class LoginDto(
     @NotNull
     @NotEmpty
     @Size(min = Constants.PASSWORD_MIN_SIZE, max = Constants.PASSWORD_MAX_SIZE)
-    val password: String?)
+    val password: String?,
+    val boolean: Boolean?)

@@ -76,6 +76,7 @@ class WebSecurityConfig {
                     .useSecureCookie(true)
                     .tokenValiditySeconds(Constants.REMEMBER_ME_VALIDITY_DURATION)
                     .rememberMeCookieDomain(Constants.REMEMBER_ME_COOKIE_DOMAIN)
+                    .rememberMeParameter(Constants.REMEMBER_ME_PARAMETER)
                     .rememberMeServices(PersistentTokenBasedRememberMeServices(
                             rememberKey, userDetailsService(), customRememberMeTokenRepository
                     ))

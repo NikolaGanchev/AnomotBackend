@@ -3,6 +3,7 @@ package com.anomot.anomotbackend.services
 import com.anomot.anomotbackend.entities.MfaRecoveryCode
 import com.anomot.anomotbackend.repositories.MfaRecoveryCodeRepository
 import com.anomot.anomotbackend.repositories.UserRepository
+import com.anomot.anomotbackend.security.CustomUserDetails
 import com.anomot.anomotbackend.utils.Constants
 import com.anomot.anomotbackend.utils.SecureRandomStringGenerator
 import org.springframework.beans.factory.annotation.Autowired
@@ -48,8 +49,8 @@ class MfaRecoveryService @Autowired constructor(
         return mfaRecoveryCodeRepository.saveAll(recoveryCodes)
     }
 
-    fun handleVerification(userId: Long, code: String): Boolean {
-        val user = userRepository.getReferenceById(userId)
+    fun handleVerification(userDetails: CustomUserDetails, code: String): Boolean {
+        val user = userRepository.getReferenceById(userDetails.id!!)
         val codes = mfaRecoveryCodeRepository.getAllByUser(user)
 
         if (codes == null) {
@@ -72,10 +73,15 @@ class MfaRecoveryService @Autowired constructor(
         }
 
         if (isSuccessful) {
+            sendRecoveryCodeUsedEmail(userDetails, code)
             mfaRecoveryCodeRepository.delete(codes[successfulIndex])
         }
 
         return isSuccessful
+    }
+
+    fun sendRecoveryCodeUsedEmail(user: CustomUserDetails, code: String,) {
+        //TODO("implement when emails are available")
     }
 
     fun mitigateTimingAttack(timesToRun: Int) {

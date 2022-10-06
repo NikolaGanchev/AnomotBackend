@@ -2,7 +2,6 @@ package com.anomot.anomotbackend.security.filters
 
 import com.anomot.anomotbackend.utils.Constants
 import com.fasterxml.jackson.databind.ObjectMapper
-import org.springframework.security.authentication.AuthenticationServiceException
 import org.springframework.web.filter.OncePerRequestFilter
 import javax.servlet.FilterChain
 import javax.servlet.http.HttpServletRequest
@@ -17,16 +16,23 @@ class CustomJsonReaderFilter:
             chain.doFilter(request, response)
         } else {
 
-            val requestMap: MutableMap<String, String> = ObjectMapper()
+            val requestMap: MutableMap<String, String>? = ObjectMapper()
                     .readValue(request.inputStream, MutableMap::class.java)
                     as? MutableMap<String, String>
-                    ?: throw AuthenticationServiceException("Could not read message")
 
-            val email = requestMap[Constants.USERNAME_PARAMETER]
-                    ?: throw AuthenticationServiceException("Could not read argument")
+            if (requestMap == null) {
+                response.sendError(HttpServletResponse.SC_BAD_REQUEST)
+                return
+            }
 
-            val password = requestMap[Constants.PASSWORD_PARAMETER]
-                    ?: throw AuthenticationServiceException("Could not read argument")
+            val email: String? = requestMap[Constants.USERNAME_PARAMETER]
+
+            val password: String? = requestMap[Constants.PASSWORD_PARAMETER]
+
+            if (email == null || password == null) {
+                response.sendError(HttpServletResponse.SC_BAD_REQUEST)
+                return
+            }
 
             val mutableRequestWrapper = CustomHttpServletRequestWrapper(request)
 
@@ -47,6 +53,12 @@ class CustomJsonReaderFilter:
             if (requestMap.contains(Constants.MFA_RECOVERY_CODE_PARAMETER)) {
                 val mfaRecoveryCode = requestMap[Constants.MFA_RECOVERY_CODE_PARAMETER]
                 mutableRequestWrapper.setParameter(Constants.MFA_RECOVERY_CODE_PARAMETER, mfaRecoveryCode!!)
+            }
+
+            // Remember me parameter
+            if (requestMap.contains(Constants.REMEMBER_ME_PARAMETER)) {
+                val rememberMe = requestMap[Constants.REMEMBER_ME_PARAMETER].toString()
+                mutableRequestWrapper.setParameter(Constants.REMEMBER_ME_PARAMETER, rememberMe)
             }
 
             chain.doFilter(mutableRequestWrapper, response)
