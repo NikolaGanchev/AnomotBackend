@@ -9,6 +9,7 @@ import com.anomot.anomotbackend.utils.SecureRandomStringGenerator
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 
 @Service
 class MfaRecoveryService @Autowired constructor(
@@ -49,6 +50,7 @@ class MfaRecoveryService @Autowired constructor(
         return mfaRecoveryCodeRepository.saveAll(recoveryCodes)
     }
 
+    @Transactional
     fun handleVerification(userDetails: CustomUserDetails, code: String): Boolean {
         val user = userRepository.getReferenceById(userDetails.id!!)
         val codes = mfaRecoveryCodeRepository.getAllByUser(user)
@@ -93,6 +95,7 @@ class MfaRecoveryService @Autowired constructor(
         }
     }
 
+    @Transactional
     fun deleteRecoveryCodes(userId: Long): Long {
         val user = userRepository.getReferenceById(userId)
 

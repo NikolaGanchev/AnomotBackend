@@ -1,15 +1,20 @@
 package com.anomot.anomotbackend.services
 
+import com.anomot.anomotbackend.AnomotBackendApplication
 import com.anomot.anomotbackend.entities.PasswordResetToken
 import com.anomot.anomotbackend.repositories.PasswordResetTokenRepository
 import com.anomot.anomotbackend.repositories.UserRepository
 import com.anomot.anomotbackend.utils.Constants
 import com.anomot.anomotbackend.utils.SecureRandomStringGenerator
 import com.anomot.anomotbackend.utils.TimeUtils
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.scheduling.annotation.Async
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.lang.IllegalArgumentException
 import java.time.Instant
 import java.util.*
@@ -25,6 +30,10 @@ class PasswordResetService @Autowired constructor(
     private val TIMING_ATTACK_MITIGATION_CODE = "a".repeat(Constants.PASSWORD_RESET_CODE_LENGTH)
     private var encryptedTimingAttackMitigationCode: String? = null
 
+    private val logger: Logger = LoggerFactory.getLogger(AnomotBackendApplication::class.java)
+    @Value("\${environment.is-local}")
+    private val isLocal: String? = null
+
     private fun generateResetCode(): String {
         val stringGenerator = SecureRandomStringGenerator(SecureRandomStringGenerator.ALPHANUMERIC)
 
@@ -39,7 +48,14 @@ class PasswordResetService @Autowired constructor(
         return TimeUtils.generateFutureAfterMinutes(tokenLifeDurationMinutes)
     }
 
-    fun sendPasswordResetTokenEmail(passwordResetToken: PasswordResetToken) {
+    fun sendPasswordResetTokenEmail(code: String, passwordResetToken: PasswordResetToken) {
+        if (isLocal != null && isLocal.toBoolean()) {
+            logger.info("\nPassword reset token \n" +
+                    "Code: $code \n" +
+                    "Identifier: ${passwordResetToken.identifier} \n" +
+                    "Expiry date: ${passwordResetToken.expiryDate} \n" +
+                    "User email: ${passwordResetToken.user.email}")
+        }
         // TODO("implement when emails are available")
     }
 
@@ -62,12 +78,13 @@ class PasswordResetService @Autowired constructor(
 
         passwordResetTokenRepository.save(passwordResetToken)
 
-        sendPasswordResetTokenEmail(passwordResetToken)
+        sendPasswordResetTokenEmail(code, passwordResetToken)
 
         return CompletableFuture.completedFuture(true)
     }
 
     // Checks if the provided password reset code exists and if it does, resets the user's password
+    @Transactional
     fun resetPasswordIfValidCode(code: String, identifier: String, newPassword: String, now: Instant): Boolean {
         val passwordResetToken = passwordResetTokenRepository.findByIdentifier(identifier)
 
@@ -76,6 +93,7 @@ class PasswordResetService @Autowired constructor(
 
             if (isValidCode && isNotExpired(passwordResetToken, now)) {
                 resetPassword(newPassword, passwordResetToken.user.id)
+                passwordResetTokenRepository.delete(passwordResetToken)
                 sendPasswordResetEmail(passwordResetToken)
                 return true
             }
@@ -88,6 +106,7 @@ class PasswordResetService @Autowired constructor(
 
     // Use async to prevent timing attacks
     @Async
+    @Transactional
     protected fun resetPassword(newPassword: String, id: Long?) {
         if (id == null) {
             throw IllegalArgumentException("User id should not be null")
@@ -96,12 +115,12 @@ class PasswordResetService @Autowired constructor(
         userRepository.setPassword(newPassword, id)
     }
 
-    private fun mitigatePasswordResetTimingAttack(code: String) {
+    private fun mitigatePasswordResetTimingAttack(code: String): Boolean {
         if (encryptedTimingAttackMitigationCode == null) {
             encryptedTimingAttackMitigationCode = passwordEncoder.encode(TIMING_ATTACK_MITIGATION_CODE)
         }
 
-        passwordEncoder.matches(code, encryptedTimingAttackMitigationCode)
+        return passwordEncoder.matches(code, encryptedTimingAttackMitigationCode)
     }
 
     fun isNotExpired(token: PasswordResetToken, now: Instant): Boolean {

@@ -88,6 +88,7 @@ class UserDetailsServiceImpl: UserDetailsService {
         return UserDto(email = savedUser.email, username = savedUser.username, listOf(Authorities.USER.roleName), false)
     }
 
+    @Transactional
     fun changePassword(oldPassword: String, newPassword: String) {
         val user = SecurityContextHolder.getContext().authentication
                 ?: throw AccessDeniedException("No authentication present")
@@ -103,6 +104,7 @@ class UserDetailsServiceImpl: UserDetailsService {
         authenticationService.reAuthenticate(user)
     }
 
+    @Transactional
     fun changeUsername(newUsername: String) {
         val user = SecurityContextHolder.getContext().authentication
                 ?: throw AccessDeniedException("No authentication present")
@@ -112,6 +114,7 @@ class UserDetailsServiceImpl: UserDetailsService {
         authenticationService.reAuthenticate(user)
     }
 
+    @Transactional
     fun changeEmail(password: String, newEmail: String) {
         val user = SecurityContextHolder.getContext().authentication
                 ?: throw AccessDeniedException("No authentication present")

@@ -49,6 +49,7 @@ class PasswordResetTests @Autowired constructor(
         val token = PasswordResetToken(code, identifier, user, TimeUtils.generateFutureDate(60))
 
         every { passwordResetTokenRepository.findByIdentifier(any()) } returns token
+        every { passwordResetTokenRepository.delete(any()) } returns Unit
         every { passwordEncoder.matches(any(), any()) } returns true
         every { userRepository.setPassword(any(), any()) } returns 1
 

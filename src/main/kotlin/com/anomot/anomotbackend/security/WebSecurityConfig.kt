@@ -37,7 +37,7 @@ import javax.servlet.http.HttpServletResponse.*
 class WebSecurityConfig {
     @Value("\${remember-me.key}")
     private val rememberKey: String? = null
-    @Value("client.domain")
+    @Value("\${client.domain}")
     private val clientDomain: String? = null
 
     @Autowired

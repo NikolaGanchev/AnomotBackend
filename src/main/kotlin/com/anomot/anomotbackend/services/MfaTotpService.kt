@@ -7,6 +7,7 @@ import com.bastiaanjansen.otp.SecretGenerator
 import com.bastiaanjansen.otp.TOTP
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.time.Duration
 
 @Service
@@ -34,6 +35,7 @@ class MfaTotpService @Autowired constructor(
         return totp.verify(codeToVerify, Constants.TOTP_CODE_ALLOWED_DELAY)
     }
 
+    @Transactional
     fun deleteMfaSecret(userId: Long) {
         mfaTotpSecretRepository.deleteByUserId(userId)
     }
