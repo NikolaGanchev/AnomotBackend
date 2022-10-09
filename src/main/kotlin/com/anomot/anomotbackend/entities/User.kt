@@ -1,6 +1,7 @@
 package com.anomot.anomotbackend.entities
 
 import java.io.Serializable
+import java.util.*
 import javax.persistence.*
 
 
@@ -31,4 +32,5 @@ class User(
             inverseJoinColumns = [JoinColumn(name = "mfa_method_id")]
     )
     var mfaMethods: MutableList<MfaMethod>? = null,
+    var creationDate: Date = Date(),
     @Id @GeneratedValue(strategy = GenerationType.AUTO) var id: Long? = null) : Serializable

@@ -468,7 +468,8 @@ class AuthenticationWebTests @Autowired constructor(
                 user.isEmailVerified,
                 user.isMfaActive,
                 user.mfaMethods,
-            5)
+                Date(),
+                5)
 
         val expectedUserDetails = CustomUserDetails(dbUser)
 
@@ -510,6 +511,7 @@ class AuthenticationWebTests @Autowired constructor(
                 user.isEmailVerified,
                 user.isMfaActive,
                 user.mfaMethods,
+                Date(),
                 5)
 
         val expectedUserDetails = CustomUserDetails(dbUser)
@@ -1071,7 +1073,8 @@ class AuthenticationWebTests @Autowired constructor(
                 user.isEmailVerified,
                 user.isMfaActive,
                 user.mfaMethods,
-            5)
+                Date(),
+                5)
 
         val expectedUserDetails = CustomUserDetails(dbUser)
 
@@ -1112,6 +1115,7 @@ class AuthenticationWebTests @Autowired constructor(
                 user.isEmailVerified,
                 user.isMfaActive,
                 user.mfaMethods,
+                Date(),
                 5)
 
         val expectedUserDetails = CustomUserDetails(dbUser)
