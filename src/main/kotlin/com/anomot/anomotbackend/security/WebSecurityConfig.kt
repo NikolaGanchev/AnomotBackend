@@ -12,7 +12,6 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Scope
-import org.springframework.security.authentication.DisabledException
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
@@ -81,9 +80,12 @@ class WebSecurityConfig {
                     .tokenValiditySeconds(Constants.REMEMBER_ME_VALIDITY_DURATION)
                     .rememberMeCookieDomain(Constants.REMEMBER_ME_COOKIE_DOMAIN)
                     .rememberMeParameter(Constants.REMEMBER_ME_PARAMETER)
+                    .rememberMeCookieName(Constants.REMEMBER_ME_COOKIE_NAME)
                     .rememberMeServices(PersistentTokenBasedRememberMeServices(
                             rememberKey, userDetailsService(), customRememberMeTokenRepository
-                    ))
+                    ).also {
+                        it.parameter = Constants.REMEMBER_ME_PARAMETER
+                    })
                 .and()
                 .cors()
                 .and()
@@ -118,10 +120,6 @@ class WebSecurityConfig {
         request, response, authentication ->
         response.status = SC_UNAUTHORIZED
         response.contentType = "text/plain"
-
-        if (authentication is DisabledException) {
-            response.status = SC_FORBIDDEN
-        }
 
         response.writer.write(authentication.message ?: "Login error")
     }

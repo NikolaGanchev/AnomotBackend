@@ -197,7 +197,7 @@ class AuthenticationWebTests @Autowired constructor(
         mockMvc.perform(formLogin("/account/login").user(Constants.USERNAME_PARAMETER, user.email)
                 .password(Constants.PASSWORD_PARAMETER, user.password)
                 .acceptMediaType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isForbidden)
+                .andExpect(status().isUnauthorized)
                 .andExpect(content().contentType(MediaType.TEXT_PLAIN))
                 .andExpect(content().string("User is disabled"))
     }
@@ -1088,7 +1088,10 @@ class AuthenticationWebTests @Autowired constructor(
                 .content(TestUtils.objectToJson(request))
                 .with(csrf()))
                 .andExpect(status().isOk)
-                .andExpect(cookie().exists("remember-me"))
+                .andDo {
+                    println(it.response.cookies)
+                }
+                .andExpect(cookie().exists(Constants.REMEMBER_ME_COOKIE_NAME))
     }
 
     @Test

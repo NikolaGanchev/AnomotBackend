@@ -24,5 +24,6 @@ class Constants {
         const val REMEMBER_ME_COOKIE_DOMAIN = "domain"
         const val LOGINS_PER_PAGE = 20
         const val REMEMBER_ME_PARAMETER = "rememberMe"
+        const val REMEMBER_ME_COOKIE_NAME = "remember-me"
     }
 }
