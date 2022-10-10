@@ -239,90 +239,7 @@ class AuthenticationWebTests @Autowired constructor(
     }
 
     @Test
-    fun `When get mfa methods with correct credentials then return 200`() {
-        val authority = Authority(Authorities.USER.roleName)
-        val user = User("example@test.com",
-                "password12$",
-                "Georgi",
-                mutableListOf(authority),
-                true,
-                true,
-                mutableListOf(mfaMethodEmail, mfaMethodTotp))
-
-        val loginDto = LoginDto("example@example.com", "password12$", null)
-
-        val dbUser = User(user.email,
-                passwordEncoder.encode("password12$"),
-                user.username,
-                mutableListOf(authority),
-                user.isEmailVerified,
-                user.isMfaActive,
-                user.mfaMethods)
-
-        val expectedUserDetails = CustomUserDetails(dbUser)
-        val authentication = UsernamePasswordAuthenticationToken.authenticated(expectedUserDetails,
-                "password", mutableListOf())
-
-        every { authenticationService.verifyAuthenticationWithoutMfa(any<String>(), any()) } returns authentication
-
-        mockMvc.perform(post("/account/mfa/email/methods")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(TestUtils.objectToJson(loginDto))
-                .with(csrf()))
-                .andExpect(status().isOk)
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(content().json("{\"mfaMethods\":[\"email\",\"totp\"]}"))
-    }
-
-    @Test
-    fun `When get mfa methods with incorrect credentials then return 401`() {
-        val loginDto = LoginDto("example@example.com", "password12$", null)
-
-        every { authenticationService.verifyAuthenticationWithoutMfa(any<String>(), any()) } returns null
-
-        mockMvc.perform(post("/account/mfa/email/methods")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(TestUtils.objectToJson(loginDto))
-                .with(csrf()))
-                .andExpect(status().isUnauthorized)
-    }
-
-    @Test
-    fun `When get mfa methods with no mfa enabled then return 409`() {
-        val authority = Authority(Authorities.USER.roleName)
-        val user = User("example@test.com",
-                "password12$",
-                "Georgi",
-                mutableListOf(authority),
-                true,
-                false,
-                mutableListOf(mfaMethodTotp))
-
-        val loginDto = LoginDto("example@example.com", "password12$", null)
-
-        val dbUser = User(user.email,
-                passwordEncoder.encode("password12$"),
-                user.username,
-                mutableListOf(authority),
-                user.isEmailVerified,
-                user.isMfaActive,
-                user.mfaMethods)
-
-        val expectedUserDetails = CustomUserDetails(dbUser)
-        val authentication = UsernamePasswordAuthenticationToken.authenticated(expectedUserDetails,
-                "password", mutableListOf())
-
-        every { authenticationService.verifyAuthenticationWithoutMfa(any<String>(), any()) } returns authentication
-
-        mockMvc.perform(post("/account/mfa/email/methods")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(TestUtils.objectToJson(loginDto))
-                .with(csrf()))
-                .andExpect(status().isConflict)
-    }
-
-    @Test
-    fun `When get mfa status with correct credentials and mfa enabled then return 200 and true`() {
+    fun `When get mfa status with correct credentials then return 200 and true`() {
         val authority = Authority(Authorities.USER.roleName)
         val user = User("example@test.com",
                 "password12$",
@@ -354,43 +271,7 @@ class AuthenticationWebTests @Autowired constructor(
                 .with(csrf()))
                 .andExpect(status().isOk)
                 .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("\$.isMfaEnabled").value(true))
-    }
-
-    @Test
-    fun `When get mfa status with correct credentials and mfa disabled then return 200 and false`() {
-        val authority = Authority(Authorities.USER.roleName)
-        val user = User("example@test.com",
-                "password12$",
-                "Georgi",
-                mutableListOf(authority),
-                true,
-                false,
-                mutableListOf(mfaMethodEmail, mfaMethodTotp))
-
-        val loginDto = LoginDto("example@example.com", "password12$", null)
-
-        val dbUser = User(user.email,
-                passwordEncoder.encode("password12$"),
-                user.username,
-                mutableListOf(authority),
-                user.isEmailVerified,
-                user.isMfaActive,
-                user.mfaMethods)
-
-        val expectedUserDetails = CustomUserDetails(dbUser)
-        val authentication = UsernamePasswordAuthenticationToken.authenticated(expectedUserDetails,
-                "password", mutableListOf())
-
-        every { authenticationService.verifyAuthenticationWithoutMfa(any<String>(), any()) } returns authentication
-
-        mockMvc.perform(post("/account/mfa/status")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(TestUtils.objectToJson(loginDto))
-                .with(csrf()))
-                .andExpect(status().isOk)
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("\$.isMfaEnabled").value(false))
+                .andExpect(content().json("{\"mfaMethods\":[\"email\",\"totp\"], \"isEnabled\": true}"))
     }
 
     @Test
@@ -404,6 +285,41 @@ class AuthenticationWebTests @Autowired constructor(
                 .content(TestUtils.objectToJson(loginDto))
                 .with(csrf()))
                 .andExpect(status().isUnauthorized)
+    }
+
+    @Test
+    fun `When get mfa methods with no mfa enabled then return 200 and false`() {
+        val authority = Authority(Authorities.USER.roleName)
+        val user = User("example@test.com",
+                "password12$",
+                "Georgi",
+                mutableListOf(authority),
+                true,
+                false)
+
+        val loginDto = LoginDto("example@example.com", "password12$", null)
+
+        val dbUser = User(user.email,
+                passwordEncoder.encode("password12$"),
+                user.username,
+                mutableListOf(authority),
+                user.isEmailVerified,
+                user.isMfaActive,
+                user.mfaMethods)
+
+        val expectedUserDetails = CustomUserDetails(dbUser)
+        val authentication = UsernamePasswordAuthenticationToken.authenticated(expectedUserDetails,
+                "password", mutableListOf())
+
+        every { authenticationService.verifyAuthenticationWithoutMfa(any<String>(), any()) } returns authentication
+
+        mockMvc.perform(post("/account/mfa/status")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(TestUtils.objectToJson(loginDto))
+                .with(csrf()))
+                .andExpect(status().isOk)
+                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
+                .andExpect(content().json("{\"mfaMethods\": null, \"isEnabled\": false}"))
     }
 
     @Test
