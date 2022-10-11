@@ -1,0 +1,20 @@
+services:
+  web:
+    image: anomot/backend
+    ports:
+      - "8080:8080"
+    environment:
+      - IS_LOCAL=true
+    network_mode: "host"
+  db:
+    image: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_PASSWORD=password
+      - POSTGRES_USER=anomot
+      - POSTGRES_DB=anomot
+  redis_db:
+    image: redis
+    ports:
+      - "6379:6379"

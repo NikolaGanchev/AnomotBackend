@@ -14,10 +14,10 @@ import com.maxmind.geoip2.model.CityResponse
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.core.io.ClassPathResource
+import org.springframework.core.io.Resource
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
-import org.springframework.util.ResourceUtils
-import java.io.File
 import java.net.InetAddress
 import java.util.*
 
@@ -33,8 +33,8 @@ class LoginInfoExtractorService @Autowired constructor(
 
 
     init {
-        val db: File = ResourceUtils.getFile("classpath:GeoLite2/GeoLite2-City.mmdb")
-        dbReader = DatabaseReader.Builder(db).build()
+        val db: Resource = ClassPathResource("/GeoLite2/GeoLite2-City.mmdb")
+        dbReader = DatabaseReader.Builder(db.inputStream).build()
         userAgentParser = UserAgentService().loadParser()
     }
 
