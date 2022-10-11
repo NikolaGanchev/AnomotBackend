@@ -53,11 +53,13 @@ class MfaEmailTokenService @Autowired constructor(
     fun verifyMfaCode(id: String, codeToVerify: String): Boolean {
         val foundCode = mfaEmailCodeRepository.findById(id)
 
-        if (foundCode.isEmpty) return false
+        var isValid = false
 
-        if (foundCode.get().code.secureEquals(codeToVerify)) return true
+        foundCode.ifPresent {
+            isValid = it.code.secureEquals(codeToVerify)
+        }
 
-        return false
+        return isValid
     }
 
     fun deleteMfaCode(id: String, codeToDelete: String) {
