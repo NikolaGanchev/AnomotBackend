@@ -3,10 +3,15 @@ services:
     image: anomot/backend
     ports:
       - "8080:8080"
+    links:
+      - redis_db
+      - db
     environment:
       - IS_LOCAL=true
-    network_mode: "host"
+      - SPRING_REDIS_URL=redis://redis-host:6379
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://db-host:5432/anomot
   db:
+    hostname: db-host
     image: postgres
     ports:
       - "5432:5432"
@@ -15,6 +20,7 @@ services:
       - POSTGRES_USER=anomot
       - POSTGRES_DB=anomot
   redis_db:
+    hostname: redis-host
     image: redis
     ports:
       - "6379:6379"
