@@ -69,7 +69,6 @@ class WebSecurityConfig {
                     .logoutUrl("/account/logout")
                     .permitAll()
                     .invalidateHttpSession(true)
-                    .deleteCookies("SESSION", Constants.REMEMBER_ME_COOKIE_NAME)
                     .and()
                 .csrf()
                     .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
