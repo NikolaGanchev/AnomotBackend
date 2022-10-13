@@ -48,6 +48,8 @@ class UserDetailsServiceTests {
     private lateinit var authenticationService: AuthenticationService
     @MockkBean
     private lateinit var mfaRecoveryService: MfaRecoveryService
+    @MockkBean
+    private lateinit var loginInfoExtractorService: LoginInfoExtractorService
     @Autowired
     @InjectMockKs
     private lateinit var userDetailsService: UserDetailsServiceImpl

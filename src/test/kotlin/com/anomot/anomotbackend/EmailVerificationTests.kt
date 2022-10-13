@@ -6,6 +6,7 @@ import com.anomot.anomotbackend.repositories.EmailVerificationTokenRepository
 import com.anomot.anomotbackend.repositories.UserRepository
 import com.anomot.anomotbackend.security.Authorities
 import com.anomot.anomotbackend.services.EmailVerificationService
+import com.anomot.anomotbackend.services.LoginInfoExtractorService
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
@@ -24,6 +25,8 @@ class EmailVerificationTests @Autowired constructor(
     private lateinit var emailVerificationTokenRepository: EmailVerificationTokenRepository
     @MockkBean
     private lateinit var userRepository: UserRepository
+    @MockkBean
+    private lateinit var loginInfoExtractorService: LoginInfoExtractorService
 
     @Test
     fun `When create token and non expired then verify`() {

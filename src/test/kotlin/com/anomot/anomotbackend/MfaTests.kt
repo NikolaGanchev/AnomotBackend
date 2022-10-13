@@ -7,6 +7,7 @@ import com.anomot.anomotbackend.repositories.MfaTotpSecretRepository
 import com.anomot.anomotbackend.repositories.UserRepository
 import com.anomot.anomotbackend.security.Authorities
 import com.anomot.anomotbackend.security.CustomUserDetails
+import com.anomot.anomotbackend.services.LoginInfoExtractorService
 import com.anomot.anomotbackend.services.MfaEmailTokenService
 import com.anomot.anomotbackend.services.MfaRecoveryService
 import com.anomot.anomotbackend.services.MfaTotpService
@@ -40,6 +41,8 @@ class MfaTests @Autowired constructor(
     private lateinit var mfaRecoveryCodeRepository: MfaRecoveryCodeRepository
     @MockkBean
     private lateinit var userRepository: UserRepository
+    @MockkBean
+    private lateinit var loginInfoExtractorService: LoginInfoExtractorService
     @MockK
     private lateinit var totp: TOTP
 

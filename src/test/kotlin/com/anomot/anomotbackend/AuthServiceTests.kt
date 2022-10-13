@@ -2,6 +2,7 @@ package com.anomot.anomotbackend
 
 import com.anomot.anomotbackend.security.CustomAuthenticationProvider
 import com.anomot.anomotbackend.services.AuthenticationService
+import com.anomot.anomotbackend.services.LoginInfoExtractorService
 import com.anomot.anomotbackend.services.UserDetailsServiceImpl
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
@@ -24,6 +25,8 @@ class AuthServiceTests {
     @MockkBean
     @Qualifier("authenticationProvider")
     private lateinit var authenticationProvider: CustomAuthenticationProvider
+    @MockkBean
+    private lateinit var loginInfoExtractorService: LoginInfoExtractorService
     @Autowired
     @InjectMockKs
     private lateinit var authenticationService: AuthenticationService
