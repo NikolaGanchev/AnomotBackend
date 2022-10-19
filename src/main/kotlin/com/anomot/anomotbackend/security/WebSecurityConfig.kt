@@ -38,6 +38,8 @@ class WebSecurityConfig {
     private val rememberKey: String? = null
     @Value("\${client.domain}")
     private val clientDomain: String? = null
+    @Value("\${environment.is-local}")
+    private val isLocal: String? = null
 
     @Autowired
     private lateinit var customRememberMeTokenRepository: CustomRememberMeTokenRepository
@@ -92,6 +94,9 @@ class WebSecurityConfig {
                 .addFilterAfter(LoginArgumentValidationFilter(), CustomJsonReaderFilter::class.java)
                 .httpBasic()
 
+        if (isLocal != null && isLocal.toBoolean()) {
+            http.cors().disable()
+        }
 
         return http.build()
     }
