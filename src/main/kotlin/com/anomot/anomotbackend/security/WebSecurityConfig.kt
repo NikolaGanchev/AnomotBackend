@@ -12,9 +12,12 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Scope
+import org.springframework.http.HttpMethod
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
+import org.springframework.security.config.annotation.web.builders.WebSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
+import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.AuthenticationFailureHandler
@@ -22,8 +25,9 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 import org.springframework.security.web.authentication.rememberme.PersistentTokenBasedRememberMeServices
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository
-import org.springframework.web.servlet.config.annotation.CorsRegistry
-import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
+import org.springframework.web.cors.CorsConfiguration
+import org.springframework.web.cors.CorsConfigurationSource
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 import javax.servlet.http.HttpServletResponse.*
 
 
@@ -101,6 +105,11 @@ class WebSecurityConfig {
         return http.build()
     }
 
+    @Bean
+    fun webSecurityCustomizer(): WebSecurityCustomizer {
+        return WebSecurityCustomizer { web: WebSecurity -> web.ignoring().antMatchers(HttpMethod.OPTIONS, "/**") }
+    }
+
     private val loginSuccessHandler = AuthenticationSuccessHandler {
         request, response, authentication ->
         // Get user
@@ -129,15 +138,23 @@ class WebSecurityConfig {
     }
 
     @Bean
-    fun corsMappingConfigurer(): WebMvcConfigurer {
-        return object : WebMvcConfigurer {
-            override fun addCorsMappings(registry: CorsRegistry) {
-                registry.addMapping("/**")
-                        .allowedOrigins(clientDomain)
-                        .allowedMethods("POST", "GET", "DELETE", "PUT", "OPTIONS")
-                        .allowCredentials(true)
-            }
-        }
+    fun corsConfigurationSource(): CorsConfigurationSource {
+        val configuration = CorsConfiguration()
+        configuration.allowedOrigins = listOf(clientDomain)
+        configuration.allowedMethods = listOf("POST", "GET", "DELETE", "PUT", "OPTIONS")
+        configuration.allowedHeaders = listOf("DNT",
+                "User-Agent",
+                "X-Requested-With",
+                "If-Modified-Since",
+                "Cache-Control",
+                "Content-Type",
+                "Range",
+                "X-XSRF-TOKEN")
+        configuration.allowCredentials = true
+
+        val source = UrlBasedCorsConfigurationSource()
+        source.registerCorsConfiguration("/**", configuration)
+        return source
     }
 
     @Bean()
