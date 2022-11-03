@@ -50,8 +50,8 @@ class MfaEmailTokenService @Autowired constructor(
         //TODO("implement when emails are available")
     }
 
-    fun verifyMfaCode(id: String, codeToVerify: String): Boolean {
-        val foundCode = mfaEmailCodeRepository.findById(id)
+    fun verifyMfaCode(id: Long?, codeToVerify: String): Boolean {
+        val foundCode = mfaEmailCodeRepository.findById(id.toString())
 
         var isValid = false
 

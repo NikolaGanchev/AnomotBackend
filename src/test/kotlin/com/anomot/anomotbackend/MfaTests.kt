@@ -54,7 +54,7 @@ class MfaTests @Autowired constructor(
 
         every { mfaEmailCodeRepository.findById(id.toString()) } returns Optional.of(expectedMfaToken)
 
-        val isValid = mfaEmailTokenService.verifyMfaCode(id.toString(), code)
+        val isValid = mfaEmailTokenService.verifyMfaCode(id.toLong(), code)
 
         assertThat(isValid).isTrue
     }
@@ -66,7 +66,7 @@ class MfaTests @Autowired constructor(
 
         every { mfaEmailCodeRepository.findById(id.toString()) } returns Optional.ofNullable(null)
 
-        val isValid = mfaEmailTokenService.verifyMfaCode(id.toString(), code)
+        val isValid = mfaEmailTokenService.verifyMfaCode(id.toLong(), code)
 
         assertThat(isValid).isFalse
     }
@@ -79,7 +79,7 @@ class MfaTests @Autowired constructor(
 
         every { mfaEmailCodeRepository.findById(id.toString()) } returns Optional.of(expectedMfaToken)
 
-        val isValid = mfaEmailTokenService.verifyMfaCode(id.toString(), "54bnOt")
+        val isValid = mfaEmailTokenService.verifyMfaCode(id.toLong(), "54bnOt")
 
         assertThat(isValid).isFalse
     }

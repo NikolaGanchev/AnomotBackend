@@ -63,7 +63,7 @@ class CustomAuthenticationProvider(userDetailsService: UserDetailsServiceImpl): 
 
             val isVerified = when(mfaMethod) {
                 MfaMethodValue.EMAIL -> {
-                    mfaEmailTokenService.verifyMfaCode(user.username, mfaCode).also {
+                    mfaEmailTokenService.verifyMfaCode(user.id, mfaCode).also {
                         if (it) mfaEmailTokenService.deleteMfaCode(user.username, mfaCode)
                     }
                 }
