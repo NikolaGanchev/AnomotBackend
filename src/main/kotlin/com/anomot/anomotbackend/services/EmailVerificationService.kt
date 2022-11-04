@@ -52,6 +52,7 @@ class EmailVerificationService @Autowired constructor(
             logger.info("\nEmail verification token \n" +
                     "Code: ${token.verificationCode} \n" +
                     "Expiry date: ${token.expiryDate} \n" +
+                    "Link: http://localhost:3000/bg/create/verify?code=${token.verificationCode} \n" +
                     "User email: ${user.email}")
         }
         //TODO("implement when emails are available")

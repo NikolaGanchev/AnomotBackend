@@ -54,6 +54,7 @@ class PasswordResetService @Autowired constructor(
                     "Code: $code \n" +
                     "Identifier: ${passwordResetToken.identifier} \n" +
                     "Expiry date: ${passwordResetToken.expiryDate} \n" +
+                    "Link: http://localhost:3000/bg/login/reset-password?code=$code&id=${passwordResetToken.identifier} \n" +
                     "User email: ${passwordResetToken.user.email}")
         }
         // TODO("implement when emails are available")
@@ -112,7 +113,9 @@ class PasswordResetService @Autowired constructor(
             throw IllegalArgumentException("User id should not be null")
         }
 
-        userRepository.setPassword(newPassword, id)
+        val hashedPassword = passwordEncoder.encode(newPassword)
+
+        userRepository.setPassword(hashedPassword, id)
     }
 
     private fun mitigatePasswordResetTimingAttack(code: String): Boolean {
