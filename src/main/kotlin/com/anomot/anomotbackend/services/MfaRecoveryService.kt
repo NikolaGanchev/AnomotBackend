@@ -27,6 +27,7 @@ class MfaRecoveryService @Autowired constructor(
         return stringGenerator.generate(Constants.MFA_RECOVERY_CODE_LENGTH)
     }
 
+    @Transactional
     fun updateRecoveryCodes(userId: Long): List<String> {
         deleteRecoveryCodes(userId)
         val codes = generateRecoveryCodes()
