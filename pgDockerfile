@@ -1,0 +1,6 @@
+FROM postgis/postgis:15-3.3
+
+COPY /postgres_extensions/hamming_distance_extension.tar.gz .
+RUN tar -xvf hamming_distance_extension.tar.gz
+
+COPY /postgres_extensions/load_extensions.sh /docker-entrypoint-initdb.d/

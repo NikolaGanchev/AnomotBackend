@@ -12,7 +12,9 @@ services:
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db-host:5432/anomot
   db:
     hostname: db-host
-    image: postgres
+    build:
+      context: .
+      dockerfile: pgDockerfile
     ports:
       - "5432:5432"
     environment:
