@@ -5,23 +5,29 @@ import com.anomot.anomotbackend.entities.User
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.userdetails.UserDetails
-import org.springframework.transaction.annotation.Transactional
 
-@Transactional
-class CustomUserDetails(private val user: User): UserDetails {
+open class CustomUserDetails(user: User): UserDetails {
 
-    val id = user.id
+    // The naming of the variables needs to not conflict with the abstract methods
+    val id: Long? = user.id
+    private val _authorities: MutableCollection<out GrantedAuthority> = user.authorities.map { it -> SimpleGrantedAuthority(it.authority) }.toCollection(mutableListOf())
+    private val _password = user.password
+    private val _username = user.username
+    private val _email = user.email
+    private val _mfaMethods: List<String>? = user.mfaMethods?.map { it.method }?.toCollection(mutableListOf())
+    private val isEmailVerified = user.isEmailVerified
+    private val isMfaActive = user.isMfaActive
 
     override fun getAuthorities(): MutableCollection<out GrantedAuthority> {
-        return user.authorities.map { it -> SimpleGrantedAuthority(it.authority) }.toCollection(mutableListOf())
+        return _authorities
     }
 
     override fun getPassword(): String {
-       return user.password
+       return _password
     }
 
     override fun getUsername(): String {
-        return user.email
+        return _email
     }
 
     override fun isAccountNonExpired(): Boolean {
@@ -37,34 +43,30 @@ class CustomUserDetails(private val user: User): UserDetails {
     }
 
     override fun isEnabled(): Boolean {
-        return user.isEmailVerified
+        return isEmailVerified
     }
 
     fun getAsDto(): UserDto {
-        return UserDto(email = user.email,
-                username = user.username,
+        return UserDto(email = _email,
+                username = _username,
                 roles = getAuthoritiesAsList(),
-                isMfaActive = user.isMfaActive,
-                if (user.isMfaActive) getMfaMethodsAsList() else null)
+                isMfaActive = isMfaActive,
+                if (isMfaActive) _mfaMethods else null)
     }
 
     private fun getAuthoritiesAsList(): List<String> {
-        return user.authorities.map { it -> it.authority }.toCollection(mutableListOf())
-    }
-
-    fun getMfaMethodsAsList(): List<String>? {
-        return user.mfaMethods?.map { it.method }?.toCollection(mutableListOf())
+        return _authorities.map { it -> it.authority }.toCollection(mutableListOf())
     }
 
     fun hasMfaMethod(mfaMethodValue: MfaMethodValue): Boolean {
-        return user.mfaMethods != null && getMfaMethodsAsList()!!.contains(mfaMethodValue.method)
-    }
-
-    fun isEmailVerified(): Boolean {
-        return user.isEmailVerified
+        return _mfaMethods != null && _mfaMethods.contains(mfaMethodValue.method)
     }
 
     fun isMfaEnabled(): Boolean {
-        return user.isMfaActive
+        return isMfaActive
+    }
+
+    fun getMfaMethodsAsList(): List<String>? {
+        return _mfaMethods
     }
 }
