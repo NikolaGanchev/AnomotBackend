@@ -27,6 +27,7 @@ import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder
 import org.springframework.stereotype.Service
+import java.nio.charset.StandardCharsets
 import java.time.Duration
 import java.time.Instant
 import javax.transaction.Transactional
@@ -144,7 +145,8 @@ class UserDetailsServiceImpl: UserDetailsService {
             activateMfa(user, mfaMethod)
 
             val secret = totpService.generateSecret()
-            val token = MfaTotpSecret(secret.toString(), user)
+            val stringSecret = String(secret, StandardCharsets.UTF_8)
+            val token = MfaTotpSecret(stringSecret, user)
             totpService.saveCode(token)
 
             val totp = TOTP.Builder(secret)
@@ -154,7 +156,7 @@ class UserDetailsServiceImpl: UserDetailsService {
 
             authenticationService.reAuthenticate(userAuth)
 
-            return TotpDto(totp.secret.toString(), totp.getURI("Anomot%20${user.email}").toString())
+            return TotpDto(stringSecret, totp.getURI("Anomot:${user.email}").toString())
         } else {
             return null
         }
@@ -170,6 +172,9 @@ class UserDetailsServiceImpl: UserDetailsService {
             val mfaMethod = getMfaEntityReference(MfaMethodValue.TOTP)
 
             deactivateMfa(user, mfaMethod)
+
+            totpService.deleteMfaSecret(user.id!!)
+
             authenticationService.reAuthenticate(userAuth)
             return true
         }
