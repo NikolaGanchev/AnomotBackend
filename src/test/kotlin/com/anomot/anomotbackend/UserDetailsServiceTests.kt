@@ -209,7 +209,7 @@ class UserDetailsServiceTests {
     }
 
     @Test
-    @WithMockCustomUser(password = "password", isMfaActive = true, mfaMethods = [])
+    @WithMockCustomUser(password = "password", isMfaActive = true, mfaMethods = ["totp"])
     fun `When activate totp with authentication and active mfa then return null`() {
         val mfaMethod = MfaMethod(MfaMethodValue.TOTP.method)
         val authority = Authority(Authorities.USER.roleName)
@@ -234,7 +234,7 @@ class UserDetailsServiceTests {
     }
 
     @Test
-    @WithMockCustomUser(password = "password", isMfaActive = true)
+    @WithMockCustomUser(password = "password", isMfaActive = true, mfaMethods = ["totp"])
     fun `When deactivate totp with authentication and active mfa then return true`() {
         val mfaMethod = MfaMethod(MfaMethodValue.TOTP.method, users = null, 5)
         val authority = Authority(Authorities.USER.roleName, users = null, 5)
@@ -291,7 +291,7 @@ class UserDetailsServiceTests {
     }
 
     @Test
-    @WithMockCustomUser(password = "password", isMfaActive = true, mfaMethods = [])
+    @WithMockCustomUser(password = "password", isMfaActive = true, mfaMethods = ["email"])
     fun `When activate email mfa with authentication and active mfa then return false`() {
         val mfaMethod = MfaMethod(MfaMethodValue.EMAIL.method)
         val authority = Authority(Authorities.USER.roleName)
@@ -313,7 +313,7 @@ class UserDetailsServiceTests {
     }
 
     @Test
-    @WithMockCustomUser(password = "password", isMfaActive = true)
+    @WithMockCustomUser(password = "password", isMfaActive = true, mfaMethods = ["email"])
     fun `When deactivate email mfa with authentication and active mfa then return true`() {
         val mfaMethod = MfaMethod(MfaMethodValue.EMAIL.method, users = null, 5)
         val authority = Authority(Authorities.USER.roleName)

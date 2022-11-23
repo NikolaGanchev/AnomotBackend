@@ -136,7 +136,7 @@ class UserDetailsServiceImpl: UserDetailsService {
         val userAuth = SecurityContextHolder.getContext().authentication
                 ?: throw AccessDeniedException("No authentication present")
 
-        if (!(userAuth.principal as CustomUserDetails).isMfaEnabled()) {
+        if (!(userAuth.principal as CustomUserDetails).hasMfaMethod(MfaMethodValue.TOTP)) {
             val user = userRepository.findByEmail(userAuth.name) ?: throw UsernameNotFoundException("Email not found")
 
             val mfaMethod = getMfaEntityReference(MfaMethodValue.TOTP)
@@ -164,7 +164,7 @@ class UserDetailsServiceImpl: UserDetailsService {
         val userAuth = SecurityContextHolder.getContext().authentication
                 ?: throw AccessDeniedException("No authentication present")
 
-        if ((userAuth.principal as CustomUserDetails).isMfaEnabled()) {
+        if ((userAuth.principal as CustomUserDetails).hasMfaMethod(MfaMethodValue.TOTP)) {
             val user = userRepository.findByEmail(userAuth.name) ?: throw UsernameNotFoundException("Email not found")
 
             val mfaMethod = getMfaEntityReference(MfaMethodValue.TOTP)
@@ -180,7 +180,7 @@ class UserDetailsServiceImpl: UserDetailsService {
         val userAuth = SecurityContextHolder.getContext().authentication
                 ?: throw AccessDeniedException("No authentication present")
 
-        if (!(userAuth.principal as CustomUserDetails).isMfaEnabled()) {
+        if (!(userAuth.principal as CustomUserDetails).hasMfaMethod(MfaMethodValue.EMAIL)) {
             val user = userRepository.findByEmail(userAuth.name) ?: throw UsernameNotFoundException("Email not found")
 
             val mfaMethod = getMfaEntityReference(MfaMethodValue.EMAIL)
@@ -196,7 +196,7 @@ class UserDetailsServiceImpl: UserDetailsService {
         val userAuth = SecurityContextHolder.getContext().authentication
                 ?: throw AccessDeniedException("No authentication present")
 
-        if ((userAuth.principal as CustomUserDetails).isMfaEnabled()) {
+        if ((userAuth.principal as CustomUserDetails).hasMfaMethod(MfaMethodValue.EMAIL)) {
             val user = userRepository.findByEmail(userAuth.name) ?: throw UsernameNotFoundException("Email not found")
 
             val mfaMethod = getMfaEntityReference(MfaMethodValue.EMAIL)
