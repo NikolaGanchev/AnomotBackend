@@ -239,12 +239,13 @@ class UserDetailsServiceTests {
         val mfaMethod = MfaMethod(MfaMethodValue.TOTP.method, users = null, 5)
         val authority = Authority(Authorities.USER.roleName, users = null, 5)
         val user = User("example@test.com", "password12$", "Georgi", mutableListOf(authority),
-                        mfaMethods = mutableListOf(MfaMethod(MfaMethodValue.TOTP.method)))
+                        mfaMethods = mutableListOf(MfaMethod(MfaMethodValue.TOTP.method)), id = 5)
 
         every { userRepository.findByEmail(any()) } returns user
         every { mfaMethodRepository.findByMethod(MfaMethodValue.TOTP.method) } returns mfaMethod
         every { authenticationService.reAuthenticate(any()) } returns Unit
         every { mfaMethodRepository.getReferenceById(any()) } returns mfaMethod
+        every { totpService.deleteMfaSecret(any()) } returns Unit
 
         val result = userDetailsService.deactivateTotpMfa()
 
