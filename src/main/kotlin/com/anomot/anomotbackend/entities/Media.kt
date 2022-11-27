@@ -9,8 +9,8 @@ import javax.persistence.*
 class Media(
         @Column(columnDefinition = "uuid")
         var name: UUID,
-        var duration: Float,
-        var phash: ByteArray,
+        var duration: Float?,
+        var phash: ByteArray?,
         @Enumerated(EnumType.ORDINAL)
         var mediaType: MediaType,
         var creationDate: Date = Date(),

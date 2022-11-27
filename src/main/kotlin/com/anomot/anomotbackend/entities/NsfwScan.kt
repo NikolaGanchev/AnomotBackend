@@ -14,6 +14,6 @@ class NsfwScan(
         @Enumerated(EnumType.ORDINAL)
         var type: NsfwScanType,
         @ManyToOne(fetch = FetchType.LAZY)
-        var media: Media,
+        var media: Media?,
         @Id @GeneratedValue(strategy = GenerationType.AUTO) var id: Long? = null
 ): Serializable

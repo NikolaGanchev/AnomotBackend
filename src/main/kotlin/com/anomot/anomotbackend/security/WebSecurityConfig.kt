@@ -7,12 +7,15 @@ import com.anomot.anomotbackend.services.UserDetailsServiceImpl
 import com.anomot.anomotbackend.utils.Constants
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.ObjectMapper
+import io.netty.resolver.DefaultAddressResolverGroup
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Primary
 import org.springframework.context.annotation.Scope
 import org.springframework.http.HttpMethod
+import org.springframework.http.client.reactive.ReactorClientHttpConnector
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.builders.WebSecurity
@@ -28,6 +31,8 @@ import org.springframework.security.web.csrf.CookieCsrfTokenRepository
 import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.CorsConfigurationSource
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource
+import org.springframework.web.reactive.function.client.WebClient
+import reactor.netty.http.client.HttpClient
 import javax.servlet.http.HttpServletResponse.*
 
 
@@ -59,7 +64,8 @@ class WebSecurityConfig {
                             "/account/mfa/email/send",
                             "/account/mfa/status",
                             "/account/password/reset/new",
-                            "/account/password/reset").permitAll()
+                            "/account/password/reset",
+                    "/upload").permitAll()
                     .anyRequest().authenticated()
                     .and()
                 .formLogin()
@@ -173,5 +179,14 @@ class WebSecurityConfig {
     @Bean
     fun userDetailsService(): UserDetailsServiceImpl {
         return UserDetailsServiceImpl()
+    }
+
+    @Bean
+    @Primary
+    fun webClient(): WebClient? {
+        val httpClient: HttpClient = HttpClient.create().resolver(DefaultAddressResolverGroup.INSTANCE)
+        return WebClient.builder()
+                .clientConnector(ReactorClientHttpConnector(httpClient))
+                .build()
     }
 }

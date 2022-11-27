@@ -34,6 +34,7 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-validation")
     implementation("org.springframework.boot:spring-boot-starter-web")
     implementation("org.springframework.boot:spring-boot-starter-websocket")
+    implementation("org.springframework.boot:spring-boot-starter-webflux")
     implementation("com.fasterxml.jackson.module:jackson-module-kotlin")
     implementation("org.jetbrains.kotlin:kotlin-reflect")
     implementation("org.jetbrains.kotlin:kotlin-stdlib-jdk8")
@@ -42,7 +43,7 @@ dependencies {
     implementation("org.passay:passay:1.6.2")
     implementation("org.bouncycastle:bcprov-jdk15on:1.70")
     implementation("com.github.bastiaanjansen:otp-java:1.3.2")
-    implementation("com.maxmind.geoip2:geoip2:3.0.1")
+    implementation("com.maxmind.geoip2:geoip2:3.0.2")
     implementation("com.blueconic:browscap-java:1.3.13")
     runtimeOnly("com.h2database:h2")
     runtimeOnly("org.postgresql:postgresql")
@@ -54,6 +55,8 @@ dependencies {
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine")
     testImplementation("com.ninja-squad:springmockk:3.1.1")
     testImplementation("org.springframework.security:spring-security-test")
+    testImplementation("com.squareup.okhttp3:okhttp:4.10.0")
+    testImplementation("com.squareup.okhttp3:mockwebserver:4.10.0")
 }
 
 tasks.withType<KotlinCompile> {

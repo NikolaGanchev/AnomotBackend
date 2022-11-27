@@ -11,5 +11,11 @@ class TestUtils {
             return mapper.writeValueAsBytes(obj)
         }
 
+        fun objectToJsonString(obj: Any): String {
+            val mapper = ObjectMapper()
+            mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL)
+            return mapper.writeValueAsString(obj)
+        }
+
     }
 }
