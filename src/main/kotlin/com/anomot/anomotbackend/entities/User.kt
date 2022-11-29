@@ -33,4 +33,7 @@ class User(
     )
     var mfaMethods: MutableList<MfaMethod>? = null,
     var creationDate: Date = Date(),
+    @OneToOne(cascade = [CascadeType.ALL])
+    @JoinColumn
+    var avatar: Media? = null,
     @Id @GeneratedValue(strategy = GenerationType.AUTO) var id: Long? = null) : Serializable

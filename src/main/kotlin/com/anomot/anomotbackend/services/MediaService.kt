@@ -10,6 +10,7 @@ import com.anomot.anomotbackend.entities.NsfwScan
 import com.anomot.anomotbackend.repositories.FileRepository
 import com.anomot.anomotbackend.repositories.MediaRepository
 import com.anomot.anomotbackend.repositories.NsfwScanRepository
+import com.anomot.anomotbackend.utils.Constants
 import com.anomot.anomotbackend.utils.MediaType
 import com.anomot.anomotbackend.utils.NsfwScanType
 import org.springframework.beans.factory.annotation.Autowired
@@ -24,6 +25,7 @@ import org.springframework.web.reactive.function.BodyInserters
 import org.springframework.web.reactive.function.client.WebClient
 import reactor.core.publisher.Mono
 import java.util.*
+import javax.transaction.Transactional
 
 
 @Service
@@ -47,6 +49,7 @@ class MediaService @Autowired constructor(
         return saveMedia(mediaSaveDto)
     }
 
+    @Transactional
     fun saveMedia(mediaSaveDto: MediaSaveDto): MediaUploadResult {
         val media = Media(
                 name = UUID.fromString(mediaSaveDto.id),
@@ -65,7 +68,7 @@ class MediaService @Autowired constructor(
             maxNsfwScan = createNsfwScan(mediaSaveDto.maxNsfw, NsfwScanType.MAX)
         }
 
-        val savedMedia = mediaRepository.save(media)
+        val savedMedia = mediaRepository.saveAndFlush(media)
 
         var savedAvgNsfwScan: NsfwScan? = null
         if (avgNsfwScan != null) {
@@ -82,12 +85,14 @@ class MediaService @Autowired constructor(
         return MediaUploadResult(savedMedia, savedAvgNsfwScan, savedMaxNsfwScan)
     }
 
+    @Transactional
     fun saveFile(fileUploadDto: FileUploadDto): File {
         val file = File(fileUploadDto.name, fileUploadDto.id, fileUploadDto.threat)
 
-        return fileRepository.save(file)
+        return fileRepository.saveAndFlush(file)
     }
 
+    @Transactional
     fun saveSquareImage(squareImageSaveDto: SquareImageSaveDto): SquareImageSaveResult {
         val media = Media(
                 name = UUID.fromString(squareImageSaveDto.id),
@@ -96,12 +101,12 @@ class MediaService @Autowired constructor(
                 mediaType = MediaType.IMAGE
         )
 
-        val savedMedia = mediaRepository.save(media)
+        val savedMedia = mediaRepository.saveAndFlush(media)
         val nsfwScan = createNsfwScan(squareImageSaveDto.avgNsfw, NsfwScanType.AVERAGE)
         nsfwScan.media = savedMedia
         val savedNsfwScan = nsfwScanRepository.save(nsfwScan)
 
-        return SquareImageSaveResult(savedMedia, nsfwScan)
+        return SquareImageSaveResult(savedMedia, savedNsfwScan)
     }
 
     private fun createNsfwScan(nsfwScanDto: NsfwScanDto, nsfwScanType: NsfwScanType): NsfwScan {
@@ -233,7 +238,7 @@ class MediaService @Autowired constructor(
         return !content.isEmpty
     }
 
-    fun uploadSquareImageToServer(file: MultipartFile, size: Int, left: Int, top: Int): SquareImageSaveDto? {
+    fun uploadSquareImageToServer(file: MultipartFile, size: Int, left: Int, top: Int, cropSize: Int): SquareImageSaveDto? {
         val builder = MultipartBodyBuilder()
 
         val header = String.format("form-data; name=%s; filename=%s", "file", file.originalFilename)
@@ -245,6 +250,7 @@ class MediaService @Autowired constructor(
                             .queryParam("size", size)
                             .queryParam("left", left)
                             .queryParam("top", top)
+                            .queryParam("cropSize", cropSize)
                             .build()
                 }
                 .body(BodyInserters.fromMultipartData(builder.build()))
@@ -260,5 +266,13 @@ class MediaService @Autowired constructor(
         }
 
         return content.get()
+    }
+
+    fun inNsfwRequirements(nsfwScan: NsfwScan): Boolean {
+        return nsfwScan.drawings <= Constants.MAX_DRAWING_TOLERANCE &&
+                nsfwScan.hentai <= Constants.MAX_HENTAI_TOLERANCE &&
+                nsfwScan.neutral <= Constants.MAX_NEUTRAL_TOLERANCE &&
+                nsfwScan.sexy <= Constants.MAX_SEXY_TOLERANCE &&
+                nsfwScan.porn <= Constants.MAX_PORN_TOLERANCE
     }
 }

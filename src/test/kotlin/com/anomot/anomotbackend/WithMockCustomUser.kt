@@ -12,4 +12,5 @@ annotation class WithMockCustomUser(val username: String = "default",
                                     val isEmailVerified: Boolean = false,
                                     val isMfaActive: Boolean = false,
                                     val mfaMethods: Array<String> = [],
+                                    val avatar: String = "00000000-0000-0000-0000-000000000000",
                                     val id: Long = 5)

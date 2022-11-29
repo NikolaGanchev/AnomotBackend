@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RequestBody
 import org.springframework.web.bind.annotation.RequestMapping
 import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
+import org.springframework.web.multipart.MultipartFile
 import java.time.Instant
 import javax.validation.Valid
 
@@ -239,6 +240,21 @@ class AuthController(private val userDetailsService: UserDetailsServiceImpl,
             val user = (authentication.principal) as CustomUserDetails
 
             ResponseEntity(loginInfoExtractorService.getByUser(user, pageRequest), HttpStatus.OK)
+        } else {
+            ResponseEntity(HttpStatus.UNAUTHORIZED)
+        }
+    }
+
+    @PostMapping("/avatar")
+    fun uploadProfilePicture(@RequestParam("file") file: MultipartFile,
+                             @RequestParam("left") left: Int,
+                             @RequestParam("top") top: Int,
+                             @RequestParam("cropSize") cropSize: Int,
+                             authentication: Authentication?): ResponseEntity<String> {
+        return if (authentication != null && authentication.principal != null) {
+            val result = userDetailsService.changeAvatar(file, left, top, cropSize)
+
+            ResponseEntity(if (result) HttpStatus.OK else HttpStatus.BAD_REQUEST)
         } else {
             ResponseEntity(HttpStatus.UNAUTHORIZED)
         }

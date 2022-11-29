@@ -1,5 +1,6 @@
 package com.anomot.anomotbackend.repositories
 
+import com.anomot.anomotbackend.entities.Media
 import com.anomot.anomotbackend.entities.User
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
@@ -25,6 +26,10 @@ interface UserRepository: JpaRepository<User, Long> {
     @Modifying
     @Query("update User user set user.username = ?1 where user.id = ?2")
     fun setUsername(newUsername: String, id: Long): Int
+
+    @Modifying
+    @Query("update User user set user.avatar = ?1 where user.id = ?2")
+    fun setAvatar(newAvatar: Media, id: Long): Int
 
     fun existsByEmail(email: String): Boolean
 }

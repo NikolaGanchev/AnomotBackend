@@ -1,6 +1,7 @@
 package com.anomot.anomotbackend.security
 
 import com.anomot.anomotbackend.dto.UserDto
+import com.anomot.anomotbackend.entities.Media
 import com.anomot.anomotbackend.entities.User
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.authority.SimpleGrantedAuthority
@@ -15,6 +16,7 @@ open class CustomUserDetails(user: User): UserDetails {
     private val _username = user.username
     private val _email = user.email
     private val _mfaMethods: List<String>? = user.mfaMethods?.map { it.method }?.toCollection(mutableListOf())
+    private val avatar: Media?  = user.avatar
     private val isEmailVerified = user.isEmailVerified
     private val isMfaActive = user.isMfaActive
 
@@ -51,7 +53,8 @@ open class CustomUserDetails(user: User): UserDetails {
                 username = _username,
                 roles = getAuthoritiesAsList(),
                 isMfaActive = isMfaActive,
-                if (isMfaActive) _mfaMethods else null)
+                if (isMfaActive) _mfaMethods else null,
+                avatarId = avatar?.name?.toString())
     }
 
     private fun getAuthoritiesAsList(): List<String> {

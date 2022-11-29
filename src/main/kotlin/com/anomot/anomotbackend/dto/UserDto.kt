@@ -4,4 +4,5 @@ data class UserDto(val email: String,
                    val username: String,
                    val roles: List<String>,
                    val isMfaActive: Boolean,
-                   val mfaMethods: List<String>? = null,)
+                   val mfaMethods: List<String>? = null,
+                   val avatarId: String? = null)

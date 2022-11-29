@@ -26,5 +26,10 @@ class Constants {
         const val REMEMBER_ME_PARAMETER = "rememberMe"
         const val REMEMBER_ME_COOKIE_NAME = "remember-me"
         const val PROFILE_PIC_SIZE = 225
+        const val MAX_DRAWING_TOLERANCE = 1
+        const val MAX_HENTAI_TOLERANCE = 0.95
+        const val MAX_NEUTRAL_TOLERANCE = 1
+        const val MAX_SEXY_TOLERANCE = 0.90
+        const val MAX_PORN_TOLERANCE = 0.87
     }
 }

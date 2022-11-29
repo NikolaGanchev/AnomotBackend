@@ -27,9 +27,10 @@ import java.util.UUID
 @SpringBootTest
 class MediaServiceTests @Autowired constructor(
         @InjectMockKs
-        private val mediaService: MediaService,
-        private val webClient: WebClient
+        private val mediaService: MediaService
 ) {
+    @Autowired
+    private lateinit var webClient: WebClient
     @MockkBean
     private lateinit var mediaRepository: MediaRepository
     @MockkBean
@@ -77,7 +78,7 @@ class MediaServiceTests @Autowired constructor(
                 .addHeader("Content-Type", "application/json; charset=utf-8")
                 .setBody(TestUtils.objectToJsonString(mockMediaResponseFull)))
 
-        every { mediaRepository.save(any()) } returnsArgument 0
+        every { mediaRepository.saveAndFlush(any()) } returnsArgument 0
         every { nsfwScanRepository.save(any()) } returnsArgument 0
 
         val result = mediaService.uploadMedia(MockMultipartFile("hello.png",

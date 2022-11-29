@@ -1,14 +1,17 @@
 package com.anomot.anomotbackend
 
 import com.anomot.anomotbackend.entities.Authority
+import com.anomot.anomotbackend.entities.Media
 import com.anomot.anomotbackend.entities.MfaMethod
 import com.anomot.anomotbackend.entities.User
 import com.anomot.anomotbackend.security.CustomUserDetails
+import com.anomot.anomotbackend.utils.MediaType
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.Authentication
 import org.springframework.security.core.context.SecurityContext
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.test.context.support.WithSecurityContextFactory
+import java.util.*
 
 class MockSecurityContextFactory: WithSecurityContextFactory<WithMockCustomUser> {
 
@@ -22,7 +25,9 @@ class MockSecurityContextFactory: WithSecurityContextFactory<WithMockCustomUser>
                         isEmailVerified = customUser.isEmailVerified,
                         isMfaActive = customUser.isMfaActive,
                         mfaMethods = customUser.mfaMethods.map { MfaMethod(it) }.toCollection(mutableListOf()),
-                        id = customUser.id)
+                        id = customUser.id,
+                        avatar = Media(UUID.fromString(customUser.avatar),
+                        null, null, MediaType.IMAGE))
 
         val principal = CustomUserDetails(user)
         val auth: Authentication = UsernamePasswordAuthenticationToken(principal, user.password, principal.authorities)

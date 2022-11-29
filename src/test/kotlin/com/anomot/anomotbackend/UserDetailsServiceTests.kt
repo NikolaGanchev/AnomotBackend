@@ -7,9 +7,7 @@ import com.anomot.anomotbackend.entities.EmailVerificationToken
 import com.anomot.anomotbackend.entities.MfaMethod
 import com.anomot.anomotbackend.entities.User
 import com.anomot.anomotbackend.exceptions.UserAlreadyExistsException
-import com.anomot.anomotbackend.repositories.AuthorityRepository
-import com.anomot.anomotbackend.repositories.MfaMethodRepository
-import com.anomot.anomotbackend.repositories.UserRepository
+import com.anomot.anomotbackend.repositories.*
 import com.anomot.anomotbackend.security.Authorities
 import com.anomot.anomotbackend.security.MfaMethodValue
 import com.anomot.anomotbackend.services.*
@@ -50,6 +48,12 @@ class UserDetailsServiceTests {
     private lateinit var mfaRecoveryService: MfaRecoveryService
     @MockkBean
     private lateinit var loginInfoExtractorService: LoginInfoExtractorService
+    @MockkBean
+    private lateinit var mediaService: MediaService
+    @MockkBean
+    private lateinit var mediaRepository: MediaRepository
+    @MockkBean
+    private lateinit var nsfwScanRepository: NsfwScanRepository
     @Autowired
     @InjectMockKs
     private lateinit var userDetailsService: UserDetailsServiceImpl
