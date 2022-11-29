@@ -4,8 +4,10 @@ import com.anomot.anomotbackend.dto.FileUploadDto
 import com.anomot.anomotbackend.dto.MediaSaveDto
 import com.anomot.anomotbackend.dto.NsfwScanDto
 import com.anomot.anomotbackend.dto.SquareImageSaveDto
+import com.anomot.anomotbackend.entities.File
 import com.anomot.anomotbackend.entities.Media
 import com.anomot.anomotbackend.entities.NsfwScan
+import com.anomot.anomotbackend.repositories.FileRepository
 import com.anomot.anomotbackend.repositories.MediaRepository
 import com.anomot.anomotbackend.repositories.NsfwScanRepository
 import com.anomot.anomotbackend.utils.MediaType
@@ -28,9 +30,11 @@ import java.util.*
 class MediaService @Autowired constructor(
         private val webClient: WebClient,
         private val mediaRepository: MediaRepository,
-        private val nsfwScanRepository: NsfwScanRepository
+        private val nsfwScanRepository: NsfwScanRepository,
+        private val fileRepository: FileRepository
 ) {
     data class MediaUploadResult(val media: Media?, val avgNsfwScan: NsfwScan?, val maxNsfwScan: NsfwScan?)
+    data class SquareImageSaveResult(val media: Media?, val avgNsfwScan: NsfwScan?)
 
     @Value("\${environment.media_server_url}")
     private val mediaServerUrl: String? = null
@@ -76,6 +80,28 @@ class MediaService @Autowired constructor(
         }
 
         return MediaUploadResult(savedMedia, savedAvgNsfwScan, savedMaxNsfwScan)
+    }
+
+    fun saveFile(fileUploadDto: FileUploadDto): File {
+        val file = File(fileUploadDto.name, fileUploadDto.id, fileUploadDto.threat)
+
+        return fileRepository.save(file)
+    }
+
+    fun saveSquareImage(squareImageSaveDto: SquareImageSaveDto): SquareImageSaveResult {
+        val media = Media(
+                name = UUID.fromString(squareImageSaveDto.id),
+                duration = null,
+                phash = null,
+                mediaType = MediaType.IMAGE
+        )
+
+        val savedMedia = mediaRepository.save(media)
+        val nsfwScan = createNsfwScan(squareImageSaveDto.avgNsfw, NsfwScanType.AVERAGE)
+        nsfwScan.media = savedMedia
+        val savedNsfwScan = nsfwScanRepository.save(nsfwScan)
+
+        return SquareImageSaveResult(savedMedia, nsfwScan)
     }
 
     private fun createNsfwScan(nsfwScanDto: NsfwScanDto, nsfwScanType: NsfwScanType): NsfwScan {

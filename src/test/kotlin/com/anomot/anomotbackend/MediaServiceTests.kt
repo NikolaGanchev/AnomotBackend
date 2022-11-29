@@ -1,6 +1,7 @@
 package com.anomot.anomotbackend
 
 import com.anomot.anomotbackend.dto.NsfwScanDto
+import com.anomot.anomotbackend.repositories.FileRepository
 import com.anomot.anomotbackend.repositories.MediaRepository
 import com.anomot.anomotbackend.repositories.NsfwScanRepository
 import com.anomot.anomotbackend.services.MediaService
@@ -33,6 +34,8 @@ class MediaServiceTests @Autowired constructor(
     private lateinit var mediaRepository: MediaRepository
     @MockkBean
     private lateinit var nsfwScanRepository: NsfwScanRepository
+    @MockkBean
+    private lateinit var fileRepository: FileRepository
     private lateinit var mockWebServer: MockWebServer
 
     private final val mockMediaResponseFull = object {
@@ -99,12 +102,5 @@ class MediaServiceTests @Autowired constructor(
         assertThat(avgNsfwScan.type).isEqualTo(NsfwScanType.AVERAGE)
         assertThat(maxNsfwScan!!.neutral).isEqualTo(0.95023596f)
         assertThat(maxNsfwScan.type).isEqualTo(NsfwScanType.MAX)
-    }
-
-    @Test
-    fun `When get media from server then return file`() {
-        mockWebServer.enqueue(MockResponse()
-                .addHeader("Content-Type", "application/json; charset=utf-8")
-                .setBody(TestUtils.objectToJsonString(mockMediaResponseFull)))
     }
 }
