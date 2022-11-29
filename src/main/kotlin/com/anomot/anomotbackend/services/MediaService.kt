@@ -1,7 +1,9 @@
 package com.anomot.anomotbackend.services
 
+import com.anomot.anomotbackend.dto.FileUploadDto
 import com.anomot.anomotbackend.dto.MediaSaveDto
 import com.anomot.anomotbackend.dto.NsfwScanDto
+import com.anomot.anomotbackend.dto.SquareImageSaveDto
 import com.anomot.anomotbackend.entities.Media
 import com.anomot.anomotbackend.entities.NsfwScan
 import com.anomot.anomotbackend.repositories.MediaRepository
@@ -11,6 +13,7 @@ import com.anomot.anomotbackend.utils.NsfwScanType
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.io.ByteArrayResource
+import org.springframework.core.io.buffer.DataBuffer
 import org.springframework.http.HttpStatus
 import org.springframework.http.client.MultipartBodyBuilder
 import org.springframework.stereotype.Service
@@ -108,6 +111,122 @@ class MediaService @Autowired constructor(
                     return@onStatus Mono.empty()
                 }
                 .bodyToMono(MediaSaveDto::class.java)
+                .blockOptional()
+
+        if (content.isEmpty) {
+            return null
+        }
+
+        return content.get()
+    }
+
+    fun getMediaFromServer(name: String): ByteArray? {
+        val content = webClient.get()
+                .uri("$mediaServerUrl/media/$name")
+                .retrieve()
+                .onStatus(HttpStatus::is4xxClientError) {
+                    return@onStatus Mono.empty()
+                }
+                .bodyToMono(DataBuffer::class.java)
+                .blockOptional()
+
+        if (content.isEmpty) {
+            return null
+        }
+
+        return content.get().asByteBuffer().array()
+    }
+
+    fun deleteMediaFromServer(name: String): Boolean {
+        val content = webClient.delete()
+                .uri("$mediaServerUrl/media/$name")
+                .exchangeToMono {
+                    if (it.statusCode() == HttpStatus.OK) {
+                        return@exchangeToMono Mono.just(true)
+                    } else {
+                        return@exchangeToMono Mono.just(false)
+                    }
+                }
+                .blockOptional()
+
+        return !content.isEmpty
+    }
+
+    fun uploadFileToServer(file: MultipartFile): FileUploadDto? {
+        val builder = MultipartBodyBuilder()
+
+        val header = String.format("form-data; name=%s; filename=%s", "file", file.originalFilename)
+        builder.part("file", ByteArrayResource(file.bytes)).header("Content-Disposition", header)
+
+        val content = webClient.post()
+                .uri("$mediaServerUrl/file")
+                .body(BodyInserters.fromMultipartData(builder.build()))
+                .retrieve()
+                .onStatus(HttpStatus::is4xxClientError) {
+                    return@onStatus Mono.empty()
+                }
+                .bodyToMono(FileUploadDto::class.java)
+                .blockOptional()
+
+        if (content.isEmpty) {
+            return null
+        }
+
+        return content.get()
+    }
+
+    fun getFileFromServer(name: String): ByteArray? {
+        val content = webClient.get()
+                .uri("$mediaServerUrl/file/$name")
+                .retrieve()
+                .onStatus(HttpStatus::is4xxClientError) {
+                    return@onStatus Mono.empty()
+                }
+                .bodyToMono(DataBuffer::class.java)
+                .blockOptional()
+
+        if (content.isEmpty) {
+            return null
+        }
+
+        return content.get().asByteBuffer().array()
+    }
+
+    fun deleteFileFromServer(name: String): Boolean {
+        val content = webClient.delete()
+                .uri("$mediaServerUrl/file/$name")
+                .exchangeToMono {
+                    if (it.statusCode() == HttpStatus.OK) {
+                        return@exchangeToMono Mono.just(true)
+                    } else {
+                        return@exchangeToMono Mono.just(false)
+                    }
+                }
+                .blockOptional()
+
+        return !content.isEmpty
+    }
+
+    fun uploadSquareImageToServer(file: MultipartFile, size: Int, left: Int, top: Int): SquareImageSaveDto? {
+        val builder = MultipartBodyBuilder()
+
+        val header = String.format("form-data; name=%s; filename=%s", "file", file.originalFilename)
+        builder.part("file", ByteArrayResource(file.bytes)).header("Content-Disposition", header)
+
+        val content = webClient.post()
+                .uri {
+                    it.path("$mediaServerUrl/image/square")
+                            .queryParam("size", size)
+                            .queryParam("left", left)
+                            .queryParam("top", top)
+                            .build()
+                }
+                .body(BodyInserters.fromMultipartData(builder.build()))
+                .retrieve()
+                .onStatus(HttpStatus::is4xxClientError) {
+                    return@onStatus Mono.empty()
+                }
+                .bodyToMono(SquareImageSaveDto::class.java)
                 .blockOptional()
 
         if (content.isEmpty) {

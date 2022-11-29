@@ -100,4 +100,11 @@ class MediaServiceTests @Autowired constructor(
         assertThat(maxNsfwScan!!.neutral).isEqualTo(0.95023596f)
         assertThat(maxNsfwScan.type).isEqualTo(NsfwScanType.MAX)
     }
+
+    @Test
+    fun `When get media from server then return file`() {
+        mockWebServer.enqueue(MockResponse()
+                .addHeader("Content-Type", "application/json; charset=utf-8")
+                .setBody(TestUtils.objectToJsonString(mockMediaResponseFull)))
+    }
 }
