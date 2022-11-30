@@ -19,7 +19,6 @@ import org.springframework.core.io.ClassPathResource
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import java.io.FileNotFoundException
-import java.io.InputStream
 import java.net.InetAddress
 import java.util.*
 
@@ -29,22 +28,22 @@ class LoginInfoExtractorService @Autowired constructor(
         private val successfulLoginRepository: SuccessfulLoginRepository,
         private val userRepository: UserRepository
 ) {
-    private val dbReader: DatabaseReader
+    private var dbReader: DatabaseReader? = null
     private val userAgentParser: UserAgentParser
     private val logger: Logger = LoggerFactory.getLogger(AnomotBackendApplication::class.java)
     @Value("\${environment.is-local}")
     private val isLocal: String? = null
 
     init {
-        var db: InputStream? = InputStream.nullInputStream()
-        try {
-            db = ClassPathResource("/GeoLite2/GeoLite2-City.mmdb").inputStream
+        dbReader = try {
+            val db = ClassPathResource("/GeoLite2/GeoLite2-City.mmdb").inputStream
+            DatabaseReader.Builder(db).build()
         } catch (exception: FileNotFoundException) {
             if (isLocal != null && isLocal.toBoolean()) {
                 throw exception
             }
+            null
         }
-        dbReader = DatabaseReader.Builder(db).build()
         userAgentParser = UserAgentService().loadParser()
     }
 
@@ -53,7 +52,7 @@ class LoginInfoExtractorService @Autowired constructor(
         var response: CityResponse? = null
 
         try {
-            response = dbReader.city(address)
+            response = dbReader?.city(address)
         } catch(exception: AddressNotFoundException) {
             logger.error("Ip not found $ip")
         }
