@@ -29,7 +29,7 @@ class LoginInfoExtractorService @Autowired constructor(
         private val successfulLoginRepository: SuccessfulLoginRepository,
         private val userRepository: UserRepository
 ) {
-    private val dbReader: DatabaseReader
+    private var dbReader: DatabaseReader? = null
     private val userAgentParser: UserAgentParser
     private val logger: Logger = LoggerFactory.getLogger(AnomotBackendApplication::class.java)
     @Value("\${environment.is-local}")
@@ -39,12 +39,13 @@ class LoginInfoExtractorService @Autowired constructor(
         var db: InputStream? = InputStream.nullInputStream()
         try {
             db = ClassPathResource("/GeoLite2/GeoLite2-City.mmdb").inputStream
+            dbReader = null
         } catch (exception: FileNotFoundException) {
             if (isLocal != null && isLocal.toBoolean()) {
                 throw exception
             }
+            dbReader = DatabaseReader.Builder(db).build()
         }
-        dbReader = DatabaseReader.Builder(db).build()
         userAgentParser = UserAgentService().loadParser()
     }
 
@@ -53,7 +54,7 @@ class LoginInfoExtractorService @Autowired constructor(
         var response: CityResponse? = null
 
         try {
-            response = dbReader.city(address)
+            response = dbReader?.city(address)
         } catch(exception: AddressNotFoundException) {
             logger.error("Ip not found $ip")
         }
