@@ -14,10 +14,12 @@ import com.maxmind.geoip2.model.CityResponse
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.io.ClassPathResource
-import org.springframework.core.io.Resource
 import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
+import java.io.FileNotFoundException
+import java.io.InputStream
 import java.net.InetAddress
 import java.util.*
 
@@ -30,11 +32,19 @@ class LoginInfoExtractorService @Autowired constructor(
     private val dbReader: DatabaseReader
     private val userAgentParser: UserAgentParser
     private val logger: Logger = LoggerFactory.getLogger(AnomotBackendApplication::class.java)
-
+    @Value("\${environment.is-local}")
+    private val isLocal: String? = null
 
     init {
-        val db: Resource = ClassPathResource("/GeoLite2/GeoLite2-City.mmdb")
-        dbReader = DatabaseReader.Builder(db.inputStream).build()
+        var db: InputStream? = InputStream.nullInputStream()
+        try {
+            db = ClassPathResource("/GeoLite2/GeoLite2-City.mmdb").inputStream
+        } catch (exception: FileNotFoundException) {
+            if (isLocal != null && isLocal.toBoolean()) {
+                throw exception
+            }
+        }
+        dbReader = DatabaseReader.Builder(db).build()
         userAgentParser = UserAgentService().loadParser()
     }
 

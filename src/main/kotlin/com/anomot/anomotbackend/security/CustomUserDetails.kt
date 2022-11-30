@@ -17,7 +17,7 @@ open class CustomUserDetails(user: User): UserDetails {
     private val _email = user.email
     private val _mfaMethods: List<String>? = user.mfaMethods?.map { it.method }?.toCollection(mutableListOf())
     private val avatar: Media?  = user.avatar
-    private val isEmailVerified = user.isEmailVerified
+    val isEmailVerified = user.isEmailVerified
     private val isMfaActive = user.isMfaActive
 
     override fun getAuthorities(): MutableCollection<out GrantedAuthority> {

@@ -143,8 +143,12 @@ class UserDetailsServiceTests {
                 UsernamePasswordAuthenticationToken.authenticated(null, null, null)
         every { authenticationService.reAuthenticate(any()) } returns Unit
         every { userRepository.existsByEmail(any()) } returns false
+        every { userRepository.flush() } returns Unit
+        every { userRepository.setIsEmailVerifiedByEmail(any(), any()) } returns 1
 
-        userDetailsService.changeEmail("password", "example@test.com")
+        val newEmail = "example@test.com"
+
+        userDetailsService.changeEmail("password", newEmail)
     }
 
     @Test

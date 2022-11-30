@@ -215,8 +215,12 @@ class AuthController(private val userDetailsService: UserDetailsServiceImpl,
                              @RequestParam("top") top: Int,
                              @RequestParam("cropSize") cropSize: Int,
                              authentication: Authentication): ResponseEntity<String> {
-        val result = userDetailsService.changeAvatar(file, left, top, cropSize)
+        return try {
+            val result = userDetailsService.changeAvatar(file, left, top, cropSize)
 
-        return ResponseEntity(if (result) HttpStatus.OK else HttpStatus.BAD_REQUEST)
+            ResponseEntity(if (result) HttpStatus.OK else HttpStatus.BAD_REQUEST)
+        } catch (exception: AccessDeniedException) {
+            ResponseEntity(exception.message, HttpStatus.FORBIDDEN)
+        }
     }
 }
