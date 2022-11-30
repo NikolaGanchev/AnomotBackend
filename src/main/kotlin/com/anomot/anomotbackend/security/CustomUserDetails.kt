@@ -45,12 +45,13 @@ open class CustomUserDetails(user: User): UserDetails {
     }
 
     override fun isEnabled(): Boolean {
-        return isEmailVerified
+        return true
     }
 
     fun getAsDto(): UserDto {
         return UserDto(email = _email,
                 username = _username,
+                isEmailVerified = isEmailVerified,
                 roles = getAuthoritiesAsList(),
                 isMfaActive = isMfaActive,
                 if (isMfaActive) _mfaMethods else null,

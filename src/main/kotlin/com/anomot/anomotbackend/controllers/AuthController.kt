@@ -12,7 +12,6 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.core.Authentication
-import org.springframework.security.core.AuthenticationException
 import org.springframework.web.bind.annotation.DeleteMapping
 import org.springframework.web.bind.annotation.GetMapping
 import org.springframework.web.bind.annotation.PostMapping
@@ -51,14 +50,19 @@ class AuthController(private val userDetailsService: UserDetailsServiceImpl,
         return ResponseEntity(if (isVerified) HttpStatus.CREATED else HttpStatus.UNAUTHORIZED)
     }
 
+    @PostMapping("/email/verification/new")
+    fun requestEmailVerification(authentication: Authentication): ResponseEntity<String> {
+        userDetailsService.sendVerificationEmail(
+                userDetailsService.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails))
+        return ResponseEntity(HttpStatus.CREATED)
+    }
+
     @PutMapping("/password")
     fun changePassword(@RequestBody @Valid passwordChangeDto: PasswordChangeDto): ResponseEntity<String> {
         return try {
             userDetailsService.changePassword(oldPassword = passwordChangeDto.oldPassword,
                     newPassword = passwordChangeDto.newPassword)
             ResponseEntity(HttpStatus.OK)
-        } catch (exception: AccessDeniedException) {
-            ResponseEntity(HttpStatus.UNAUTHORIZED)
         } catch (exception: BadCredentialsException) {
             ResponseEntity(HttpStatus.UNAUTHORIZED)
         }
@@ -70,8 +74,6 @@ class AuthController(private val userDetailsService: UserDetailsServiceImpl,
             userDetailsService.changeEmail(password = emailChangeDto.password,
                     newEmail = emailChangeDto.newEmail)
             ResponseEntity(HttpStatus.OK)
-        } catch (exception: AccessDeniedException) {
-            ResponseEntity(HttpStatus.UNAUTHORIZED)
         } catch (exception: BadCredentialsException) {
             ResponseEntity(HttpStatus.UNAUTHORIZED)
         } catch (exception: UserAlreadyExistsException) {
@@ -81,42 +83,30 @@ class AuthController(private val userDetailsService: UserDetailsServiceImpl,
 
     @PutMapping("/username")
     fun changeUsername(@RequestBody @Valid usernameChangeDto: UsernameChangeDto): ResponseEntity<String> {
-        return try {
-            userDetailsService.changeUsername(newUsername = usernameChangeDto.username)
-            ResponseEntity(HttpStatus.OK)
-        } catch (exception: AccessDeniedException) {
-            ResponseEntity(HttpStatus.UNAUTHORIZED)
-        }
+        userDetailsService.changeUsername(newUsername = usernameChangeDto.username)
+        return ResponseEntity(HttpStatus.OK)
     }
 
     @PutMapping("/mfa/totp")
     fun updateTotpStatus(@RequestBody @Valid mfaEnabledDto: MfaEnabledDto): ResponseEntity<TotpDto> {
-        return try {
-            if (mfaEnabledDto.isMfaEnabled) {
-                val totpDto = userDetailsService.activateTotpMfa()
-                ResponseEntity(totpDto, if (totpDto == null) HttpStatus.CONFLICT else HttpStatus.OK)
-            } else {
-                val success = userDetailsService.deactivateTotpMfa()
-                ResponseEntity(if (success) HttpStatus.OK else HttpStatus.CONFLICT)
-            }
-        } catch (exception: AuthenticationException) {
-            ResponseEntity(HttpStatus.UNAUTHORIZED)
+        return if (mfaEnabledDto.isMfaEnabled) {
+            val totpDto = userDetailsService.activateTotpMfa()
+            ResponseEntity(totpDto, if (totpDto == null) HttpStatus.CONFLICT else HttpStatus.OK)
+        } else {
+            val success = userDetailsService.deactivateTotpMfa()
+            ResponseEntity(if (success) HttpStatus.OK else HttpStatus.CONFLICT)
         }
     }
 
     @PutMapping("/mfa/email")
     fun updateEmailMfaStatus(@RequestBody @Valid mfaEnabledDto: MfaEnabledDto): ResponseEntity<String> {
-        return try {
-            val success = if (mfaEnabledDto.isMfaEnabled) {
-                userDetailsService.activateEmailMfa()
-            } else {
-                userDetailsService.deactivateEmailMfa()
-            }
-
-            ResponseEntity(if (success) HttpStatus.OK else HttpStatus.CONFLICT)
-        } catch (exception: AuthenticationException) {
-            ResponseEntity(HttpStatus.UNAUTHORIZED)
+        val success = if (mfaEnabledDto.isMfaEnabled) {
+            userDetailsService.activateEmailMfa()
+        } else {
+            userDetailsService.deactivateEmailMfa()
         }
+
+        return ResponseEntity(if (success) HttpStatus.OK else HttpStatus.CONFLICT)
     }
 
     @DeleteMapping()
@@ -124,8 +114,6 @@ class AuthController(private val userDetailsService: UserDetailsServiceImpl,
         return try {
             userDetailsService.deleteUser(deleteDto.password)
             ResponseEntity(HttpStatus.OK)
-        } catch (exception: AccessDeniedException) {
-            ResponseEntity(HttpStatus.UNAUTHORIZED)
         } catch (exception: BadCredentialsException) {
             ResponseEntity(HttpStatus.UNAUTHORIZED)
         }
@@ -133,83 +121,63 @@ class AuthController(private val userDetailsService: UserDetailsServiceImpl,
 
     @PostMapping("/mfa/status")
     fun getMfaStatus(@RequestBody @Valid loginDto: LoginDto): ResponseEntity<MfaStatusDto> {
-        return try {
-            val authentication = authenticationService.verifyAuthenticationWithoutMfa(loginDto.email!!, loginDto.password!!)
+        val authentication = authenticationService.verifyAuthenticationWithoutMfa(loginDto.email!!, loginDto.password!!)
 
-            if (authentication == null || authentication.principal == null) {
-                return ResponseEntity(HttpStatus.UNAUTHORIZED)
-            }
-
-            val user = (authentication.principal) as CustomUserDetails
-
-            ResponseEntity(MfaStatusDto(user.isMfaEnabled(), user.getMfaMethodsAsList()), HttpStatus.OK)
-        } catch (exception: AuthenticationException) {
-            ResponseEntity(HttpStatus.UNAUTHORIZED)
+        if (authentication == null || authentication.principal == null) {
+            return ResponseEntity(HttpStatus.UNAUTHORIZED)
         }
+
+        val user = (authentication.principal) as CustomUserDetails
+
+        return ResponseEntity(MfaStatusDto(user.isMfaEnabled(), user.getMfaMethodsAsList()), HttpStatus.OK)
     }
 
     @PostMapping("/mfa/email/send")
     fun sendMfaEmail(@RequestBody @Valid loginDto: LoginDto): ResponseEntity<String> {
-        return try {
-            val authentication = authenticationService.verifyAuthenticationWithoutMfa(loginDto.email!!, loginDto.password!!)
+        val authentication = authenticationService.verifyAuthenticationWithoutMfa(loginDto.email!!, loginDto.password!!)
 
-            if (authentication == null || authentication.principal == null) {
-                return ResponseEntity<String>(HttpStatus.UNAUTHORIZED)
-            }
+        if (authentication == null || authentication.principal == null) {
+            return ResponseEntity<String>(HttpStatus.UNAUTHORIZED)
+        }
 
-            val user = (authentication.principal) as CustomUserDetails
+        val user = (authentication.principal) as CustomUserDetails
 
-            if (user.isMfaEnabled() && user.hasMfaMethod(MfaMethodValue.EMAIL)) {
-                mfaEmailTokenService.generateAndSendMfaEmail(user.id.toString())
-                ResponseEntity(HttpStatus.OK)
-            } else {
-                ResponseEntity(HttpStatus.CONFLICT)
-            }
-        } catch (exception: AuthenticationException) {
-            ResponseEntity(HttpStatus.UNAUTHORIZED)
+        return if (user.isMfaEnabled() && user.hasMfaMethod(MfaMethodValue.EMAIL)) {
+            mfaEmailTokenService.generateAndSendMfaEmail(user.id.toString())
+            ResponseEntity(HttpStatus.OK)
+        } else {
+            ResponseEntity(HttpStatus.CONFLICT)
         }
     }
 
     @PutMapping("/mfa/recovery/codes")
-    fun generateCodes(authentication: Authentication?): ResponseEntity<MfaRecoveryCodesDto> {
-        return if (authentication != null && authentication.principal != null) {
-            val user = (authentication.principal) as CustomUserDetails
+    fun generateCodes(authentication: Authentication): ResponseEntity<MfaRecoveryCodesDto> {
+        val user = (authentication.principal) as CustomUserDetails
 
-            if (!user.isMfaEnabled()) {
-                return ResponseEntity(HttpStatus.CONFLICT)
-            }
-
-            val codes = mfaRecoveryService.updateRecoveryCodes(user.id!!)
-
-            ResponseEntity(MfaRecoveryCodesDto(codes), HttpStatus.CREATED)
-        } else {
-            ResponseEntity(HttpStatus.UNAUTHORIZED)
+        if (!user.isMfaEnabled()) {
+            return ResponseEntity(HttpStatus.CONFLICT)
         }
+
+        val codes = mfaRecoveryService.updateRecoveryCodes(user.id!!)
+
+        return ResponseEntity(MfaRecoveryCodesDto(codes), HttpStatus.CREATED)
     }
 
     // Can also be accessed even if mfa is disabled in case recovery codes fail to be deleted on disabling mfa
     @DeleteMapping("/mfa/recovery/codes")
-    fun deleteCodes(authentication: Authentication?): ResponseEntity<String> {
-        return if (authentication != null && authentication.principal != null) {
-            val user = (authentication.principal) as CustomUserDetails
+    fun deleteCodes(authentication: Authentication): ResponseEntity<String> {
+        val user = (authentication.principal) as CustomUserDetails
 
-            mfaRecoveryService.deleteRecoveryCodes(user.id!!)
+        mfaRecoveryService.deleteRecoveryCodes(user.id!!)
 
-            ResponseEntity(HttpStatus.OK)
-        } else {
-            ResponseEntity(HttpStatus.UNAUTHORIZED)
-        }
+        return ResponseEntity(HttpStatus.OK)
     }
 
     @GetMapping("/user")
-    fun getUser(authentication: Authentication?): ResponseEntity<UserDto> {
-        return if (authentication != null && authentication.principal != null) {
-            val userDto = ((authentication.principal) as CustomUserDetails).getAsDto()
+    fun getUser(authentication: Authentication): ResponseEntity<UserDto> {
+        val userDto = ((authentication.principal) as CustomUserDetails).getAsDto()
 
-            ResponseEntity(userDto, HttpStatus.OK)
-        } else {
-            ResponseEntity(HttpStatus.UNAUTHORIZED)
-        }
+        return ResponseEntity(userDto, HttpStatus.OK)
     }
 
     @PostMapping("/password/reset/new")
@@ -234,15 +202,11 @@ class AuthController(private val userDetailsService: UserDetailsServiceImpl,
     }
 
     @GetMapping("/security/logins")
-    fun getLogins(@RequestParam("page") page: Int, authentication: Authentication?): ResponseEntity<List<LoginInfoDto>> {
-        return if (authentication != null && authentication.principal != null) {
-            val pageRequest = PageRequest.of(page, Constants.LOGINS_PER_PAGE, Sort.by("date").descending())
-            val user = (authentication.principal) as CustomUserDetails
+    fun getLogins(@RequestParam("page") page: Int, authentication: Authentication): ResponseEntity<List<LoginInfoDto>> {
+        val pageRequest = PageRequest.of(page, Constants.LOGINS_PER_PAGE, Sort.by("date").descending())
+        val user = (authentication.principal) as CustomUserDetails
 
-            ResponseEntity(loginInfoExtractorService.getByUser(user, pageRequest), HttpStatus.OK)
-        } else {
-            ResponseEntity(HttpStatus.UNAUTHORIZED)
-        }
+        return ResponseEntity(loginInfoExtractorService.getByUser(user, pageRequest), HttpStatus.OK)
     }
 
     @PostMapping("/avatar")
@@ -250,13 +214,9 @@ class AuthController(private val userDetailsService: UserDetailsServiceImpl,
                              @RequestParam("left") left: Int,
                              @RequestParam("top") top: Int,
                              @RequestParam("cropSize") cropSize: Int,
-                             authentication: Authentication?): ResponseEntity<String> {
-        return if (authentication != null && authentication.principal != null) {
-            val result = userDetailsService.changeAvatar(file, left, top, cropSize)
+                             authentication: Authentication): ResponseEntity<String> {
+        val result = userDetailsService.changeAvatar(file, left, top, cropSize)
 
-            ResponseEntity(if (result) HttpStatus.OK else HttpStatus.BAD_REQUEST)
-        } else {
-            ResponseEntity(HttpStatus.UNAUTHORIZED)
-        }
+        return ResponseEntity(if (result) HttpStatus.OK else HttpStatus.BAD_REQUEST)
     }
 }

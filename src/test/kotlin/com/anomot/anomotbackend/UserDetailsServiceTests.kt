@@ -79,7 +79,7 @@ class UserDetailsServiceTests {
     fun `When create user then return User`() {
         val authority = Authority(Authorities.USER.roleName, users = null, 5)
         val user = User("example@test.com", "password12$", "Georgi", mutableListOf(authority))
-        val expectedResult = UserDto("example@test.com", "Georgi", mutableListOf(authority.authority), false)
+        val expectedResult = UserDto("example@test.com", "Georgi", false, mutableListOf(authority.authority), false)
 
         every { passwordEncoder.encode(user.password) } returns user.password
         every { userRepository.save(any()) } returns user

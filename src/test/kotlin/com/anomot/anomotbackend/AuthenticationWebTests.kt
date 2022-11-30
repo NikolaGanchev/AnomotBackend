@@ -103,7 +103,7 @@ class AuthenticationWebTests @Autowired constructor(
     fun `When register then return User`() {
         val authority = Authority(Authorities.USER.roleName)
         val user = UserRegisterDto("example@test.com", "password12$", "Georgi")
-        val expectedResult = UserDto("example@test.com", "Georgi", mutableListOf(authority.authority), false)
+        val expectedResult = UserDto("example@test.com", "Georgi", false, mutableListOf(authority.authority), false)
         val emailVerificationToken = EmailVerificationToken(
                 "code",
                 User("example@test.com", "password12$", "Georgi", mutableListOf(authority)),
@@ -178,28 +178,6 @@ class AuthenticationWebTests @Autowired constructor(
                 .andExpect(status().isUnauthorized)
                 .andExpect(content().contentType(MediaType.TEXT_PLAIN))
                 .andExpect(content().string("Bad credentials"))
-    }
-
-    @Test
-    fun `When user login without verified email then return 403`() {
-        val authority = Authority(Authorities.USER.roleName)
-        val user = User("example@test.com", "password12$", "Georgi", mutableListOf(authority), false)
-
-        val dbUser = User("example@test.com",
-                passwordEncoder.encode("password12$"),
-                "Georgi",
-                mutableListOf(authority), false)
-
-        val expectedUserDetails = CustomUserDetails(dbUser)
-
-        every { userDetailsServiceImpl.loadUserByUsername(any()) } returns expectedUserDetails
-
-        mockMvc.perform(formLogin("/account/login").user(Constants.USERNAME_PARAMETER, user.email)
-                .password(Constants.PASSWORD_PARAMETER, user.password)
-                .acceptMediaType(MediaType.APPLICATION_JSON))
-                .andExpect(status().isUnauthorized)
-                .andExpect(content().contentType(MediaType.TEXT_PLAIN))
-                .andExpect(content().string("User is disabled"))
     }
 
     @Test

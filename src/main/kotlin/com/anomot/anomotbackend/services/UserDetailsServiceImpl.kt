@@ -89,7 +89,7 @@ class UserDetailsServiceImpl: UserDetailsService {
 
         sendVerificationEmail(savedUser)
 
-        return UserDto(email = savedUser.email, username = savedUser.username, listOf(Authorities.USER.roleName), false)
+        return UserDto(email = savedUser.email, username = savedUser.username, false, listOf(Authorities.USER.roleName), false)
     }
 
     @Transactional
@@ -314,6 +314,10 @@ class UserDetailsServiceImpl: UserDetailsService {
         val token = emailVerificationService.createEmailVerificationToken(code, user, expiryDate)
         val savedToken = emailVerificationService.saveEmailVerificationToken(token)
         emailVerificationService.sendVerificationEmail(user, savedToken)
+    }
+
+    fun getUserReferenceFromDetails(details: CustomUserDetails): User {
+        return userRepository.getReferenceById(details.id!!)
     }
 
     private fun userExists(userRegisterDto: UserRegisterDto): Boolean {
