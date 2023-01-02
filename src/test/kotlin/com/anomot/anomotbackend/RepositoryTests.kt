@@ -30,7 +30,8 @@ class RepositoryTests @Autowired constructor(
         val mfaRecoveryCodeRepository: MfaRecoveryCodeRepository,
         val passwordResetTokenRepository: PasswordResetTokenRepository,
         val rememberMeTokenRepository: RememberMeTokenRepository,
-        val successfulLoginRepository: SuccessfulLoginRepository
+        val successfulLoginRepository: SuccessfulLoginRepository,
+        val followRepository: FollowRepository
 ) {
 
     @Test
@@ -389,5 +390,56 @@ class RepositoryTests @Autowired constructor(
 
         assertThat(result[0].city).isEqualTo("l1")
         assertThat(result[1].city).isEqualTo("l")
+    }
+
+    @Test
+    fun `When get followers then return followers`() {
+        val authority = Authority(Authorities.USER.roleName)
+        var user = User("example@example.com", "password", "Georgi", mutableListOf(authority))
+        var user1 = User("example1@example.com", "password", "Georgi", mutableListOf(authority))
+        var user2 = User("example2@example.com", "password", "Georgi", mutableListOf(authority))
+
+        user = entityManager.persist(user)
+        user1 = entityManager.persist(user1)
+        user2 = entityManager.persist(user2)
+        entityManager.flush()
+
+        val follow1 = Follow(user, user1)
+        val follow2 = Follow(user, user2)
+
+        entityManager.persist(follow1)
+        entityManager.persist(follow2)
+
+        val followerNumber = followRepository.countFollowsByFollowed(user)
+        val followers = followRepository.getFollowsByFollowed(user)
+
+        assertThat(followerNumber).isEqualTo(2)
+        assertThat(followers.contains(Follow(user, user1)))
+        assertThat(followers.contains(Follow(user, user2)))
+    }
+
+    @Test
+    fun `When get follows then return follows`() {
+        val authority = Authority(Authorities.USER.roleName)
+        var user = User("example@example.com", "password", "Georgi", mutableListOf(authority))
+        var user1 = User("example1@example.com", "password", "Georgi", mutableListOf(authority))
+        var user2 = User("example2@example.com", "password", "Georgi", mutableListOf(authority))
+
+        user = entityManager.persist(user)
+        user1 = entityManager.persist(user1)
+        user2 = entityManager.persist(user2)
+        entityManager.flush()
+
+        val follow1 = Follow(user, user1)
+        val follow2 = Follow(user, user2)
+
+        entityManager.persist(follow1)
+        entityManager.persist(follow2)
+
+        val followedNumber = followRepository.countFollowsByFollower(user1)
+        val followed = followRepository.getFollowsByFollower(user1)
+
+        assertThat(followedNumber).isEqualTo(1)
+        assertThat(followed.contains(Follow(user, user1)))
     }
 }
