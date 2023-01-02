@@ -118,7 +118,7 @@ class WebSecurityConfig {
     private val loginSuccessHandler = AuthenticationSuccessHandler {
         request, response, authentication ->
         // Get user
-        val userDto = (authentication.principal as CustomUserDetails).getAsDto()
+        val userDto = (authentication.principal as CustomUserDetails).getAsSelfDto()
 
         // Store login info
         val successfulLogin = loginInfoExtractorService.getInfo(request.remoteAddr, request.getHeader("User-Agent"))

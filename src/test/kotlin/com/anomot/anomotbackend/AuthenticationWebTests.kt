@@ -103,7 +103,7 @@ class AuthenticationWebTests @Autowired constructor(
     fun `When register then return User`() {
         val authority = Authority(Authorities.USER.roleName)
         val user = UserRegisterDto("example@test.com", "password12$", "Georgi")
-        val expectedResult = UserDto("example@test.com", "Georgi", false, mutableListOf(authority.authority), false)
+        val expectedResult = SelfUserDto("example@test.com", "Georgi", false, mutableListOf(authority.authority), false)
         val emailVerificationToken = EmailVerificationToken(
                 "code",
                 User("example@test.com", "password12$", "Georgi", mutableListOf(authority)),

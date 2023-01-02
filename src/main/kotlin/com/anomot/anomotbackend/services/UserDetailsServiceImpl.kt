@@ -1,7 +1,7 @@
 package com.anomot.anomotbackend.services
 
 import com.anomot.anomotbackend.dto.TotpDto
-import com.anomot.anomotbackend.dto.UserDto
+import com.anomot.anomotbackend.dto.SelfUserDto
 import com.anomot.anomotbackend.dto.UserRegisterDto
 import com.anomot.anomotbackend.entities.Authority
 import com.anomot.anomotbackend.entities.MfaMethod
@@ -69,7 +69,7 @@ class UserDetailsServiceImpl: UserDetailsService {
         return CustomUserDetails(user)
     }
 
-    fun createUser(userRegisterDto: UserRegisterDto): UserDto {
+    fun createUser(userRegisterDto: UserRegisterDto): SelfUserDto {
         val emailExists = userExists(userRegisterDto)
 
         if (emailExists) {
@@ -89,7 +89,7 @@ class UserDetailsServiceImpl: UserDetailsService {
 
         sendVerificationEmail(savedUser)
 
-        return UserDto(email = savedUser.email, username = savedUser.username, false, listOf(Authorities.USER.roleName), false)
+        return SelfUserDto(email = savedUser.email, username = savedUser.username, false, listOf(Authorities.USER.roleName), false)
     }
 
     @Transactional
@@ -324,6 +324,10 @@ class UserDetailsServiceImpl: UserDetailsService {
 
     fun getUserReferenceFromDetails(details: CustomUserDetails): User {
         return userRepository.getReferenceById(details.id!!)
+    }
+
+    fun getUserReferenceFromId(id: Long): User {
+        return userRepository.getReferenceById(id)
     }
 
     private fun userExists(userRegisterDto: UserRegisterDto): Boolean {

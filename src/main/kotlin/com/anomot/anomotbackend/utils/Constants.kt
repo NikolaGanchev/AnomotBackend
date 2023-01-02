@@ -31,5 +31,6 @@ class Constants {
         const val MAX_NEUTRAL_TOLERANCE = 1
         const val MAX_SEXY_TOLERANCE = 0.90
         const val MAX_PORN_TOLERANCE = 0.87
+        const val FOLLOWS_PER_PAGE = 30
     }
 }

@@ -1,6 +1,6 @@
 package com.anomot.anomotbackend.security
 
-import com.anomot.anomotbackend.dto.UserDto
+import com.anomot.anomotbackend.dto.SelfUserDto
 import com.anomot.anomotbackend.entities.Media
 import com.anomot.anomotbackend.entities.User
 import org.springframework.security.core.GrantedAuthority
@@ -8,7 +8,6 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.userdetails.UserDetails
 
 open class CustomUserDetails(user: User): UserDetails {
-
     // The naming of the variables needs to not conflict with the abstract methods
     val id: Long? = user.id
     private val _authorities: MutableCollection<out GrantedAuthority> = user.authorities.map { it -> SimpleGrantedAuthority(it.authority) }.toCollection(mutableListOf())
@@ -48,8 +47,8 @@ open class CustomUserDetails(user: User): UserDetails {
         return true
     }
 
-    fun getAsDto(): UserDto {
-        return UserDto(email = _email,
+    fun getAsSelfDto(): SelfUserDto {
+        return SelfUserDto(email = _email,
                 username = _username,
                 isEmailVerified = isEmailVerified,
                 roles = getAuthoritiesAsList(),

@@ -35,7 +35,7 @@ class AuthController(private val userDetailsService: UserDetailsServiceImpl,
                     private val loginInfoExtractorService: LoginInfoExtractorService) {
 
     @PostMapping("/new")
-    fun registerUser(@RequestBody @Valid userRegisterDTO: UserRegisterDto): ResponseEntity<UserDto> {
+    fun registerUser(@RequestBody @Valid userRegisterDTO: UserRegisterDto): ResponseEntity<SelfUserDto> {
         return try {
             val user = userDetailsService.createUser(userRegisterDTO)
             ResponseEntity(user, HttpStatus.CREATED)
@@ -174,8 +174,8 @@ class AuthController(private val userDetailsService: UserDetailsServiceImpl,
     }
 
     @GetMapping("/user")
-    fun getUser(authentication: Authentication): ResponseEntity<UserDto> {
-        val userDto = ((authentication.principal) as CustomUserDetails).getAsDto()
+    fun getUser(authentication: Authentication): ResponseEntity<SelfUserDto> {
+        val userDto = ((authentication.principal) as CustomUserDetails).getAsSelfDto()
 
         return ResponseEntity(userDto, HttpStatus.OK)
     }
