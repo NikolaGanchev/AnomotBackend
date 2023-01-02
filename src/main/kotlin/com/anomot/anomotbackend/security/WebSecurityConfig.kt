@@ -64,8 +64,7 @@ class WebSecurityConfig {
                             "/account/mfa/email/send",
                             "/account/mfa/status",
                             "/account/password/reset/new",
-                            "/account/password/reset",
-                    "/upload").permitAll()
+                            "/account/password/reset").permitAll()
                     .anyRequest().authenticated()
                     .and()
                 .formLogin()

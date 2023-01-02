@@ -1,9 +1,6 @@
 package com.anomot.anomotbackend.services
 
-import com.anomot.anomotbackend.dto.FileUploadDto
-import com.anomot.anomotbackend.dto.MediaSaveDto
-import com.anomot.anomotbackend.dto.NsfwScanDto
-import com.anomot.anomotbackend.dto.SquareImageSaveDto
+import com.anomot.anomotbackend.dto.*
 import com.anomot.anomotbackend.entities.File
 import com.anomot.anomotbackend.entities.Media
 import com.anomot.anomotbackend.entities.NsfwScan
@@ -18,6 +15,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.io.ByteArrayResource
 import org.springframework.core.io.buffer.DataBuffer
 import org.springframework.http.HttpStatus
+import org.springframework.http.ResponseEntity
 import org.springframework.http.client.MultipartBodyBuilder
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
@@ -151,21 +149,22 @@ class MediaService @Autowired constructor(
         return content.get()
     }
 
-    fun getMediaFromServer(name: String): ByteArray? {
-        val content = webClient.get()
+    fun getMediaFromServer(name: String): MediaResponse? {
+        val content: Optional<ResponseEntity<DataBuffer>> = webClient.get()
                 .uri("$mediaServerUrl/media/$name")
                 .retrieve()
                 .onStatus(HttpStatus::is4xxClientError) {
                     return@onStatus Mono.empty()
                 }
-                .bodyToMono(DataBuffer::class.java)
+                .toEntity(DataBuffer::class.java)
                 .blockOptional()
 
-        if (content.isEmpty) {
+        if (content.isEmpty || content.get().body == null || content.get().headers.contentType == null) {
             return null
         }
 
-        return content.get().asByteBuffer().array()
+        return MediaResponse(content.get().body!!.asByteBuffer().array(),
+                content.get().headers.contentType!!)
     }
 
     fun deleteMediaFromServer(name: String): Boolean {
