@@ -28,6 +28,15 @@ interface FollowRepository: JpaRepository<Follow, Long> {
     // Get number of followed users
     fun countFollowsByFollower(follower: User): Long
 
+    // Get followers you also follow back
+    // These should be the only ones visible to the user
+    @Query("with followers as (select * from follow where followed_id = ?1),\n" +
+            "followed as (select * from follow where follower_id = ?1)\n" +
+            "select followers.id, followers.followed_id, followers.follower_id from followers inner join followed on followers.follower_id = followed.followed_id ",
+            nativeQuery = true)
+    fun getFollowedFollowers(user: User, pageable: Pageable =
+        PageRequest.of(0, Constants.FOLLOWS_PER_PAGE)): List<Follow>
+
     @Modifying
     @Query("delete from Follow f where f.followed = ?2 and f.follower = ?1")
     fun delete(user: User, userToUnfollow: User)

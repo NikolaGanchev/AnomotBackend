@@ -2,6 +2,7 @@ package com.anomot.anomotbackend.services
 
 import com.anomot.anomotbackend.dto.TotpDto
 import com.anomot.anomotbackend.dto.SelfUserDto
+import com.anomot.anomotbackend.dto.UserDto
 import com.anomot.anomotbackend.dto.UserRegisterDto
 import com.anomot.anomotbackend.entities.Authority
 import com.anomot.anomotbackend.entities.MfaMethod
@@ -9,6 +10,7 @@ import com.anomot.anomotbackend.entities.MfaTotpSecret
 import com.anomot.anomotbackend.entities.User
 import com.anomot.anomotbackend.exceptions.UserAlreadyExistsException
 import com.anomot.anomotbackend.repositories.AuthorityRepository
+import com.anomot.anomotbackend.repositories.FollowRepository
 import com.anomot.anomotbackend.repositories.MfaMethodRepository
 import com.anomot.anomotbackend.repositories.UserRepository
 import com.anomot.anomotbackend.security.Authorities
@@ -52,6 +54,8 @@ class UserDetailsServiceImpl: UserDetailsService {
     private lateinit var mfaRecoveryService: MfaRecoveryService
     @Autowired
     private lateinit var mediaService: MediaService
+    @Autowired
+    private lateinit var followRepository: FollowRepository
     @Autowired
     @Lazy
     private lateinit var authenticationService: AuthenticationService
@@ -328,6 +332,14 @@ class UserDetailsServiceImpl: UserDetailsService {
 
     fun getUserReferenceFromId(id: Long): User {
         return userRepository.getReferenceById(id)
+    }
+
+    fun getAsDto(user: User): UserDto {
+        return UserDto(
+                username = user.username,
+                avatarId = user.avatar?.name?.toString(),
+                id = user.id ?: throw IllegalStateException("Id not available")
+        )
     }
 
     private fun userExists(userRegisterDto: UserRegisterDto): Boolean {

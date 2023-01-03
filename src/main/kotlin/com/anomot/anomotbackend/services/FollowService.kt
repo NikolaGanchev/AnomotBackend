@@ -13,9 +13,13 @@ import javax.transaction.Transactional
 
 @Service
 class FollowService @Autowired constructor(
-        private val followRepository: FollowRepository
+        private val followRepository: FollowRepository,
+        private val userDetailsServiceImpl: UserDetailsServiceImpl
 ) {
     fun follow(user: User, userToFollow: User): Boolean {
+        if (user.id == userToFollow.id) {
+            return false
+        }
         val follow = Follow(userToFollow, user)
         followRepository.save(follow)
         return true
@@ -23,15 +27,18 @@ class FollowService @Autowired constructor(
 
     @Transactional
     fun unfollow(user: User, userToUnfollow: User): Boolean {
+        if (user.id == userToUnfollow.id) {
+            return false
+        }
         followRepository.delete(user, userToUnfollow)
         return true
     }
 
     fun getFollowers(user: User, pageNumber: Int): List<UserDto> {
-        val page = PageRequest.of(pageNumber, Constants.FOLLOWS_PER_PAGE, Sort.by("followerId").ascending())
+        val page = PageRequest.of(pageNumber, Constants.FOLLOWS_PER_PAGE)
 
-        return followRepository.getFollowsByFollowed(user, page).map {
-            return@map it.follower.getAsDto()
+        return followRepository.getFollowedFollowers(user, page).map {
+            return@map userDetailsServiceImpl.getAsDto(it.follower)
         }
     }
 
@@ -39,7 +46,7 @@ class FollowService @Autowired constructor(
         val page = PageRequest.of(pageNumber, Constants.FOLLOWS_PER_PAGE, Sort.by("followerId").ascending())
 
         return followRepository.getFollowsByFollower(user, page).map {
-            return@map it.followed.getAsDto()
+            return@map userDetailsServiceImpl.getAsDto(it.followed)
         }
     }
 

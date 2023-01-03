@@ -1,6 +1,5 @@
 package com.anomot.anomotbackend.entities
 
-import com.anomot.anomotbackend.dto.UserDto
 import java.io.Serializable
 import java.util.*
 import javax.persistence.*
@@ -37,13 +36,4 @@ class User(
     @OneToOne(cascade = [CascadeType.ALL])
     @JoinColumn
     var avatar: Media? = null,
-    @Id @GeneratedValue(strategy = GenerationType.AUTO) var id: Long? = null) : Serializable {
-        fun getAsDto(): UserDto {
-            return UserDto(
-                    email = email,
-                    username = username,
-                    avatarId = avatar?.name?.toString(),
-                    id = id ?: throw IllegalStateException("Id not available")
-            )
-        }
-    }
+    @Id @GeneratedValue(strategy = GenerationType.AUTO) var id: Long? = null) : Serializable

@@ -9,10 +9,12 @@ import com.anomot.anomotbackend.utils.TimeUtils
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
+import org.springframework.test.context.TestPropertySource
 import java.time.Instant
 import java.time.OffsetDateTime
 import java.time.ZoneOffset
@@ -20,6 +22,8 @@ import java.util.*
 
 
 @DataJpaTest
+@AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@TestPropertySource(properties = ["spring.datasource.url=jdbc:h2:mem:anomot;MODE=PostgreSQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH;"])
 class RepositoryTests @Autowired constructor(
         val entityManager: TestEntityManager,
         val userRepository: UserRepository,
@@ -406,9 +410,13 @@ class RepositoryTests @Autowired constructor(
 
         val follow1 = Follow(user, user1)
         val follow2 = Follow(user, user2)
+        val follow3 = Follow(user2, user1)
+        val follow4 = Follow(user1, user)
 
         entityManager.persist(follow1)
         entityManager.persist(follow2)
+        entityManager.persist(follow3)
+        entityManager.persist(follow4)
 
         val followerNumber = followRepository.countFollowsByFollowed(user)
         val followers = followRepository.getFollowsByFollowed(user)
