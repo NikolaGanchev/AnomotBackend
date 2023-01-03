@@ -36,4 +36,5 @@ class User(
     @OneToOne(cascade = [CascadeType.ALL])
     @JoinColumn
     var avatar: Media? = null,
+    var elo: Int = 1000,
     @Id @GeneratedValue(strategy = GenerationType.AUTO) var id: Long? = null) : Serializable

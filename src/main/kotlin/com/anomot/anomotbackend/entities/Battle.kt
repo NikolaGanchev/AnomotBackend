@@ -13,6 +13,7 @@ class Battle(
         val redPost: Post,
         @Enumerated(EnumType.ORDINAL)
         val type: PostType,
+        val totalVotePossibilities: Int,
         var creationDate: Date = Date(),
         @Id @GeneratedValue(strategy = GenerationType.AUTO) var id: Long? = null
 ): Serializable
