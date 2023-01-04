@@ -33,5 +33,6 @@ class Constants {
         const val MAX_PORN_TOLERANCE = 0.87
         const val FOLLOWS_PER_PAGE = 30
         const val MAX_POST_LENGTH = 4200
+        const val MAX_ELO_DIFFERENCE = 1000
     }
 }

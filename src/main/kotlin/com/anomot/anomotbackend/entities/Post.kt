@@ -10,9 +10,9 @@ class Post(
         @ManyToOne
         val poster: User,
         @OneToOne
-        val media: Media,
+        val media: Media?,
         @Column(columnDefinition="TEXT")
-        val text: String,
+        val text: String?,
         @Enumerated(EnumType.ORDINAL)
         val type: PostType,
         var creationDate: Date = Date(),

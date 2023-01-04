@@ -5,6 +5,7 @@ import com.anomot.anomotbackend.repositories.*
 import com.anomot.anomotbackend.security.Authorities
 import com.anomot.anomotbackend.security.MfaMethodValue
 import com.anomot.anomotbackend.utils.Constants
+import com.anomot.anomotbackend.utils.PostType
 import com.anomot.anomotbackend.utils.TimeUtils
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
@@ -35,7 +36,10 @@ class RepositoryTests @Autowired constructor(
         val passwordResetTokenRepository: PasswordResetTokenRepository,
         val rememberMeTokenRepository: RememberMeTokenRepository,
         val successfulLoginRepository: SuccessfulLoginRepository,
-        val followRepository: FollowRepository
+        val followRepository: FollowRepository,
+        val postRepository: PostRepository,
+        val battleQueueRepository: BattleQueueRepository,
+        val battleRepository: BattleRepository
 ) {
 
     @Test
@@ -449,5 +453,48 @@ class RepositoryTests @Autowired constructor(
 
         assertThat(followedNumber).isEqualTo(1)
         assertThat(followed.contains(Follow(user, user1)))
+    }
+
+    @Test
+    fun `When search battles find most similar elo of same type`() {
+        val authority = Authority(Authorities.USER.roleName)
+        var user = User("example@example.com", "password", "Georgi", mutableListOf(authority), elo = 2400)
+        var user1 = User("example1@example.com", "password", "Georgi", mutableListOf(authority), elo = 1700)
+        var user2 = User("example2@example.com", "password", "Georgi", mutableListOf(authority), elo = 1100)
+        var user3 = User("example3@example.com", "password", "Georgi", mutableListOf(authority), elo = 1600)
+        var user4 = User("example3@example.com", "password", "Georgi", mutableListOf(authority), elo = 600)
+
+        user = entityManager.persist(user)
+        user1 = entityManager.persist(user1)
+        user2 = entityManager.persist(user2)
+        user3 = entityManager.persist(user3)
+        user4 = entityManager.persist(user4)
+        entityManager.flush()
+
+        val post = entityManager.persist(Post(user, null, null, PostType.MEDIA))
+        val post1 = entityManager.persist(Post(user1, null, null, PostType.MEDIA))
+        val post2 = entityManager.persist(Post(user2, null, null, PostType.MEDIA))
+        val post3 = entityManager.persist(Post(user3, null, null, PostType.TEXT))
+        val post4 = entityManager.persist(Post(user4, null, null, PostType.MEDIA))
+        entityManager.flush()
+
+        val battleQueuePost = BattleQueuePost(post)
+        val battleQueuePost1 = BattleQueuePost(post1)
+        val battleQueuePost2 = BattleQueuePost(post2)
+        val battleQueuePost3 = BattleQueuePost(post3)
+        val battleQueuePost4 = BattleQueuePost(post4)
+
+        entityManager.persist(battleQueuePost)
+        entityManager.persist(battleQueuePost1)
+        entityManager.persist(battleQueuePost2)
+        entityManager.persist(battleQueuePost3)
+        entityManager.persist(battleQueuePost4)
+        entityManager.flush()
+
+        val candidates = battleQueueRepository.findSimilarByElo(battleQueuePost1)
+
+        assertThat(candidates.size).isEqualTo(2)
+        assertThat(candidates[0].post).isEqualTo(post2)
+        assertThat(candidates[1].post).isEqualTo(post)
     }
 }

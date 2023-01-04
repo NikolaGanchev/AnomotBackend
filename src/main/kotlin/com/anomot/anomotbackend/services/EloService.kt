@@ -23,8 +23,9 @@ class EloService {
 
         const val exponentDenominator = 400
         const val exponentBase = 10
-        const val winScore = 1
-        const val loseScore = 0
+        const val winScore = 1.0
+        const val loseScore = 0.0
+        const val drawScore = 0.5
     }
 
     private fun getExpectedProbability(ratingDifference: Int): Double {
@@ -43,8 +44,8 @@ class EloService {
         return UserDifference(goldUserProbability, redUserProbability)
     }
 
-    fun getNextRating(elo: Int, actualPoints: Int, expectedPoints: Int): Int {
-        val change = (k(elo) * (actualPoints - expectedPoints)).toDouble().roundToInt()
+    fun getNextRating(elo: Int, actualPoints: Double, expectedPoints: Double): Int {
+        val change = (k(elo) * (actualPoints - expectedPoints)).roundToInt()
 
         return elo + change
     }
