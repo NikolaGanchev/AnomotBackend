@@ -27,7 +27,7 @@ class MockSecurityContextFactory: WithSecurityContextFactory<WithMockCustomUser>
                         mfaMethods = customUser.mfaMethods.map { MfaMethod(it) }.toCollection(mutableListOf()),
                         id = customUser.id,
                         avatar = Media(UUID.fromString(customUser.avatar),
-                        null, null, MediaType.IMAGE))
+                        null, null, MediaType.IMAGE, User("", "", "", mutableListOf())))
 
         val principal = CustomUserDetails(user)
         val auth: Authentication = UsernamePasswordAuthenticationToken(principal, user.password, principal.authorities)

@@ -1,6 +1,7 @@
 package com.anomot.anomotbackend
 
 import com.anomot.anomotbackend.dto.NsfwScanDto
+import com.anomot.anomotbackend.entities.User
 import com.anomot.anomotbackend.repositories.FileRepository
 import com.anomot.anomotbackend.repositories.MediaRepository
 import com.anomot.anomotbackend.repositories.NsfwScanRepository
@@ -84,7 +85,7 @@ class MediaServiceTests @Autowired constructor(
         val result = mediaService.uploadMedia(MockMultipartFile("hello.png",
                 "hello.png",
                 "image/png",
-                null))
+                null), user = User("", "", "", mutableListOf()))
 
         assertThat(result).isNotNull
         assertThat(result!!.media).isNotNull

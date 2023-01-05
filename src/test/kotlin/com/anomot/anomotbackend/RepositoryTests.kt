@@ -491,7 +491,7 @@ class RepositoryTests @Autowired constructor(
         entityManager.persist(battleQueuePost4)
         entityManager.flush()
 
-        val candidates = battleQueueRepository.findSimilarByElo(battleQueuePost1)
+        val candidates = battleQueueRepository.findSimilarByElo(battleQueuePost1, PageRequest.of(0, 5))
 
         assertThat(candidates.size).isEqualTo(2)
         assertThat(candidates[0].post).isEqualTo(post2)

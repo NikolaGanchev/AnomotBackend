@@ -297,7 +297,8 @@ class UserDetailsServiceImpl: UserDetailsService {
         val result = mediaService.uploadSquareImageToServer(file, Constants.PROFILE_PIC_SIZE, left, top, cropSize)
                 ?: return false
 
-        val saveResult = mediaService.saveSquareImage(result)
+        val saveResult = mediaService.saveSquareImage(result,
+                getUserReferenceFromDetails((user.principal as CustomUserDetails)))
 
         if (saveResult.media == null ||
                 saveResult.avgNsfwScan == null ||
