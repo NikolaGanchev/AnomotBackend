@@ -29,7 +29,7 @@ class EloService {
     }
 
     private fun getExpectedProbability(ratingDifference: Int): Double {
-        val exponent = ratingDifference / exponentDenominator
+        val exponent = ratingDifference.toDouble() / exponentDenominator.toDouble()
 
         return 1 / (1 + exponentBase.toDouble().pow(exponent))
     }

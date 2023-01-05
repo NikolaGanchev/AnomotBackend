@@ -16,6 +16,7 @@ import org.springframework.context.annotation.Primary
 import org.springframework.context.annotation.Scope
 import org.springframework.http.HttpMethod
 import org.springframework.http.client.reactive.ReactorClientHttpConnector
+import org.springframework.http.codec.ClientCodecConfigurer
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.builders.WebSecurity
@@ -31,6 +32,7 @@ import org.springframework.security.web.csrf.CookieCsrfTokenRepository
 import org.springframework.web.cors.CorsConfiguration
 import org.springframework.web.cors.CorsConfigurationSource
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource
+import org.springframework.web.reactive.function.client.ExchangeStrategies
 import org.springframework.web.reactive.function.client.WebClient
 import reactor.netty.http.client.HttpClient
 import javax.servlet.http.HttpServletResponse.*
@@ -182,9 +184,14 @@ class WebSecurityConfig {
 
     @Bean
     @Primary
-    fun webClient(): WebClient? {
+    fun webClient(): WebClient {
         val httpClient: HttpClient = HttpClient.create().resolver(DefaultAddressResolverGroup.INSTANCE)
+        val size = 80 * 1024 * 1024
+        val strategies = ExchangeStrategies.builder()
+                .codecs { codecs: ClientCodecConfigurer -> codecs.defaultCodecs().maxInMemorySize(size) }
+                .build()
         return WebClient.builder()
+                .exchangeStrategies(strategies)
                 .clientConnector(ReactorClientHttpConnector(httpClient))
                 .build()
     }

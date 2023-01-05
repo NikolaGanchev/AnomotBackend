@@ -74,8 +74,8 @@ class BattleService @Autowired constructor(
 
         val expected = eloService.getUserProbability(goldUser!!, redUser!!)
 
-        val goldNewElo = eloService.getNextRating(goldUser.elo, expected.goldUserProbability, scoreGold)
-        val redNewElo = eloService.getNextRating(redUser.elo, expected.redUserProbability, scoreRed)
+        val goldNewElo = eloService.getNextRating(goldUser.elo, scoreGold, expected.goldUserProbability)
+        val redNewElo = eloService.getNextRating(redUser.elo, scoreRed, expected.redUserProbability)
 
         battle.goldPost!!.poster!!.elo = goldNewElo
         battle.redPost!!.poster!!.elo = redNewElo
