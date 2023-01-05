@@ -4,6 +4,7 @@ import com.anomot.anomotbackend.dto.*
 import com.anomot.anomotbackend.entities.File
 import com.anomot.anomotbackend.entities.Media
 import com.anomot.anomotbackend.entities.NsfwScan
+import com.anomot.anomotbackend.entities.User
 import com.anomot.anomotbackend.repositories.FileRepository
 import com.anomot.anomotbackend.repositories.MediaRepository
 import com.anomot.anomotbackend.repositories.NsfwScanRepository
@@ -41,19 +42,21 @@ class MediaService @Autowired constructor(
 
     fun uploadMedia(file: MultipartFile,
                     shouldHash: Boolean = true,
-                    shouldNsfwScan: Boolean = true): MediaUploadResult? {
+                    shouldNsfwScan: Boolean = true,
+                    user: User): MediaUploadResult? {
         val mediaSaveDto = uploadMediaToServer(file, shouldHash, shouldNsfwScan) ?: return null
 
-        return saveMedia(mediaSaveDto)
+        return saveMedia(mediaSaveDto, user = user)
     }
 
     @Transactional
-    fun saveMedia(mediaSaveDto: MediaSaveDto): MediaUploadResult {
+    fun saveMedia(mediaSaveDto: MediaSaveDto, user: User): MediaUploadResult {
         val media = Media(
                 name = UUID.fromString(mediaSaveDto.id),
                 mediaType = MediaType.valueOf(mediaSaveDto.type.uppercase()),
                 duration = mediaSaveDto.duration,
-                phash = if (mediaSaveDto.phash != null) { HexFormat.of().parseHex(mediaSaveDto.phash) } else { null }
+                phash = if (mediaSaveDto.phash != null) { HexFormat.of().parseHex(mediaSaveDto.phash) } else { null },
+                publisher = user
         )
 
         var avgNsfwScan: NsfwScan? = null
@@ -91,12 +94,13 @@ class MediaService @Autowired constructor(
     }
 
     @Transactional
-    fun saveSquareImage(squareImageSaveDto: SquareImageSaveDto): SquareImageSaveResult {
+    fun saveSquareImage(squareImageSaveDto: SquareImageSaveDto, user: User): SquareImageSaveResult {
         val media = Media(
                 name = UUID.fromString(squareImageSaveDto.id),
                 duration = null,
                 phash = null,
-                mediaType = MediaType.IMAGE
+                mediaType = MediaType.IMAGE,
+                user
         )
 
         val savedMedia = mediaRepository.saveAndFlush(media)

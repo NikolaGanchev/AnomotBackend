@@ -462,7 +462,7 @@ class RepositoryTests @Autowired constructor(
         var user1 = User("example1@example.com", "password", "Georgi", mutableListOf(authority), elo = 1700)
         var user2 = User("example2@example.com", "password", "Georgi", mutableListOf(authority), elo = 1100)
         var user3 = User("example3@example.com", "password", "Georgi", mutableListOf(authority), elo = 1600)
-        var user4 = User("example3@example.com", "password", "Georgi", mutableListOf(authority), elo = 600)
+        var user4 = User("example4@example.com", "password", "Georgi", mutableListOf(authority), elo = 600)
 
         user = entityManager.persist(user)
         user1 = entityManager.persist(user1)

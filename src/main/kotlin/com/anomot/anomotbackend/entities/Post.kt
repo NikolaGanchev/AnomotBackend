@@ -8,7 +8,7 @@ import javax.persistence.*
 @Entity
 class Post(
         @ManyToOne
-        val poster: User,
+        val poster: User?,
         @OneToOne
         val media: Media?,
         @Column(columnDefinition="TEXT")

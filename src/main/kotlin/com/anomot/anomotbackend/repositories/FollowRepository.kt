@@ -30,8 +30,8 @@ interface FollowRepository: JpaRepository<Follow, Long> {
 
     // Get followers you also follow back
     // These should be the only ones visible to the user
-    @Query("with followers as (select * from follow where followed_id = ?1),\n" +
-            "followed as (select * from follow where follower_id = ?1)\n" +
+    @Query("with followers as (select * from follow where followed_id = ?1), " +
+            "followed as (select * from follow where follower_id = ?1) " +
             "select followers.id, followers.followed_id, followers.follower_id from followers inner join followed on followers.follower_id = followed.followed_id ",
             nativeQuery = true)
     fun getFollowedFollowers(user: User, pageable: Pageable =
