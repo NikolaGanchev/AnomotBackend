@@ -1,8 +1,9 @@
 package com.anomot.anomotbackend.controllers
 
+import com.anomot.anomotbackend.dto.PostDto
 import com.anomot.anomotbackend.dto.TextPostDto
 import com.anomot.anomotbackend.security.CustomUserDetails
-import com.anomot.anomotbackend.services.MediaService
+import com.anomot.anomotbackend.services.PostCreateStatus
 import com.anomot.anomotbackend.services.PostService
 import com.anomot.anomotbackend.services.UserDetailsServiceImpl
 import org.springframework.beans.factory.annotation.Autowired
@@ -13,33 +14,57 @@ import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
 
 @RestController
-@RequestMapping("/account/post")
+@RequestMapping
 class PostController @Autowired constructor(
         private val postService: PostService,
-        private val mediaService: MediaService,
         private val userDetailsServiceImpl: UserDetailsServiceImpl
 ) {
-    @PostMapping("/text")
+    @PostMapping("/account/post/text")
     fun uploadTextPost(@RequestBody textPostDto: TextPostDto, authentication: Authentication): ResponseEntity<String> {
-        postService.addTextPost(textPostDto.text, (authentication.principal) as CustomUserDetails)
+        val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
+        postService.addTextPost(textPostDto.text, user)
         return ResponseEntity(HttpStatus.CREATED)
     }
 
-    @PostMapping("/media")
+    @PostMapping("/account/post/media")
     fun uploadMediaPost(@RequestParam("file") file: MultipartFile, authentication: Authentication): ResponseEntity<String> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
-        val media = mediaService.uploadMedia(file, false, true, user)
 
-        if (media?.media == null) {
-            return ResponseEntity(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+        return when (postService.createMediaPost(file, user, false)) {
+            PostCreateStatus.OK -> ResponseEntity(HttpStatus.CREATED)
+            PostCreateStatus.MEDIA_UNSUPPORTED -> ResponseEntity(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+            PostCreateStatus.NSFW_FOUND -> ResponseEntity(HttpStatus.BAD_REQUEST)
         }
+    }
 
-        if (!mediaService.inNsfwRequirements(media.maxNsfwScan!!)) {
-            return ResponseEntity(HttpStatus.BAD_REQUEST)
-        }
+    @GetMapping("/account/posts")
+    fun getSelfPosts(authentication: Authentication): ResponseEntity<List<PostDto>> {
+        //TODO
+        return ResponseEntity(HttpStatus.OK)
+    }
 
-        postService.addMediaPost(media.media, (authentication.principal) as CustomUserDetails)
+    @GetMapping("/account/posts")
+    fun getSelfPost(@RequestParam("id") id: String, authentication: Authentication): ResponseEntity<PostDto> {
+        //TODO
+        return ResponseEntity(HttpStatus.OK)
+    }
 
-        return ResponseEntity(HttpStatus.CREATED)
+    @DeleteMapping("/account/post")
+    fun deleteSelfPost(@RequestParam("id") id: String, authentication: Authentication) {
+        //TODO
+    }
+
+    @GetMapping("posts")
+    fun getOtherPosts(@RequestParam("userId") userId: String, authentication: Authentication): ResponseEntity<List<PostDto>> {
+        //TODO
+        return ResponseEntity(HttpStatus.OK)
+    }
+
+    @GetMapping("/account/posts")
+    fun getOtherPost(@RequestParam("userId") userId: String,
+                     @RequestParam("id") id: String,
+                     authentication: Authentication): ResponseEntity<PostDto> {
+        //TODO
+        return ResponseEntity(HttpStatus.OK)
     }
 }

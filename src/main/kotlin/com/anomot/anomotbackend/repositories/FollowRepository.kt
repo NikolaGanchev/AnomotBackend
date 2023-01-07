@@ -37,6 +37,8 @@ interface FollowRepository: JpaRepository<Follow, Long> {
     fun getFollowedFollowers(user: User, pageable: Pageable =
         PageRequest.of(0, Constants.FOLLOWS_PER_PAGE)): List<Follow>
 
+    fun existsFollowByFollowerAndFollowed(follower: User, followed: User): Boolean
+
     @Modifying
     @Query("delete from Follow f where f.followed = ?2 and f.follower = ?1")
     fun delete(user: User, userToUnfollow: User)

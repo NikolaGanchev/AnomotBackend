@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.io.ByteArrayResource
 import org.springframework.core.io.buffer.DataBuffer
+import org.springframework.data.domain.PageRequest
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.http.client.MultipartBodyBuilder
@@ -277,5 +278,9 @@ class MediaService @Autowired constructor(
                 nsfwScan.neutral <= Constants.MAX_NEUTRAL_TOLERANCE &&
                 nsfwScan.sexy <= Constants.MAX_SEXY_TOLERANCE &&
                 nsfwScan.porn <= Constants.MAX_PORN_TOLERANCE
+    }
+
+    fun getMediaByUser(user: User, page: Int): List<Media> {
+        return mediaRepository.getMediaByPublisher(user, PageRequest.of(page, Constants.MEDIA_PAGE))
     }
 }

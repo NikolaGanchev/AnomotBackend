@@ -9,5 +9,7 @@ class Vote(
         val battle: Battle,
         @ManyToOne
         val post: Post,
+        @ManyToOne
+        val voter: User,
         @Id @GeneratedValue(strategy = GenerationType.AUTO) var id: Long? = null
 ): Serializable

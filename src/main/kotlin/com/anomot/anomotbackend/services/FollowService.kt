@@ -57,4 +57,8 @@ class FollowService @Autowired constructor(
     fun getFollowedCount(user: User): Long {
         return followRepository.countFollowsByFollower(user)
     }
+
+    fun follows(user: User, followed: User): Boolean {
+        return followRepository.existsFollowByFollowerAndFollowed(user, followed)
+    }
 }

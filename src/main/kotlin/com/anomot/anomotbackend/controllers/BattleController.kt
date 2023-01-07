@@ -1,16 +1,10 @@
 package com.anomot.anomotbackend.controllers
 
-import com.anomot.anomotbackend.dto.BattleDto
-import com.anomot.anomotbackend.dto.BattlePostDto
-import com.anomot.anomotbackend.dto.MediaDto
-import com.anomot.anomotbackend.dto.TextPostDto
+import com.anomot.anomotbackend.dto.*
 import com.anomot.anomotbackend.entities.Battle
 import com.anomot.anomotbackend.entities.Post
 import com.anomot.anomotbackend.security.CustomUserDetails
-import com.anomot.anomotbackend.services.BattleService
-import com.anomot.anomotbackend.services.MediaService
-import com.anomot.anomotbackend.services.PostService
-import com.anomot.anomotbackend.services.UserDetailsServiceImpl
+import com.anomot.anomotbackend.services.*
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -19,10 +13,9 @@ import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
 
 @RestController
-@RequestMapping("/account")
+@RequestMapping
 class BattleController @Autowired constructor(
         private val postService: PostService,
-        private val mediaService: MediaService,
         private val userDetailsServiceImpl: UserDetailsServiceImpl,
         private val battleService: BattleService
 ) {
@@ -37,9 +30,10 @@ class BattleController @Autowired constructor(
         else battle.goldPost
     }
 
-    @PostMapping("/battle/text")
-    fun uploadTextBattle(@RequestBody textPostDto: TextPostDto, authentication: Authentication): ResponseEntity<BattleDto> {
-        val post = postService.addTextPost(textPostDto.text, (authentication.principal) as CustomUserDetails)
+    @PostMapping("/account/battle/text")
+    fun uploadTextBattle(@RequestBody textPostDto: TextPostDto, authentication: Authentication): ResponseEntity<SelfBattleDto> {
+        val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
+        val post = postService.createTextPost(textPostDto.text, user)
 
         val battle = battleService.queuePostForBattle(post) ?: return ResponseEntity(HttpStatus.CREATED)
 
@@ -48,26 +42,25 @@ class BattleController @Autowired constructor(
 
         if (selfPost == null || enemyPost == null) return ResponseEntity(HttpStatus.BAD_REQUEST)
 
-        return ResponseEntity(BattleDto(
-                BattlePostDto(selfPost.type, selfPost.text, null),
-                BattlePostDto(enemyPost.type, enemyPost.text, null),
+        return ResponseEntity(SelfBattleDto(
+                BattlePostDto(selfPost.type, selfPost.text, null, selfPost.id.toString()),
+                BattlePostDto(enemyPost.type, enemyPost.text, null, enemyPost.id.toString()),
+                0,
+                0,
+                false,
                 battle.finishDate!!), HttpStatus.CREATED)
     }
 
-    @PostMapping("/battle/media")
-    fun uploadMediaBattle(@RequestParam("file") file: MultipartFile, authentication: Authentication): ResponseEntity<BattleDto> {
+    @PostMapping("/account/battle/media")
+    fun uploadMediaBattle(@RequestParam("file") file: MultipartFile, authentication: Authentication): ResponseEntity<SelfBattleDto> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
-        val media = mediaService.uploadMedia(file, false, true, user)
 
-        if (media?.media == null) {
-            return ResponseEntity(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
-        }
+        val response = postService.createMediaPost(file, user, true)
 
-        if (!mediaService.inNsfwRequirements(media.avgNsfwScan!!)) {
-            return ResponseEntity(HttpStatus.BAD_REQUEST)
-        }
+        if (response == PostCreateStatus.MEDIA_UNSUPPORTED) return ResponseEntity(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
+        else if (response == PostCreateStatus.NSFW_FOUND) return ResponseEntity(HttpStatus.BAD_REQUEST)
 
-        val post = postService.addMediaPost(media.media, (authentication.principal) as CustomUserDetails)
+        val post = response.post ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
 
         val battle = battleService.queuePostForBattle(post) ?: return ResponseEntity(HttpStatus.CREATED)
 
@@ -76,9 +69,24 @@ class BattleController @Autowired constructor(
 
         if (selfPost == null || enemyPost == null) return ResponseEntity(HttpStatus.BAD_REQUEST)
 
-        return ResponseEntity(BattleDto(
-                BattlePostDto(selfPost.type, null, MediaDto(selfPost.media!!.mediaType, selfPost.media!!.name.toString())),
-                BattlePostDto(enemyPost.type,null, MediaDto(enemyPost.media!!.mediaType, enemyPost.media!!.name.toString())),
+        return ResponseEntity(SelfBattleDto(
+                BattlePostDto(selfPost.type, null, MediaDto(selfPost.media!!.mediaType, selfPost.media!!.name.toString()), selfPost.id.toString()),
+                BattlePostDto(enemyPost.type,null, MediaDto(enemyPost.media!!.mediaType, enemyPost.media!!.name.toString()), enemyPost.id.toString()),
+                0,
+                0,
+                false,
                 battle.finishDate!!), HttpStatus.CREATED)
+    }
+
+    @GetMapping("/battle")
+    fun getBattle(authentication: Authentication): ResponseEntity<BattleDto?> {
+        //TODO
+        return ResponseEntity(HttpStatus.OK)
+    }
+
+    @GetMapping("/account/battles")
+    fun getSelfBattles(authentication: Authentication): ResponseEntity<List<SelfBattleDto>> {
+        //TODO
+        return ResponseEntity(HttpStatus.OK)
     }
 }
