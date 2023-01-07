@@ -1,9 +1,12 @@
 package com.anomot.anomotbackend.services
 
+import com.anomot.anomotbackend.dto.PostDto
+import com.anomot.anomotbackend.dto.SelfBattleDto
 import com.anomot.anomotbackend.entities.*
 import com.anomot.anomotbackend.repositories.*
 import com.anomot.anomotbackend.utils.Constants
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import java.util.*
 import javax.transaction.Transactional
@@ -13,7 +16,8 @@ class BattleService @Autowired constructor(
         private val battleQueueRepository: BattleQueueRepository,
         private val battleRepository: BattleRepository,
         private val eloService: EloService,
-        private val voteRepository: VoteRepository
+        private val voteRepository: VoteRepository,
+        private val userDetailsServiceImpl: UserDetailsServiceImpl
 ) {
 
     @Transactional
@@ -85,5 +89,39 @@ class BattleService @Autowired constructor(
         return if (votes1 == votes2) EloService.drawScore
         else if (votes1 > votes2) EloService.winScore
         else EloService.loseScore
+    }
+
+    fun getBattles(user: User, page: Int): List<SelfBattleDto> {
+        return battleRepository.getAllBattlesByUser(user, PageRequest.of(page, Constants.BATTLE_PAGE)).map {
+            val battle = it.battle
+            val selfPost = if (battle.goldPost?.poster?.id == user.id) {
+                battle.goldPost
+            } else {
+                battle.redPost
+            }
+            val enemyPost = if (battle.goldPost?.poster?.id == user.id) {
+                battle.redPost
+            } else {
+                battle.goldPost
+            }
+
+            SelfBattleDto(
+                    if (selfPost == null) null else PostDto(selfPost.type,
+                            selfPost.text,
+                            null,
+                            userDetailsServiceImpl.getAsDto(selfPost.poster!!),
+                            0,
+                            selfPost.id.toString()),
+                    if (enemyPost == null) null else PostDto(enemyPost.type,
+                            enemyPost.text,
+                            null,
+                            if (enemyPost.poster == null) null else userDetailsServiceImpl.getAsDto(enemyPost.poster!!),
+                            0,
+                            enemyPost.id.toString()),
+                    it.votesForSelf,
+                    it.votesForOther,
+                    battle.finished,
+                    battle.finishDate!!)
+        }
     }
 }

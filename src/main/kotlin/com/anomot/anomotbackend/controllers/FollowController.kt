@@ -12,39 +12,31 @@ import org.springframework.web.bind.annotation.*
 import javax.validation.Valid
 
 @RestController
-@RequestMapping("/account")
+@RequestMapping
 class FollowController(
         private val followService: FollowService,
         private val userDetailsService: UserDetailsServiceImpl
 ) {
 
-    @PostMapping("/follow")
+    @PostMapping("/account/follow")
     fun follow(@RequestBody @Valid userReference: UserReference, authentication: Authentication): ResponseEntity<String> {
-        return try {
-            followService.follow(
-                    userDetailsService.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails),
-                    userDetailsService.getUserReferenceFromId(userReference.id.toLong()))
+        followService.follow(
+                userDetailsService.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails),
+                userDetailsService.getUserReferenceFromIdUnsafe(userReference.id) ?: return ResponseEntity(HttpStatus.BAD_REQUEST))
 
-            ResponseEntity(HttpStatus.OK)
-        } catch (numberFormatException: NumberFormatException) {
-            ResponseEntity(HttpStatus.BAD_REQUEST)
-        }
+        return ResponseEntity(HttpStatus.OK)
     }
 
-    @PostMapping("/unfollow")
+    @PostMapping("/account/unfollow")
     fun unfollow(@RequestBody @Valid userReference: UserReference, authentication: Authentication): ResponseEntity<String> {
-        return try {
-            followService.unfollow(
-                    userDetailsService.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails),
-                    userDetailsService.getUserReferenceFromId(userReference.id.toLong()))
+        followService.unfollow(
+                userDetailsService.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails),
+                userDetailsService.getUserReferenceFromIdUnsafe(userReference.id) ?: return ResponseEntity(HttpStatus.BAD_REQUEST))
 
-            ResponseEntity(HttpStatus.OK)
-        } catch (numberFormatException: NumberFormatException) {
-            ResponseEntity(HttpStatus.BAD_REQUEST)
-        }
+        return ResponseEntity(HttpStatus.OK)
     }
 
-    @GetMapping("/followers")
+    @GetMapping("/account/followers")
     fun getFollowers(@RequestParam("page") page: Int, authentication: Authentication): ResponseEntity<List<UserDto>> {
         val result = followService.getFollowers(
                 userDetailsService.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails),
@@ -53,7 +45,7 @@ class FollowController(
         return ResponseEntity(result, HttpStatus.OK)
     }
 
-    @GetMapping("/followed")
+    @GetMapping("/account/followed")
     fun getFollowed(@RequestParam("page") page: Int, authentication: Authentication): ResponseEntity<List<UserDto>> {
         val result = followService.getFollowed(
                 userDetailsService.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails),
@@ -62,18 +54,42 @@ class FollowController(
         return ResponseEntity(result, HttpStatus.OK)
     }
 
-    @GetMapping("/followers/count")
-    fun getFollowerCount(authentication: Authentication): ResponseEntity<Long> {
+    @GetMapping("/account/followers/count")
+    fun getSelfFollowerCount(authentication: Authentication): ResponseEntity<Long> {
         val result = followService.getFollowerCount(
                 userDetailsService.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails))
 
         return ResponseEntity(result, HttpStatus.OK)
     }
 
-    @GetMapping("/followed/count")
-    fun getFollowedCount(authentication: Authentication): ResponseEntity<Long> {
+    @GetMapping("/account/followed/count")
+    fun getSelfFollowedCount(authentication: Authentication): ResponseEntity<Long> {
         val result = followService.getFollowedCount(
                 userDetailsService.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails))
+
+        return ResponseEntity(result, HttpStatus.OK)
+    }
+
+    @GetMapping("/followers/count")
+    fun getFollowerCount(@RequestParam("id") userId: String, authentication: Authentication): ResponseEntity<Long> {
+        val user = userDetailsService.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
+        val otherUser = userDetailsService.getUserReferenceFromIdUnsafe(userId) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+
+        if (!followService.follows(user, otherUser)) return ResponseEntity(HttpStatus.FORBIDDEN)
+
+        val result = followService.getFollowerCount(otherUser)
+
+        return ResponseEntity(result, HttpStatus.OK)
+    }
+
+    @GetMapping("/followed/count")
+    fun getFollowedCount(@RequestParam("id") userId: String, authentication: Authentication): ResponseEntity<Long> {
+        val user = userDetailsService.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
+        val otherUser = userDetailsService.getUserReferenceFromIdUnsafe(userId) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+
+        if (!followService.follows(user, otherUser)) return ResponseEntity(HttpStatus.FORBIDDEN)
+
+        val result = followService.getFollowedCount(otherUser)
 
         return ResponseEntity(result, HttpStatus.OK)
     }

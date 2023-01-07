@@ -17,7 +17,9 @@ class FindFinishedBattlesService@Autowired constructor(
     fun findFinishedBattles() {
         val battles = battleRepository.getUnprocessedFinishedBattlesAndUpdate()
         battles.forEach {
-            battleService.finish(it)
+            try {
+                battleService.finish(it)
+            } catch (_: Exception) {}
         }
     }
 }

@@ -35,6 +35,10 @@ class Constants {
         const val MAX_POST_LENGTH = 4200
         const val MAX_ELO_DIFFERENCE = 800
         const val BATTLE_DURATION = 3 * 24 * 3600 // seconds
-        const val MEDIA_PAGE = 20
+        const val MEDIA_PAGE = 9
+        const val POST_PAGE = 9
+        const val FEED_PAGE = 8
+        const val VOTE_PAGE = 20
+        const val BATTLE_PAGE = 10
     }
 }

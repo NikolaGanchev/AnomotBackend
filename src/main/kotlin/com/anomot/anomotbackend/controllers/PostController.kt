@@ -1,8 +1,10 @@
 package com.anomot.anomotbackend.controllers
 
+import com.anomot.anomotbackend.dto.MediaDto
 import com.anomot.anomotbackend.dto.PostDto
 import com.anomot.anomotbackend.dto.TextPostDto
 import com.anomot.anomotbackend.security.CustomUserDetails
+import com.anomot.anomotbackend.services.FollowService
 import com.anomot.anomotbackend.services.PostCreateStatus
 import com.anomot.anomotbackend.services.PostService
 import com.anomot.anomotbackend.services.UserDetailsServiceImpl
@@ -17,7 +19,8 @@ import org.springframework.web.multipart.MultipartFile
 @RequestMapping
 class PostController @Autowired constructor(
         private val postService: PostService,
-        private val userDetailsServiceImpl: UserDetailsServiceImpl
+        private val userDetailsServiceImpl: UserDetailsServiceImpl,
+        private val followService: FollowService
 ) {
     @PostMapping("/account/post/text")
     fun uploadTextPost(@RequestBody textPostDto: TextPostDto, authentication: Authentication): ResponseEntity<String> {
@@ -38,33 +41,71 @@ class PostController @Autowired constructor(
     }
 
     @GetMapping("/account/posts")
-    fun getSelfPosts(authentication: Authentication): ResponseEntity<List<PostDto>> {
-        //TODO
-        return ResponseEntity(HttpStatus.OK)
-    }
+    fun getSelfPosts(@RequestParam("page") page: Int, authentication: Authentication): ResponseEntity<List<PostDto>> {
+        val posts = postService.getPostsForUser(
+                userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails),
+                page).map {
+                    PostDto(it.type,
+                            it.text,
+                            if (it.media != null) MediaDto(it.media!!.mediaType, it.media!!.name.toString()) else null,
+                            userDetailsServiceImpl.getAsDto(it.poster!!),
+                            0,
+                            it.id.toString())
+        }
 
-    @GetMapping("/account/posts")
-    fun getSelfPost(@RequestParam("id") id: String, authentication: Authentication): ResponseEntity<PostDto> {
-        //TODO
-        return ResponseEntity(HttpStatus.OK)
+        return ResponseEntity(posts, HttpStatus.OK)
     }
 
     @DeleteMapping("/account/post")
-    fun deleteSelfPost(@RequestParam("id") id: String, authentication: Authentication) {
-        //TODO
+    fun deleteSelfPost(@RequestParam("id") id: String, authentication: Authentication): ResponseEntity<String> {
+        val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
+        return try {
+            ResponseEntity(if (postService.deletePost(id.toLong(), user)) HttpStatus.OK else HttpStatus.NOT_FOUND)
+        } catch (numberFormatException: NumberFormatException) {
+            ResponseEntity(HttpStatus.BAD_REQUEST)
+        }
     }
 
-    @GetMapping("posts")
-    fun getOtherPosts(@RequestParam("userId") userId: String, authentication: Authentication): ResponseEntity<List<PostDto>> {
-        //TODO
-        return ResponseEntity(HttpStatus.OK)
+    @GetMapping("/posts")
+    fun getOtherUserPosts(@RequestParam("userId") userId: String,
+                      @RequestParam("page") page: Int,
+                      authentication: Authentication): ResponseEntity<List<PostDto>> {
+        val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
+        val otherUser = userDetailsServiceImpl.getUserReferenceFromIdUnsafe(userId) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+
+        if (!followService.follows(user, otherUser)) return ResponseEntity(HttpStatus.FORBIDDEN)
+
+        val posts = postService.getPostsForUser(
+                otherUser,
+                page).map {
+            PostDto(it.type,
+                    it.text,
+                    if (it.media != null) MediaDto(it.media!!.mediaType, it.media!!.name.toString()) else null,
+                    userDetailsServiceImpl.getAsDto(it.poster!!),
+                    0,
+                    it.id.toString())
+        }
+
+        return ResponseEntity(posts, HttpStatus.OK)
     }
 
-    @GetMapping("/account/posts")
-    fun getOtherPost(@RequestParam("userId") userId: String,
-                     @RequestParam("id") id: String,
-                     authentication: Authentication): ResponseEntity<PostDto> {
-        //TODO
-        return ResponseEntity(HttpStatus.OK)
+    @GetMapping("/feed")
+    fun getFeed(@RequestParam("page") page: Int, authentication: Authentication): ResponseEntity<List<PostDto>> {
+        val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
+
+        val posts = postService.getFeed(
+                user,
+                page).map {
+            if (it.poster == null) return@map null
+
+            PostDto(it.type,
+                    it.text,
+                    if (it.media != null) MediaDto(it.media!!.mediaType, it.media!!.name.toString()) else null,
+                    userDetailsServiceImpl.getAsDto(it.poster!!),
+                    0,
+                    it.id.toString())
+        }.filterNotNull()
+
+        return ResponseEntity(posts, HttpStatus.OK)
     }
 }

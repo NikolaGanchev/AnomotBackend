@@ -3,9 +3,12 @@ package com.anomot.anomotbackend.services
 import com.anomot.anomotbackend.entities.Media
 import com.anomot.anomotbackend.entities.Post
 import com.anomot.anomotbackend.entities.User
+import com.anomot.anomotbackend.repositories.BattleQueueRepository
 import com.anomot.anomotbackend.repositories.PostRepository
+import com.anomot.anomotbackend.utils.Constants
 import com.anomot.anomotbackend.utils.PostType
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.data.domain.PageRequest
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 
@@ -21,8 +24,8 @@ enum class PostCreateStatus {
 @Service
 class PostService @Autowired constructor(
         private val postRepository: PostRepository,
-        private val userDetailsServiceImpl: UserDetailsServiceImpl,
-        private val mediaService: MediaService
+        private val mediaService: MediaService,
+        private val battleQueueRepository: BattleQueueRepository
 ) {
 
     fun addTextPost(text: String, user: User): Post {
@@ -59,5 +62,24 @@ class PostService @Autowired constructor(
             it.post = post
             it.media = media
         }
+    }
+
+    fun getPostsForUser(user: User, page: Int): List<Post> {
+        return postRepository.findAllByPoster(user, PageRequest.of(page, Constants.POST_PAGE))
+    }
+
+    fun deletePost(postId: Long, user: User): Boolean {
+        if (!postRepository.existsById(postId)) {
+            return false
+        }
+
+        battleQueueRepository.deletePostByIdAndUser(postId, user)
+        val num = postRepository.deleteByIdAndPoster(postId, user)
+
+        return num != (0).toLong()
+    }
+
+    fun getFeed(user: User, page: Int): List<Post> {
+        return postRepository.getFeed(user.id!!, PageRequest.of(page, Constants.FEED_PAGE))
     }
 }

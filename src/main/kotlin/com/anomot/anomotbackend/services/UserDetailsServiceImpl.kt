@@ -10,7 +10,6 @@ import com.anomot.anomotbackend.entities.MfaTotpSecret
 import com.anomot.anomotbackend.entities.User
 import com.anomot.anomotbackend.exceptions.UserAlreadyExistsException
 import com.anomot.anomotbackend.repositories.AuthorityRepository
-import com.anomot.anomotbackend.repositories.FollowRepository
 import com.anomot.anomotbackend.repositories.MfaMethodRepository
 import com.anomot.anomotbackend.repositories.UserRepository
 import com.anomot.anomotbackend.security.Authorities
@@ -54,8 +53,6 @@ class UserDetailsServiceImpl: UserDetailsService {
     private lateinit var mfaRecoveryService: MfaRecoveryService
     @Autowired
     private lateinit var mediaService: MediaService
-    @Autowired
-    private lateinit var followRepository: FollowRepository
     @Autowired
     @Lazy
     private lateinit var authenticationService: AuthenticationService
@@ -331,15 +328,37 @@ class UserDetailsServiceImpl: UserDetailsService {
         return userRepository.getReferenceById(details.id!!)
     }
 
+    fun getUserReferenceFromDetailsUnsafe(details: CustomUserDetails): User? {
+        return if (userRepository.existsById(details.id!!)) {
+            userRepository.getReferenceById(details.id)
+        } else null
+    }
+
     fun getUserReferenceFromId(id: Long): User {
         return userRepository.getReferenceById(id)
+    }
+
+    fun getUserReferenceFromIdUnsafe(id: Long): User? {
+        return if (userRepository.existsById(id)) {
+            userRepository.getReferenceById(id)
+        } else null
+    }
+
+    fun getUserReferenceFromIdUnsafe(id: String): User? {
+        return try {
+            if (userRepository.existsById(id.toLong())) {
+                userRepository.getReferenceById(id.toLong())
+            } else null
+        } catch(numberFormatException: NumberFormatException) {
+            null
+        }
     }
 
     fun getAsDto(user: User): UserDto {
         return UserDto(
                 username = user.username,
                 avatarId = user.avatar?.name?.toString(),
-                id = user.id.toString() ?: throw IllegalStateException("Id not available")
+                id = (user.id ?: throw IllegalStateException("Id not available")).toString()
         )
     }
 

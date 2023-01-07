@@ -40,11 +40,25 @@ class BattleController @Autowired constructor(
         val selfPost = getSelfPost(post, battle)
         val enemyPost = getEnemyPost(post, battle)
 
-        if (selfPost == null || enemyPost == null) return ResponseEntity(HttpStatus.BAD_REQUEST)
+        if (selfPost == null || enemyPost == null || enemyPost.poster == null)  {
+            // TODO
+            // Handle post rejection because of deleted user if ever happens
+            return ResponseEntity(HttpStatus.CONFLICT)
+        }
 
         return ResponseEntity(SelfBattleDto(
-                BattlePostDto(selfPost.type, selfPost.text, null, selfPost.id.toString()),
-                BattlePostDto(enemyPost.type, enemyPost.text, null, enemyPost.id.toString()),
+                PostDto(selfPost.type,
+                        selfPost.text,
+                        null,
+                        userDetailsServiceImpl.getAsDto(selfPost.poster!!),
+                        0,
+                        selfPost.id.toString()),
+                PostDto(enemyPost.type,
+                        enemyPost.text,
+                        null,
+                        userDetailsServiceImpl.getAsDto(enemyPost.poster!!),
+                        0,
+                        enemyPost.id.toString()),
                 0,
                 0,
                 false,
@@ -67,11 +81,25 @@ class BattleController @Autowired constructor(
         val selfPost = getSelfPost(post, battle)
         val enemyPost = getEnemyPost(post, battle)
 
-        if (selfPost == null || enemyPost == null) return ResponseEntity(HttpStatus.BAD_REQUEST)
+        if (selfPost == null || enemyPost == null || enemyPost.poster == null) {
+            // TODO
+            // Handle post rejection because of deleted user if ever happens
+            return ResponseEntity(HttpStatus.CONFLICT)
+        }
 
         return ResponseEntity(SelfBattleDto(
-                BattlePostDto(selfPost.type, null, MediaDto(selfPost.media!!.mediaType, selfPost.media!!.name.toString()), selfPost.id.toString()),
-                BattlePostDto(enemyPost.type,null, MediaDto(enemyPost.media!!.mediaType, enemyPost.media!!.name.toString()), enemyPost.id.toString()),
+                PostDto(selfPost.type,
+                        null,
+                        MediaDto(selfPost.media!!.mediaType, selfPost.media!!.name.toString()),
+                        userDetailsServiceImpl.getAsDto(selfPost.poster!!),
+                        0,
+                        selfPost.id.toString()),
+                PostDto(enemyPost.type,
+                        null,
+                        MediaDto(enemyPost.media!!.mediaType, enemyPost.media!!.name.toString()),
+                        userDetailsServiceImpl.getAsDto(enemyPost.poster!!),
+                        0,
+                        enemyPost.id.toString()),
                 0,
                 0,
                 false,
@@ -85,8 +113,9 @@ class BattleController @Autowired constructor(
     }
 
     @GetMapping("/account/battles")
-    fun getSelfBattles(authentication: Authentication): ResponseEntity<List<SelfBattleDto>> {
-        //TODO
-        return ResponseEntity(HttpStatus.OK)
+    fun getSelfBattles(@RequestParam("page") page: Int, authentication: Authentication): ResponseEntity<List<SelfBattleDto>> {
+        val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
+
+        return ResponseEntity(battleService.getBattles(user, page), HttpStatus.OK)
     }
 }
