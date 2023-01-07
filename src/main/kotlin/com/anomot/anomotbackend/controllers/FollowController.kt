@@ -19,17 +19,29 @@ class FollowController(
 ) {
 
     @PostMapping("/follow")
-    fun follow(@RequestBody @Valid userReference: UserReference, authentication: Authentication) {
-        followService.follow(
-                userDetailsService.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails),
-                userDetailsService.getUserReferenceFromId(userReference.id))
+    fun follow(@RequestBody @Valid userReference: UserReference, authentication: Authentication): ResponseEntity<String> {
+        return try {
+            followService.follow(
+                    userDetailsService.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails),
+                    userDetailsService.getUserReferenceFromId(userReference.id.toLong()))
+
+            ResponseEntity(HttpStatus.OK)
+        } catch (numberFormatException: NumberFormatException) {
+            ResponseEntity(HttpStatus.BAD_REQUEST)
+        }
     }
 
     @PostMapping("/unfollow")
-    fun unfollow(@RequestBody @Valid userReference: UserReference, authentication: Authentication) {
-        followService.unfollow(
-                userDetailsService.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails),
-                userDetailsService.getUserReferenceFromId(userReference.id))
+    fun unfollow(@RequestBody @Valid userReference: UserReference, authentication: Authentication): ResponseEntity<String> {
+        return try {
+            followService.unfollow(
+                    userDetailsService.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails),
+                    userDetailsService.getUserReferenceFromId(userReference.id.toLong()))
+
+            ResponseEntity(HttpStatus.OK)
+        } catch (numberFormatException: NumberFormatException) {
+            ResponseEntity(HttpStatus.BAD_REQUEST)
+        }
     }
 
     @GetMapping("/followers")

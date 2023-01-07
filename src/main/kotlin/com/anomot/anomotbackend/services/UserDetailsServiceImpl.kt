@@ -339,7 +339,7 @@ class UserDetailsServiceImpl: UserDetailsService {
         return UserDto(
                 username = user.username,
                 avatarId = user.avatar?.name?.toString(),
-                id = user.id ?: throw IllegalStateException("Id not available")
+                id = user.id.toString() ?: throw IllegalStateException("Id not available")
         )
     }
 
