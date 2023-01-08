@@ -3,6 +3,7 @@ package com.anomot.anomotbackend.controllers
 import com.anomot.anomotbackend.dto.UserDto
 import com.anomot.anomotbackend.dto.UserReference
 import com.anomot.anomotbackend.security.CustomUserDetails
+import com.anomot.anomotbackend.security.EmailVerified
 import com.anomot.anomotbackend.services.FollowService
 import com.anomot.anomotbackend.services.UserDetailsServiceImpl
 import org.springframework.http.HttpStatus
@@ -19,6 +20,7 @@ class FollowController(
 ) {
 
     @PostMapping("/account/follow")
+    @EmailVerified
     fun follow(@RequestBody @Valid userReference: UserReference, authentication: Authentication): ResponseEntity<String> {
         followService.follow(
                 userDetailsService.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails),
@@ -28,6 +30,7 @@ class FollowController(
     }
 
     @PostMapping("/account/unfollow")
+    @EmailVerified
     fun unfollow(@RequestBody @Valid userReference: UserReference, authentication: Authentication): ResponseEntity<String> {
         followService.unfollow(
                 userDetailsService.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails),

@@ -4,6 +4,7 @@ import com.anomot.anomotbackend.dto.MediaDto
 import com.anomot.anomotbackend.dto.PostDto
 import com.anomot.anomotbackend.dto.TextPostDto
 import com.anomot.anomotbackend.security.CustomUserDetails
+import com.anomot.anomotbackend.security.EmailVerified
 import com.anomot.anomotbackend.services.FollowService
 import com.anomot.anomotbackend.services.PostCreateStatus
 import com.anomot.anomotbackend.services.PostService
@@ -23,6 +24,7 @@ class PostController @Autowired constructor(
         private val followService: FollowService
 ) {
     @PostMapping("/account/post/text")
+    @EmailVerified
     fun uploadTextPost(@RequestBody textPostDto: TextPostDto, authentication: Authentication): ResponseEntity<String> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
         postService.addTextPost(textPostDto.text, user)
@@ -30,6 +32,7 @@ class PostController @Autowired constructor(
     }
 
     @PostMapping("/account/post/media")
+    @EmailVerified
     fun uploadMediaPost(@RequestParam("file") file: MultipartFile, authentication: Authentication): ResponseEntity<String> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
 
@@ -67,6 +70,7 @@ class PostController @Autowired constructor(
     }
 
     @GetMapping("/posts")
+    @EmailVerified
     fun getOtherUserPosts(@RequestParam("userId") userId: String,
                       @RequestParam("page") page: Int,
                       authentication: Authentication): ResponseEntity<List<PostDto>> {

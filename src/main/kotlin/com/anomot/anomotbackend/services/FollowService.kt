@@ -20,6 +20,9 @@ class FollowService @Autowired constructor(
         if (user.id == userToFollow.id) {
             return false
         }
+
+        if (followRepository.canFollow(user, userToFollow)) return false
+
         val follow = Follow(userToFollow, user)
         followRepository.save(follow)
         return true

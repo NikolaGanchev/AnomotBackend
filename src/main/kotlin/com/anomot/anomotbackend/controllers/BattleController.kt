@@ -4,6 +4,7 @@ import com.anomot.anomotbackend.dto.*
 import com.anomot.anomotbackend.entities.Battle
 import com.anomot.anomotbackend.entities.Post
 import com.anomot.anomotbackend.security.CustomUserDetails
+import com.anomot.anomotbackend.security.EmailVerified
 import com.anomot.anomotbackend.services.*
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
@@ -25,12 +26,14 @@ class BattleController @Autowired constructor(
         else battle.redPost
     }
 
+
     private fun getEnemyPost(post: Post, battle: Battle): Post? {
         return if (battle.goldPost == post) battle.redPost
         else battle.goldPost
     }
 
     @PostMapping("/account/battle/text")
+    @EmailVerified
     fun uploadTextBattle(@RequestBody textPostDto: TextPostDto, authentication: Authentication): ResponseEntity<SelfBattleDto> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
         val post = postService.createTextPost(textPostDto.text, user)
@@ -66,6 +69,7 @@ class BattleController @Autowired constructor(
     }
 
     @PostMapping("/account/battle/media")
+    @EmailVerified
     fun uploadMediaBattle(@RequestParam("file") file: MultipartFile, authentication: Authentication): ResponseEntity<SelfBattleDto> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
 
@@ -107,6 +111,7 @@ class BattleController @Autowired constructor(
     }
 
     @GetMapping("/battle")
+    @EmailVerified
     fun getBattle(@RequestParam("page") page: Int, authentication: Authentication): ResponseEntity<BattleDto?> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
         return ResponseEntity(battleService.getBattle(user, page), HttpStatus.OK)

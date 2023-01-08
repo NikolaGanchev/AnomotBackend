@@ -289,8 +289,6 @@ class UserDetailsServiceImpl: UserDetailsService {
         val user = SecurityContextHolder.getContext().authentication
                 ?: throw AccessDeniedException("No authentication present")
 
-        if (!(user.principal as CustomUserDetails).isEmailVerified) throw AccessDeniedException("Email not verified")
-
         val result = mediaService.uploadSquareImageToServer(file, Constants.PROFILE_PIC_SIZE, left, top, cropSize)
                 ?: return false
 

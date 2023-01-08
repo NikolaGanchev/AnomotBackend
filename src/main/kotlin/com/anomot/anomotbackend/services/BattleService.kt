@@ -128,10 +128,8 @@ class BattleService @Autowired constructor(
     }
 
     fun getBattle(user: User, page: Int): BattleDto? {
-        val battles = battleRepository.getBattle(user.id!!, PageRequest.of(page, 1))
-        if (battles.isEmpty()) return null
+        val battle = battleRepository.getBattle(user.id!!) ?: return null
 
-        val battle = battles[0]
         if (battle.goldPost == null || battle.redPost == null) return null
 
         return BattleDto(

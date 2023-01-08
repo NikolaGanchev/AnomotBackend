@@ -3,6 +3,7 @@ package com.anomot.anomotbackend.controllers
 import com.anomot.anomotbackend.dto.VoteDto
 import com.anomot.anomotbackend.dto.VotedBattleDto
 import com.anomot.anomotbackend.security.CustomUserDetails
+import com.anomot.anomotbackend.security.EmailVerified
 import com.anomot.anomotbackend.services.UserDetailsServiceImpl
 import com.anomot.anomotbackend.services.VoteService
 import org.springframework.http.HttpStatus
@@ -19,6 +20,7 @@ class VoteController(
 ) {
 
     @PostMapping("/vote")
+    @EmailVerified
     fun vote(@RequestBody @Valid voteDto: VoteDto, authentication: Authentication): ResponseEntity<String> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
         val result = voteService.vote(user, voteDto.jwt, voteDto.forId)

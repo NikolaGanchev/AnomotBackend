@@ -24,6 +24,7 @@ import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 import org.springframework.web.reactive.function.BodyInserters
 import org.springframework.web.reactive.function.client.WebClient
+import org.springframework.web.reactive.function.client.WebClientResponseException
 import reactor.core.publisher.Mono
 import java.util.*
 import javax.transaction.Transactional
@@ -264,6 +265,9 @@ class MediaService @Autowired constructor(
                     return@onStatus Mono.empty()
                 }
                 .bodyToMono(SquareImageSaveDto::class.java)
+                .onErrorResume(WebClientResponseException.UnsupportedMediaType::class.java) {
+                    return@onErrorResume Mono.empty()
+                }
                 .blockOptional()
 
         if (content.isEmpty) {

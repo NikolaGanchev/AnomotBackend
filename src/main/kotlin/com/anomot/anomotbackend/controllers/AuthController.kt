@@ -3,6 +3,7 @@ package com.anomot.anomotbackend.controllers
 import com.anomot.anomotbackend.dto.*
 import com.anomot.anomotbackend.exceptions.UserAlreadyExistsException
 import com.anomot.anomotbackend.security.CustomUserDetails
+import com.anomot.anomotbackend.security.EmailVerified
 import com.anomot.anomotbackend.security.MfaMethodValue
 import com.anomot.anomotbackend.services.*
 import com.anomot.anomotbackend.utils.Constants
@@ -210,17 +211,14 @@ class AuthController(private val userDetailsService: UserDetailsServiceImpl,
     }
 
     @PostMapping("/avatar")
+    @EmailVerified
     fun uploadProfilePicture(@RequestParam("file") file: MultipartFile,
                              @RequestParam("left") left: Int,
                              @RequestParam("top") top: Int,
                              @RequestParam("cropSize") cropSize: Int,
                              authentication: Authentication): ResponseEntity<String> {
-        return try {
-            val result = userDetailsService.changeAvatar(file, left, top, cropSize)
+        val result = userDetailsService.changeAvatar(file, left, top, cropSize)
 
-            ResponseEntity(if (result) HttpStatus.OK else HttpStatus.BAD_REQUEST)
-        } catch (exception: AccessDeniedException) {
-            ResponseEntity(exception.message, HttpStatus.FORBIDDEN)
-        }
+        return ResponseEntity(if (result) HttpStatus.OK else HttpStatus.BAD_REQUEST)
     }
 }
