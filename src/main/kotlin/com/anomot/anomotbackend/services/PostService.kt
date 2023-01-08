@@ -12,6 +12,7 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
+import javax.transaction.Transactional
 
 enum class PostCreateStatus {
     OK,
@@ -69,18 +70,19 @@ class PostService @Autowired constructor(
         return postRepository.findAllByPoster(user, PageRequest.of(page, Constants.POST_PAGE, Sort.by("creationDate").descending()))
     }
 
+    @Transactional
     fun deletePost(postId: Long, user: User): Boolean {
         if (!postRepository.existsById(postId)) {
             return false
         }
 
-        battleQueueRepository.deletePostByIdAndUser(postId, user)
+        battleQueueRepository.deletePostByIdAndUser(postId, user.id!!)
         val num = postRepository.deleteByIdAndPoster(postId, user)
 
         return num != (0).toLong()
     }
 
     fun getFeed(user: User, page: Int): List<Post> {
-        return postRepository.getFeed(user.id!!, PageRequest.of(page, Constants.FEED_PAGE, Sort.by("creationDate").descending()))
+        return postRepository.getFeed(user.id!!, PageRequest.of(page, Constants.FEED_PAGE, Sort.by("creation_date").descending()))
     }
 }

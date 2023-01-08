@@ -1,7 +1,6 @@
 package com.anomot.anomotbackend.controllers
 
 import com.anomot.anomotbackend.dto.UserDto
-import com.anomot.anomotbackend.dto.UserReference
 import com.anomot.anomotbackend.security.CustomUserDetails
 import com.anomot.anomotbackend.security.EmailVerified
 import com.anomot.anomotbackend.services.FollowService
@@ -10,7 +9,6 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
-import javax.validation.Valid
 
 @RestController
 @RequestMapping
@@ -21,22 +19,22 @@ class FollowController(
 
     @PostMapping("/account/follow")
     @EmailVerified
-    fun follow(@RequestBody @Valid userReference: UserReference, authentication: Authentication): ResponseEntity<String> {
-        followService.follow(
+    fun follow(@RequestParam("id") userId: String, authentication: Authentication): ResponseEntity<String> {
+        val result = followService.follow(
                 userDetailsService.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails),
-                userDetailsService.getUserReferenceFromIdUnsafe(userReference.id) ?: return ResponseEntity(HttpStatus.BAD_REQUEST))
+                userDetailsService.getUserReferenceFromIdUnsafe(userId) ?: return ResponseEntity(HttpStatus.BAD_REQUEST))
 
-        return ResponseEntity(HttpStatus.OK)
+        return ResponseEntity(if (result) HttpStatus.OK else HttpStatus.BAD_REQUEST)
     }
 
     @PostMapping("/account/unfollow")
     @EmailVerified
-    fun unfollow(@RequestBody @Valid userReference: UserReference, authentication: Authentication): ResponseEntity<String> {
-        followService.unfollow(
+    fun unfollow(@RequestParam("id") userId: String, authentication: Authentication): ResponseEntity<String> {
+        val result = followService.unfollow(
                 userDetailsService.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails),
-                userDetailsService.getUserReferenceFromIdUnsafe(userReference.id) ?: return ResponseEntity(HttpStatus.BAD_REQUEST))
+                userDetailsService.getUserReferenceFromIdUnsafe(userId) ?: return ResponseEntity(HttpStatus.BAD_REQUEST))
 
-        return ResponseEntity(HttpStatus.OK)
+        return ResponseEntity(if (result) HttpStatus.OK else HttpStatus.BAD_REQUEST)
     }
 
     @GetMapping("/account/followers")

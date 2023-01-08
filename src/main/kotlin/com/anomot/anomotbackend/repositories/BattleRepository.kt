@@ -26,7 +26,7 @@ interface BattleRepository: JpaRepository<Battle, Long> {
             "from Battle b where b.goldPost.poster = ?1 or b.redPost.poster = ?1")
     fun getAllBattlesByUser(user: User, pageable: Pageable): List<BattleIntermediate>
 
-    @Query("with updates as (update battle set total_vote_possibilities = battle.total_vote_possibilities + 1 where " +
+    @Query("select * from battle where " +
             // Ignore if you are the poster
             "not exists(select from post where id = battle.red_post_id and poster_id = ?1) and " +
             "not exists(select from post where id = battle.gold_post_id and poster_id = ?1) and " +
@@ -36,10 +36,7 @@ interface BattleRepository: JpaRepository<Battle, Long> {
             // Ignore if you have already voted
             "not exists(select from vote where vote.battle_id = battle.id and voter_id = ?1)" +
             // Do not show 30 seconds before finish
-            "and extract(epoch from (finish_date - now())) > 30 " +
-            "returning *) " +
-            "select * from updates limit 1", nativeQuery = true)
-    @Modifying
+            "and extract(epoch from (finish_date - now())) > 30", nativeQuery = true)
     fun getBattle(userId: Long): Battle?
 
     @Query("from Battle b where b.id = ?1 and b.finished = false")

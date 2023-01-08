@@ -32,7 +32,7 @@ class VoteService @Autowired constructor(
 
     private val secretKey: SecretKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKeyString))
 
-    fun vote(user: User, voteJWT: String, forId: String): Boolean {
+    fun vote(user: User, voteJWT: String, forId: String): VotedBattleDto? {
         try {
             val jws = Jwts.parserBuilder()
                     .requireAudience(user.id.toString())
@@ -41,26 +41,28 @@ class VoteService @Autowired constructor(
                     .build()
                     .parseClaimsJws(voteJWT)
 
-            val battle = battleRepository.getByIdAndFinishedFalse(jws.body.subject.toLong()) ?: return false
+            val battle = battleRepository.getByIdAndFinishedFalse(jws.body.subject.toLong()) ?: return null
 
             val post = if (battle.goldPost?.id == forId.toLong()) battle.goldPost
                         else if (battle.redPost?.id == forId.toLong()) battle.redPost else null
 
-            if (post == null || post.poster?.id == user.id) return false
+            if (post == null || post.poster?.id == user.id) return null
 
-            if (voteRepository.existsByBattleAndVoter(battle, user)) return false
+            if (voteRepository.existsByBattleAndVoter(battle, user)) return null
 
             voteRepository.save(Vote(battle, post, user))
-            return true
+
+            val it = voteRepository.getByVoterAndBattle(user, battle)
+            return createVotedBattleFromIntermediate(it)
         }
         catch (exception: JwtException) {
-            return false
+            return null
         }
         catch (exception: InvalidClaimException) {
-            return false
+            return null
         }
         catch (exception: NumberFormatException) {
-            return false
+            return null
         }
     }
 
@@ -72,26 +74,31 @@ class VoteService @Autowired constructor(
     fun getVoteHistory(user: User, page: Int): List<VotedBattleDto> {
         return voteRepository.getAllByVoter(user,
                 PageRequest.of(page, Constants.VOTE_PAGE, Sort.by("creationDate").descending())).map {
-            val votedPost = it.vote.post
-            val otherPost = if (it.vote.battle.goldPost == it.vote.post) it.vote.battle.redPost else it.vote.battle.goldPost
-            val votedUserDto = if (votedPost?.poster != null) userDetailsServiceImpl.getAsDto(votedPost.poster!!) else null
-
-            VotedBattleDto(
-                    votedPost = if (votedPost == null) null else PostDto(votedPost.type,
-                            votedPost.text,
-                            if (votedPost.media != null) MediaDto(votedPost.media!!.mediaType, votedPost.media!!.name.toString()) else null,
-                            votedUserDto,
-                            0,
-                            votedPost.id.toString()),
-                    otherPost = if (otherPost == null) null else BattlePostDto(otherPost.type,
-                            otherPost.text,
-                            if (otherPost.media != null) MediaDto(otherPost.media!!.mediaType, otherPost.media!!.name.toString()) else null,
-                            otherPost.id.toString()),
-                    votesForVoted = it.votesForVoted,
-                    votesForOther = it.votesForOther,
-                    isFinished = it.vote.battle.finished
-            )
+            createVotedBattleFromIntermediate(it)
         }
+    }
+
+    fun createVotedBattleFromIntermediate(it: VotedBattleIntermediate): VotedBattleDto {
+        val votedPost = it.vote.post
+        val otherPost = if (it.vote.battle.goldPost == it.vote.post) it.vote.battle.redPost else it.vote.battle.goldPost
+        val votedUserDto = if (votedPost?.poster != null) userDetailsServiceImpl.getAsDto(votedPost.poster!!) else null
+
+        return VotedBattleDto(
+                votedPost = if (votedPost == null) null else PostDto(votedPost.type,
+                        votedPost.text,
+                        if (votedPost.media != null) MediaDto(votedPost.media!!.mediaType, votedPost.media!!.name.toString()) else null,
+                        votedUserDto,
+                        0,
+                        votedPost.creationDate,
+                        votedPost.id.toString()),
+                otherPost = if (otherPost == null) null else BattlePostDto(otherPost.type,
+                        otherPost.text,
+                        if (otherPost.media != null) MediaDto(otherPost.media!!.mediaType, otherPost.media!!.name.toString()) else null,
+                        otherPost.id.toString()),
+                votesForVoted = it.votesForVoted,
+                votesForOther = it.votesForOther,
+                isFinished = it.vote.battle.finished
+        )
     }
 
     fun genVoteJwt(user: User, battle: Battle): String {

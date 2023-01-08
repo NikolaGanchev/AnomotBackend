@@ -113,12 +113,14 @@ class BattleService @Autowired constructor(
                             null,
                             userDetailsServiceImpl.getAsDto(selfPost.poster!!),
                             0,
+                            selfPost.creationDate,
                             selfPost.id.toString()),
                     if (enemyPost == null) null else PostDto(enemyPost.type,
                             enemyPost.text,
                             null,
                             if (enemyPost.poster == null) null else userDetailsServiceImpl.getAsDto(enemyPost.poster!!),
                             0,
+                            enemyPost.creationDate,
                             enemyPost.id.toString()),
                     it.votesForSelf,
                     it.votesForOther,
@@ -127,10 +129,13 @@ class BattleService @Autowired constructor(
         }
     }
 
+    @Transactional
     fun getBattle(user: User, page: Int): BattleDto? {
         val battle = battleRepository.getBattle(user.id!!) ?: return null
 
         if (battle.goldPost == null || battle.redPost == null) return null
+
+        battle.totalVotePossibilities += 1
 
         return BattleDto(
              BattlePostDto(

@@ -21,7 +21,9 @@ class FollowService @Autowired constructor(
             return false
         }
 
-        if (followRepository.canFollow(user, userToFollow)) return false
+        // TODO(Merge into 1 query)
+        if (!(followRepository.canFollowFromBattle(user, userToFollow) ||
+                        followRepository.canFollowFromVote(user, userToFollow))) return false
 
         val follow = Follow(userToFollow, user)
         followRepository.save(follow)
@@ -33,8 +35,8 @@ class FollowService @Autowired constructor(
         if (user.id == userToUnfollow.id) {
             return false
         }
-        followRepository.delete(user, userToUnfollow)
-        return true
+        val num = followRepository.delete(user, userToUnfollow)
+        return num > 0
     }
 
     fun getFollowers(user: User, pageNumber: Int): List<UserDto> {

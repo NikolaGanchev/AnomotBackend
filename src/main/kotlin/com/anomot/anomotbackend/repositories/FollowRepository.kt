@@ -41,13 +41,14 @@ interface FollowRepository: JpaRepository<Follow, Long> {
 
     @Modifying
     @Query("delete from Follow f where f.followed = ?2 and f.follower = ?1")
-    fun delete(user: User, userToUnfollow: User)
+    fun delete(user: User, userToUnfollow: User): Int
 
-    @Query("select count(b)>0 from Battle b join Vote v on v.battle = b where " +
-            // Check if the user has voted for the other
-            "(v.voter = ?1 and v.post.poster = ?2) " +
+    @Query("select count(b)>0 from Battle b where " +
             // Check if there is/was a battle between the two users
-            "or (b.redPost.poster = ?1 and b.goldPost.poster = ?2) " +
+            "(b.redPost.poster = ?1 and b.goldPost.poster = ?2) " +
             "or (b.goldPost.poster = ?1 and b.redPost.poster = ?2)")
-    fun canFollow(user: User, userToFollow: User): Boolean
+    fun canFollowFromBattle(user: User, userToFollow: User): Boolean
+
+    @Query("select count(v)>0 from Vote v where v.voter = ?1 and v.post.poster = ?2")
+    fun canFollowFromVote(user: User, userToFollow: User): Boolean
 }

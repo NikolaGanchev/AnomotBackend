@@ -53,6 +53,7 @@ class PostController @Autowired constructor(
                             if (it.media != null) MediaDto(it.media!!.mediaType, it.media!!.name.toString()) else null,
                             userDetailsServiceImpl.getAsDto(it.poster!!),
                             0,
+                            it.creationDate,
                             it.id.toString())
         }
 
@@ -87,6 +88,7 @@ class PostController @Autowired constructor(
                     if (it.media != null) MediaDto(it.media!!.mediaType, it.media!!.name.toString()) else null,
                     userDetailsServiceImpl.getAsDto(it.poster!!),
                     0,
+                    it.creationDate,
                     it.id.toString())
         }
 
@@ -107,6 +109,7 @@ class PostController @Autowired constructor(
                     if (it.media != null) MediaDto(it.media!!.mediaType, it.media!!.name.toString()) else null,
                     userDetailsServiceImpl.getAsDto(it.poster!!),
                     0,
+                    it.creationDate,
                     it.id.toString())
         }.filterNotNull()
 

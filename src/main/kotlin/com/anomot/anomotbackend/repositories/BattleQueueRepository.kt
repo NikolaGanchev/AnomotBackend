@@ -1,7 +1,6 @@
 package com.anomot.anomotbackend.repositories
 
 import com.anomot.anomotbackend.entities.BattleQueuePost
-import com.anomot.anomotbackend.entities.User
 import com.anomot.anomotbackend.utils.Constants
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
@@ -21,7 +20,7 @@ interface BattleQueueRepository: JpaRepository<BattleQueuePost, Long> {
     fun findSimilarByElo(@Param("post") post: BattleQueuePost, pageable: Pageable =
         PageRequest.of(0, 1)): List<BattleQueuePost>
 
-    @Query("delete from BattleQueuePost p where p.post.id = ?1 and p.post.poster = ?2")
+    @Query("delete from BattleQueuePost p where p.post.id = ?1 and p.post.id in (select post.id from Post post where post.poster.id = ?2)")
     @Modifying
-    fun deletePostByIdAndUser(postId: Long, user: User): Long
+    fun deletePostByIdAndUser(postId: Long, userId: Long): Int
 }
