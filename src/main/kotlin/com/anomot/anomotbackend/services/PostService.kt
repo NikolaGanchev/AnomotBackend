@@ -9,6 +9,7 @@ import com.anomot.anomotbackend.utils.Constants
 import com.anomot.anomotbackend.utils.PostType
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 
@@ -65,7 +66,7 @@ class PostService @Autowired constructor(
     }
 
     fun getPostsForUser(user: User, page: Int): List<Post> {
-        return postRepository.findAllByPoster(user, PageRequest.of(page, Constants.POST_PAGE))
+        return postRepository.findAllByPoster(user, PageRequest.of(page, Constants.POST_PAGE, Sort.by("creationDate").descending()))
     }
 
     fun deletePost(postId: Long, user: User): Boolean {
@@ -80,6 +81,6 @@ class PostService @Autowired constructor(
     }
 
     fun getFeed(user: User, page: Int): List<Post> {
-        return postRepository.getFeed(user.id!!, PageRequest.of(page, Constants.FEED_PAGE))
+        return postRepository.getFeed(user.id!!, PageRequest.of(page, Constants.FEED_PAGE, Sort.by("creationDate").descending()))
     }
 }

@@ -20,4 +20,5 @@ interface VoteRepository: JpaRepository<Vote, Long> {
             "(select count (v2) from Vote v2 where v2.battle = v.battle and v2.post <> v.post)) from Vote v where v.voter = ?1")
     fun getAllByVoter(voter: User, pageable: Pageable): List<VotedBattleIntermediate>
 
+    fun existsByBattleAndVoter(battle: Battle, user: User): Boolean
 }

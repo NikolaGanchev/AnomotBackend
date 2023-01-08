@@ -1,12 +1,12 @@
 package com.anomot.anomotbackend.services
 
-import com.anomot.anomotbackend.dto.PostDto
-import com.anomot.anomotbackend.dto.SelfBattleDto
+import com.anomot.anomotbackend.dto.*
 import com.anomot.anomotbackend.entities.*
 import com.anomot.anomotbackend.repositories.*
 import com.anomot.anomotbackend.utils.Constants
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import java.util.*
 import javax.transaction.Transactional
@@ -17,7 +17,8 @@ class BattleService @Autowired constructor(
         private val battleRepository: BattleRepository,
         private val eloService: EloService,
         private val voteRepository: VoteRepository,
-        private val userDetailsServiceImpl: UserDetailsServiceImpl
+        private val userDetailsServiceImpl: UserDetailsServiceImpl,
+        private val voteService: VoteService
 ) {
 
     @Transactional
@@ -92,7 +93,8 @@ class BattleService @Autowired constructor(
     }
 
     fun getBattles(user: User, page: Int): List<SelfBattleDto> {
-        return battleRepository.getAllBattlesByUser(user, PageRequest.of(page, Constants.BATTLE_PAGE)).map {
+        return battleRepository.getAllBattlesByUser(user,
+                PageRequest.of(page, Constants.BATTLE_PAGE, Sort.by("creationDate").descending())).map {
             val battle = it.battle
             val selfPost = if (battle.goldPost?.poster?.id == user.id) {
                 battle.goldPost
@@ -123,5 +125,27 @@ class BattleService @Autowired constructor(
                     battle.finished,
                     battle.finishDate!!)
         }
+    }
+
+    fun getBattle(user: User, page: Int): BattleDto? {
+        val battles = battleRepository.getBattle(user.id!!, PageRequest.of(page, 1))
+        if (battles.isEmpty()) return null
+
+        val battle = battles[0]
+        if (battle.goldPost == null || battle.redPost == null) return null
+
+        return BattleDto(
+             BattlePostDto(
+                     battle.goldPost!!.type,
+                     battle.goldPost!!.text,
+                    if (battle.goldPost!!.media != null) MediaDto(battle.goldPost!!.media!!.mediaType, battle.goldPost!!.media!!.name.toString()) else null,
+                    battle.goldPost!!.id.toString()),
+             BattlePostDto(
+                     battle.redPost!!.type,
+                     battle.redPost!!.text,
+                     if (battle.redPost!!.media != null) MediaDto(battle.redPost!!.media!!.mediaType, battle.redPost!!.media!!.name.toString()) else null,
+                    battle.redPost!!.id.toString()),
+                    voteService.genVoteJwt(user, battle)
+        )
     }
 }

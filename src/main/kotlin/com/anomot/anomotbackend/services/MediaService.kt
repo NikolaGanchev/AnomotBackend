@@ -16,6 +16,7 @@ import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.io.ByteArrayResource
 import org.springframework.core.io.buffer.DataBuffer
 import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.http.client.MultipartBodyBuilder
@@ -281,6 +282,6 @@ class MediaService @Autowired constructor(
     }
 
     fun getMediaByUser(user: User, page: Int): List<Media> {
-        return mediaRepository.getMediaByPublisher(user, PageRequest.of(page, Constants.MEDIA_PAGE))
+        return mediaRepository.getMediaByPublisher(user, PageRequest.of(page, Constants.MEDIA_PAGE, Sort.by("creationDate").descending()))
     }
 }

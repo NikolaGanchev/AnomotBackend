@@ -19,9 +19,10 @@ class VoteController(
 ) {
 
     @PostMapping("/vote")
-    fun vote(@RequestBody @Valid voteDto: VoteDto, authentication: Authentication) {
-        voteService.vote((authentication.principal) as CustomUserDetails, voteDto.jwt, voteDto.forId)
-        //TODO
+    fun vote(@RequestBody @Valid voteDto: VoteDto, authentication: Authentication): ResponseEntity<String> {
+        val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
+        val result = voteService.vote(user, voteDto.jwt, voteDto.forId)
+        return ResponseEntity(if (result) HttpStatus.OK else HttpStatus.FORBIDDEN)
     }
 
     @GetMapping("/votes")

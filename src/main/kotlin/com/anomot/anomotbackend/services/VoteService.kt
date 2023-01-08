@@ -1,26 +1,77 @@
 package com.anomot.anomotbackend.services
 
 import com.anomot.anomotbackend.dto.*
+import com.anomot.anomotbackend.entities.Battle
 import com.anomot.anomotbackend.entities.User
+import com.anomot.anomotbackend.entities.Vote
+import com.anomot.anomotbackend.repositories.BattleRepository
 import com.anomot.anomotbackend.repositories.VoteRepository
-import com.anomot.anomotbackend.security.CustomUserDetails
 import com.anomot.anomotbackend.utils.Constants
+import io.jsonwebtoken.InvalidClaimException
+import io.jsonwebtoken.JwtException
+import io.jsonwebtoken.Jwts
+import io.jsonwebtoken.SignatureAlgorithm
+import io.jsonwebtoken.io.Decoders
+import io.jsonwebtoken.io.Encoders
+import io.jsonwebtoken.security.Keys
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
+import java.security.Key
+import javax.crypto.SecretKey
 
 @Service
 class VoteService @Autowired constructor(
+        @Value("\${vote.jwt.private-key}") private val secretKeyString: String,
         private val voteRepository: VoteRepository,
-        private val userDetailsServiceImpl: UserDetailsServiceImpl
+        private val userDetailsServiceImpl: UserDetailsServiceImpl,
+        private val battleRepository: BattleRepository
 ) {
 
-    fun vote(user: CustomUserDetails, voteJWT: String, forId: String) {
-        //TODO
+    private val secretKey: SecretKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKeyString))
+
+    fun vote(user: User, voteJWT: String, forId: String): Boolean {
+        try {
+            val jws = Jwts.parserBuilder()
+                    .requireAudience(user.id.toString())
+                    .require("action", "vote")
+                    .setSigningKey(secretKey)
+                    .build()
+                    .parseClaimsJws(voteJWT)
+
+            val battle = battleRepository.getByIdAndFinishedFalse(jws.body.subject.toLong()) ?: return false
+
+            val post = if (battle.goldPost?.id == forId.toLong()) battle.goldPost
+                        else if (battle.redPost?.id == forId.toLong()) battle.redPost else null
+
+            if (post == null || post.poster?.id == user.id) return false
+
+            if (voteRepository.existsByBattleAndVoter(battle, user)) return false
+
+            voteRepository.save(Vote(battle, post, user))
+            return true
+        }
+        catch (exception: JwtException) {
+            return false
+        }
+        catch (exception: InvalidClaimException) {
+            return false
+        }
+        catch (exception: NumberFormatException) {
+            return false
+        }
+    }
+
+    fun genJwtKey(): String {
+        val key: Key = Keys.secretKeyFor(SignatureAlgorithm.HS256)
+        return Encoders.BASE64.encode(key.encoded)
     }
 
     fun getVoteHistory(user: User, page: Int): List<VotedBattleDto> {
-        return voteRepository.getAllByVoter(user, PageRequest.of(page, Constants.VOTE_PAGE)).map {
+        return voteRepository.getAllByVoter(user,
+                PageRequest.of(page, Constants.VOTE_PAGE, Sort.by("creationDate").descending())).map {
             val votedPost = it.vote.post
             val otherPost = if (it.vote.battle.goldPost == it.vote.post) it.vote.battle.redPost else it.vote.battle.goldPost
             val votedUserDto = if (votedPost?.poster != null) userDetailsServiceImpl.getAsDto(votedPost.poster!!) else null
@@ -41,5 +92,15 @@ class VoteService @Autowired constructor(
                     isFinished = it.vote.battle.finished
             )
         }
+    }
+
+    fun genVoteJwt(user: User, battle: Battle): String {
+        return Jwts.builder()
+                .setSubject(battle.id.toString())
+                .setAudience(user.id.toString())
+                .setExpiration(battle.finishDate)
+                .claim("action", "vote")
+                .signWith(secretKey)
+                .compact()
     }
 }
