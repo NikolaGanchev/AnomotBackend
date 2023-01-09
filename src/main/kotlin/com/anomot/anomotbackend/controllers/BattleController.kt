@@ -149,4 +149,10 @@ class BattleController @Autowired constructor(
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
         return ResponseEntity(battleService.getBattles(user, page), HttpStatus.OK)
     }
+
+    @GetMapping("/account/battles/queue")
+    fun getSelfBattlesQueue(@RequestParam("page") page: Int, authentication: Authentication): ResponseEntity<List<PostDto>> {
+        val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
+        return ResponseEntity(battleService.getPostsInQueue(user, page), HttpStatus.OK)
+    }
 }

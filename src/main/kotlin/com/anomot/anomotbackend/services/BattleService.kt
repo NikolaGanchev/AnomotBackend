@@ -151,4 +151,16 @@ class BattleService @Autowired constructor(
                     voteService.genVoteJwt(user, battle)
         )
     }
+
+    fun getPostsInQueue(user: User, page: Int): List<PostDto> {
+        return battleQueueRepository.getAllByPostPoster(user, PageRequest.of(page, Constants.POST_PAGE, Sort.by("post.creationDate"))).map {
+            PostDto(it.post.type,
+                    it.post.text,
+                    if (it.post.media != null) MediaDto(it.post.media!!.mediaType, it.post.media!!.name.toString()) else null,
+                    userDetailsServiceImpl.getAsDto(it.post.poster!!),
+                    0,
+                    it.post.creationDate,
+                    it.id.toString())
+        }
+    }
 }
