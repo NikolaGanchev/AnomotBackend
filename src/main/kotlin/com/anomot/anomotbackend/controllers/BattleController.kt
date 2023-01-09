@@ -32,14 +32,23 @@ class BattleController @Autowired constructor(
         else battle.goldPost
     }
 
+    // returns either a battle dto if battle is successfully found, list of posts too similar if available or null
     @PostMapping("/account/battle/text")
     @EmailVerified
-    fun uploadTextBattle(@RequestBody textPostDto: TextPostDto, authentication: Authentication): ResponseEntity<SelfBattleDto> {
+    fun uploadTextBattle(@RequestBody textPostDto: TextPostDto, authentication: Authentication): ResponseEntity<Any> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
         val postCreateStatus = postService.createTextPost(textPostDto.text, user, true)
 
         if (postCreateStatus == PostCreateStatus.SIMILAR_FOUND || postCreateStatus.post == null) {
-            return ResponseEntity(HttpStatus.CONFLICT)
+            return ResponseEntity(postCreateStatus.similar?.map {
+                return@map PostDto(it.type,
+                        it.text,
+                        null,
+                        userDetailsServiceImpl.getAsDto(it.poster!!),
+                        0,
+                        it.creationDate,
+                        it.id.toString())
+            }, HttpStatus.CONFLICT)
         }
 
         val battle = battleService.queuePostForBattle(postCreateStatus.post!!) ?: return ResponseEntity(HttpStatus.CREATED)
@@ -74,16 +83,25 @@ class BattleController @Autowired constructor(
                 battle.finishDate!!), HttpStatus.CREATED)
     }
 
+    // returns either a battle dto if battle is successfully found, list of posts too similar if available or null
     @PostMapping("/account/battle/media")
     @EmailVerified
-    fun uploadMediaBattle(@RequestParam("file") file: MultipartFile, authentication: Authentication): ResponseEntity<SelfBattleDto> {
+    fun uploadMediaBattle(@RequestParam("file") file: MultipartFile, authentication: Authentication): ResponseEntity<Any> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
 
         val response = postService.createMediaPost(file, user, true)
 
         if (response == PostCreateStatus.MEDIA_UNSUPPORTED) return ResponseEntity(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
         else if (response == PostCreateStatus.NSFW_FOUND) return ResponseEntity(HttpStatus.BAD_REQUEST)
-        else if (response == PostCreateStatus.SIMILAR_FOUND) return ResponseEntity(HttpStatus.CONFLICT)
+        else if (response == PostCreateStatus.SIMILAR_FOUND) return ResponseEntity(response.similar?.map {
+            return@map PostDto(it.type,
+                    null,
+                    MediaDto(it.media!!.mediaType, it.media!!.name.toString()),
+                    userDetailsServiceImpl.getAsDto(it.poster!!),
+                    0,
+                    it.creationDate,
+                    it.id.toString())
+        }, HttpStatus.CONFLICT)
 
         val post = response.post ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
 

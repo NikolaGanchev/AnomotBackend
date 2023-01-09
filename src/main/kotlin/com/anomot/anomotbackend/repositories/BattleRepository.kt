@@ -44,13 +44,13 @@ interface BattleRepository: JpaRepository<Battle, Long> {
     @Query("from Battle b where b.id = ?1 and b.finished = false")
     fun getByIdAndFinishedFalse(id: Long): Battle?
 
-    @Query("select p from Post p, Battle b where (b.redPost = p or b.goldPost = p) " +
+    @Query("select p from Post p, Battle b, BattleQueuePost bp where (b.redPost = p or b.goldPost = p or bp.post = p) " +
             "and p.poster = :user and " +
             "function('hamming_distance', p.media.phash, :#{#media.phash}) < 15")
     fun getSimilarMedia(user: User, media: Media): List<Post>
 
-    @Query("select p from Post p, Battle b where (b.redPost = p or b.goldPost = p) and" +
-            "((b.redPost = :user and b.goldPost.text = :text) or " +
+    @Query("select p from Post p, Battle b, BattleQueuePost bp where (b.redPost = p or b.goldPost = p or bp.post = p) and" +
+            "((b.goldPost.poster = :user and b.goldPost.text = :text) or " +
             "(b.redPost.poster = :user and b.redPost.text = :text))")
     fun getWithSameText(user: User, text: String): List<Post>
 }
