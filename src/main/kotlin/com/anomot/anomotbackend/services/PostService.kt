@@ -4,6 +4,7 @@ import com.anomot.anomotbackend.entities.Media
 import com.anomot.anomotbackend.entities.Post
 import com.anomot.anomotbackend.entities.User
 import com.anomot.anomotbackend.repositories.BattleQueueRepository
+import com.anomot.anomotbackend.repositories.BattleRepository
 import com.anomot.anomotbackend.repositories.PostRepository
 import com.anomot.anomotbackend.utils.Constants
 import com.anomot.anomotbackend.utils.PostType
@@ -17,17 +18,20 @@ import javax.transaction.Transactional
 enum class PostCreateStatus {
     OK,
     MEDIA_UNSUPPORTED,
-    NSFW_FOUND;
+    NSFW_FOUND,
+    SIMILAR_FOUND;
 
     var media: MediaService.MediaUploadResult? = null
     var post: Post? = null
+    var similar: List<Post>? = null
 }
 
 @Service
 class PostService @Autowired constructor(
         private val postRepository: PostRepository,
         private val mediaService: MediaService,
-        private val battleQueueRepository: BattleQueueRepository
+        private val battleQueueRepository: BattleQueueRepository,
+        private val battleRepository: BattleRepository
 ) {
 
     fun addTextPost(text: String, user: User): Post {
@@ -38,12 +42,23 @@ class PostService @Autowired constructor(
         return postRepository.save(Post(user, media, null, PostType.MEDIA))
     }
 
-    fun createTextPost(text: String, user: User): Post {
-        return addTextPost(text, user)
+    fun createTextPost(text: String, user: User, checkSimilar: Boolean): PostCreateStatus {
+        if (checkSimilar) {
+            val same = battleRepository.getWithSameText(user, text)
+            if (same.isNotEmpty()) {
+                return PostCreateStatus.SIMILAR_FOUND.also {
+                    it.similar = same
+                }
+            }
+        }
+
+        return PostCreateStatus.OK.also {
+            it.post = addTextPost(text, user)
+        }
     }
 
     fun createMediaPost(file: MultipartFile, user: User, shouldHash: Boolean): PostCreateStatus {
-        val media = mediaService.uploadMedia(file, false, true, user)
+        val media = mediaService.uploadMedia(file, shouldHash, true, user)
 
         if (media?.media == null) {
             return PostCreateStatus.MEDIA_UNSUPPORTED
@@ -51,10 +66,18 @@ class PostService @Autowired constructor(
 
         val nsfwStats = media.maxNsfwScan ?: media.avgNsfwScan!!
 
-
         if (!mediaService.inNsfwRequirements(nsfwStats)) {
             return PostCreateStatus.NSFW_FOUND.also {
                 it.media = media
+            }
+        }
+
+        if (shouldHash) {
+            val similar = battleRepository.getSimilarMedia(user, media.media)
+            if (similar.isNotEmpty()) {
+                return PostCreateStatus.SIMILAR_FOUND.also {
+                    it.similar = similar
+                }
             }
         }
 

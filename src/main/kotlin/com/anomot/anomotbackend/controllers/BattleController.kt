@@ -36,12 +36,16 @@ class BattleController @Autowired constructor(
     @EmailVerified
     fun uploadTextBattle(@RequestBody textPostDto: TextPostDto, authentication: Authentication): ResponseEntity<SelfBattleDto> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
-        val post = postService.createTextPost(textPostDto.text, user)
+        val postCreateStatus = postService.createTextPost(textPostDto.text, user, true)
 
-        val battle = battleService.queuePostForBattle(post) ?: return ResponseEntity(HttpStatus.CREATED)
+        if (postCreateStatus == PostCreateStatus.SIMILAR_FOUND || postCreateStatus.post == null) {
+            return ResponseEntity(HttpStatus.CONFLICT)
+        }
 
-        val selfPost = getSelfPost(post, battle)
-        val enemyPost = getEnemyPost(post, battle)
+        val battle = battleService.queuePostForBattle(postCreateStatus.post!!) ?: return ResponseEntity(HttpStatus.CREATED)
+
+        val selfPost = getSelfPost(postCreateStatus.post!!, battle)
+        val enemyPost = getEnemyPost(postCreateStatus.post!!, battle)
 
         if (selfPost == null || enemyPost == null || enemyPost.poster == null)  {
             // TODO
@@ -79,6 +83,7 @@ class BattleController @Autowired constructor(
 
         if (response == PostCreateStatus.MEDIA_UNSUPPORTED) return ResponseEntity(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
         else if (response == PostCreateStatus.NSFW_FOUND) return ResponseEntity(HttpStatus.BAD_REQUEST)
+        else if (response == PostCreateStatus.SIMILAR_FOUND) return ResponseEntity(HttpStatus.CONFLICT)
 
         val post = response.post ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
 

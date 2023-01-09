@@ -40,6 +40,7 @@ class PostController @Autowired constructor(
             PostCreateStatus.OK -> ResponseEntity(HttpStatus.CREATED)
             PostCreateStatus.MEDIA_UNSUPPORTED -> ResponseEntity(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
             PostCreateStatus.NSFW_FOUND -> ResponseEntity(HttpStatus.BAD_REQUEST)
+            PostCreateStatus.SIMILAR_FOUND -> ResponseEntity(HttpStatus.BAD_REQUEST)
         }
     }
 

@@ -2,6 +2,8 @@ package com.anomot.anomotbackend.repositories
 
 import com.anomot.anomotbackend.dto.BattleIntermediate
 import com.anomot.anomotbackend.entities.Battle
+import com.anomot.anomotbackend.entities.Media
+import com.anomot.anomotbackend.entities.Post
 import com.anomot.anomotbackend.entities.User
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
@@ -41,4 +43,14 @@ interface BattleRepository: JpaRepository<Battle, Long> {
 
     @Query("from Battle b where b.id = ?1 and b.finished = false")
     fun getByIdAndFinishedFalse(id: Long): Battle?
+
+    @Query("select p from Post p, Battle b where (b.redPost = p or b.goldPost = p) " +
+            "and p.poster = :user and " +
+            "function('hamming_distance', p.media.phash, :#{#media.phash}) < 15")
+    fun getSimilarMedia(user: User, media: Media): List<Post>
+
+    @Query("select p from Post p, Battle b where (b.redPost = p or b.goldPost = p) and" +
+            "((b.redPost = :user and b.goldPost.text = :text) or " +
+            "(b.redPost.poster = :user and b.redPost.text = :text))")
+    fun getWithSameText(user: User, text: String): List<Post>
 }
