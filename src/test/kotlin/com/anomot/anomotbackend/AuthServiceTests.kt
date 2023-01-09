@@ -17,7 +17,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.core.userdetails.User
 
-@SpringBootTest
+@SpringBootTest(properties = ["vote.jwt.private-key=1edbc7fb7bae1628f085f6db259b7de40b887157aea732c7c31f18403a562338"])
 class AuthServiceTests {
     @MockkBean
     @Qualifier("userDetailsService")

@@ -16,7 +16,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
 import java.time.Instant
 
-@SpringBootTest
+@SpringBootTest(properties = ["vote.jwt.private-key=1edbc7fb7bae1628f085f6db259b7de40b887157aea732c7c31f18403a562338"])
 class EmailVerificationTests @Autowired constructor(
         @InjectMockKs
         private val emailVerificationService: EmailVerificationService,

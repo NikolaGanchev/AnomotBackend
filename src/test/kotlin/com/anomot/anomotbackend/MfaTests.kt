@@ -23,7 +23,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder
 import java.util.*
 
-@SpringBootTest
+@SpringBootTest(properties = ["vote.jwt.private-key=1edbc7fb7bae1628f085f6db259b7de40b887157aea732c7c31f18403a562338"])
 class MfaTests @Autowired constructor(
         @InjectMockKs
         val mfaEmailTokenService: MfaEmailTokenService,
