@@ -1,5 +1,6 @@
 package com.anomot.anomotbackend.repositories
 
+import com.anomot.anomotbackend.dto.PostWithLikes
 import com.anomot.anomotbackend.entities.BattleQueuePost
 import com.anomot.anomotbackend.entities.User
 import com.anomot.anomotbackend.utils.Constants
@@ -25,5 +26,9 @@ interface BattleQueueRepository: JpaRepository<BattleQueuePost, Long> {
     @Modifying
     fun deletePostByIdAndUser(postId: Long, userId: Long): Int
 
-    fun getAllByPostPoster(poster: User, pageable: Pageable): List<BattleQueuePost>
+    @Query("select new com.anomot.anomotbackend.dto.PostWithLikes(p.post, " +
+            "(select count(l) from Like l where l.post = p.post), " +
+            "(select count(l) > 0 from Like l where l.likedBy = ?2)) " +
+            "from BattleQueuePost p where p.post.poster = ?1")
+    fun getAllByPostPoster(poster: User, requester: User, pageable: Pageable): List<PostWithLikes>
 }

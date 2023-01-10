@@ -1,5 +1,6 @@
 package com.anomot.anomotbackend.repositories
 
+import com.anomot.anomotbackend.dto.PostWithLikes
 import com.anomot.anomotbackend.entities.Post
 import com.anomot.anomotbackend.entities.User
 import org.springframework.data.domain.Pageable
@@ -10,11 +11,21 @@ import org.springframework.stereotype.Repository
 @Repository
 interface PostRepository: JpaRepository<Post, Long> {
 
-    fun findAllByPoster(poster: User, pageable: Pageable): List<Post>
+
+    @Query("select new com.anomot.anomotbackend.dto.PostWithLikes(p, " +
+            "(select count(l) from Like l where l.post = p), " +
+            "(select count(l) > 0 from Like l where l.post = p and l.likedBy = ?1)) " +
+            "from Post p where p.poster = ?1")
+    fun findAllByPoster(poster: User, pageable: Pageable): List<PostWithLikes>
 
     fun deleteByIdAndPoster(id: Long, poster: User): Long
 
-    @Query("with followed as (select followed_id from follow where follower_id = ?1) " +
-            "select * from post where exists(select 1 from followed where poster_id = followed_id)", nativeQuery = true)
-    fun getFeed(userId: Long, pageable: Pageable): List<Post>
+    @Query("select new com.anomot.anomotbackend.dto.PostWithLikes(p, " +
+            "(select count(l) from Like l where l.post = p), " +
+            "(select count(l) > 0 from Like l where l.post = p and l.likedBy = ?1)) " +
+            "from Post p, Follow f where p.poster = f.followed and f.follower = ?1")
+    fun getFeed(user: User, pageable: Pageable): List<PostWithLikes>
+
+    @Query("select p.poster from Post p where p.id = ?1")
+    fun findPosterById(id: Long): User
 }

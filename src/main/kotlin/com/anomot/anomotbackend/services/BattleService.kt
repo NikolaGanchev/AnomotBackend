@@ -96,32 +96,36 @@ class BattleService @Autowired constructor(
         return battleRepository.getAllBattlesByUser(user,
                 PageRequest.of(page, Constants.BATTLE_PAGE, Sort.by("creationDate").descending())).map {
             val battle = it.battle
+
             val selfPost = if (battle.goldPost?.poster?.id == user.id) {
-                battle.goldPost
+                PostWithLikes(battle.goldPost, it.goldPostLikes, it.hasLikedGoldPost)
             } else {
-                battle.redPost
+                PostWithLikes(battle.redPost, it.redPostLikes, it.hasLikedRedPost)
             }
+
             val enemyPost = if (battle.goldPost?.poster?.id == user.id) {
-                battle.redPost
+                PostWithLikes(battle.redPost, it.redPostLikes, it.hasLikedRedPost)
             } else {
-                battle.goldPost
+                PostWithLikes(battle.goldPost, it.goldPostLikes, it.hasLikedGoldPost)
             }
 
             SelfBattleDto(
-                    if (selfPost == null) null else PostDto(selfPost.type,
-                            selfPost.text,
-                            null,
-                            userDetailsServiceImpl.getAsDto(selfPost.poster!!),
-                            0,
-                            selfPost.creationDate,
-                            selfPost.id.toString()),
-                    if (enemyPost == null) null else PostDto(enemyPost.type,
-                            enemyPost.text,
-                            null,
-                            if (enemyPost.poster == null) null else userDetailsServiceImpl.getAsDto(enemyPost.poster!!),
-                            0,
-                            enemyPost.creationDate,
-                            enemyPost.id.toString()),
+                    if (selfPost.post == null) null else PostDto(selfPost.post.type,
+                            selfPost.post.text,
+                            if (selfPost.post.media != null) MediaDto(selfPost.post.media!!.mediaType, selfPost.post.media!!.name.toString()) else null,
+                            userDetailsServiceImpl.getAsDto(selfPost.post.poster!!),
+                            selfPost.likes,
+                            selfPost.hasUserLiked,
+                            selfPost.post.creationDate,
+                            selfPost.post.id.toString()),
+                    if (enemyPost.post == null) null else PostDto(enemyPost.post.type,
+                            enemyPost.post.text,
+                            if (enemyPost.post.media != null) MediaDto(enemyPost.post.media!!.mediaType, enemyPost.post.media!!.name.toString()) else null,
+                            if (enemyPost.post.poster == null) null else userDetailsServiceImpl.getAsDto(enemyPost.post.poster!!),
+                            enemyPost.likes,
+                            enemyPost.hasUserLiked,
+                            enemyPost.post.creationDate,
+                            enemyPost.post.id.toString()),
                     it.votesForSelf,
                     it.votesForOther,
                     battle.finished,
@@ -131,7 +135,7 @@ class BattleService @Autowired constructor(
 
     @Transactional
     fun getBattle(user: User, page: Int): BattleDto? {
-        val battle = battleRepository.getBattle(user.id!!) ?: return null
+        val battle = battleRepository.getBattle(user.id!!, PageRequest.of(page, 1))[0] ?: return null
 
         if (battle.goldPost == null || battle.redPost == null) return null
 
@@ -153,14 +157,15 @@ class BattleService @Autowired constructor(
     }
 
     fun getPostsInQueue(user: User, page: Int): List<PostDto> {
-        return battleQueueRepository.getAllByPostPoster(user, PageRequest.of(page, Constants.POST_PAGE, Sort.by("post.creationDate"))).map {
-            PostDto(it.post.type,
+        return battleQueueRepository.getAllByPostPoster(user, user, PageRequest.of(page, Constants.POST_PAGE, Sort.by("post.creationDate"))).map {
+            PostDto(it.post!!.type,
                     it.post.text,
                     if (it.post.media != null) MediaDto(it.post.media!!.mediaType, it.post.media!!.name.toString()) else null,
                     userDetailsServiceImpl.getAsDto(it.post.poster!!),
-                    0,
+                    it.likes,
+                    it.hasUserLiked,
                     it.post.creationDate,
-                    it.id.toString())
+                    it.post.id.toString())
         }
     }
 }

@@ -1,18 +1,30 @@
 package com.anomot.anomotbackend.services
 
+import com.anomot.anomotbackend.dto.PostWithLikes
+import com.anomot.anomotbackend.dto.UserDto
+import com.anomot.anomotbackend.entities.Like
 import com.anomot.anomotbackend.entities.Media
 import com.anomot.anomotbackend.entities.Post
 import com.anomot.anomotbackend.entities.User
 import com.anomot.anomotbackend.repositories.BattleQueueRepository
 import com.anomot.anomotbackend.repositories.BattleRepository
+import com.anomot.anomotbackend.repositories.LikeRepository
 import com.anomot.anomotbackend.repositories.PostRepository
 import com.anomot.anomotbackend.utils.Constants
 import com.anomot.anomotbackend.utils.PostType
+import io.jsonwebtoken.Jwts
+import io.jsonwebtoken.io.Decoders
+import io.jsonwebtoken.security.Keys
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
+import java.lang.NumberFormatException
+import java.time.Instant
+import java.util.*
+import javax.crypto.SecretKey
 import javax.transaction.Transactional
 
 enum class PostCreateStatus {
@@ -28,11 +40,17 @@ enum class PostCreateStatus {
 
 @Service
 class PostService @Autowired constructor(
+        @Value("\${vote.jwt.private-key}") private val secretKeyString: String,
         private val postRepository: PostRepository,
         private val mediaService: MediaService,
         private val battleQueueRepository: BattleQueueRepository,
-        private val battleRepository: BattleRepository
+        private val battleRepository: BattleRepository,
+        private val followService: FollowService,
+        private val likeRepository: LikeRepository,
+        private val userDetailsServiceImpl: UserDetailsServiceImpl
 ) {
+
+    private val secretKey: SecretKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKeyString))
 
     fun addTextPost(text: String, user: User): Post {
         return postRepository.save(Post(user, null, text, PostType.TEXT))
@@ -89,7 +107,7 @@ class PostService @Autowired constructor(
         }
     }
 
-    fun getPostsForUser(user: User, page: Int): List<Post> {
+    fun getPostsForUser(user: User, page: Int): List<PostWithLikes> {
         return postRepository.findAllByPoster(user, PageRequest.of(page, Constants.POST_PAGE, Sort.by("creationDate").descending()))
     }
 
@@ -105,7 +123,66 @@ class PostService @Autowired constructor(
         return num != (0).toLong()
     }
 
-    fun getFeed(user: User, page: Int): List<Post> {
-        return postRepository.getFeed(user.id!!, PageRequest.of(page, Constants.FEED_PAGE, Sort.by("creation_date").descending()))
+    fun getFeed(user: User, page: Int): List<PostWithLikes> {
+        return postRepository.getFeed(user, PageRequest.of(page, Constants.FEED_PAGE, Sort.by("creationDate").descending()))
+    }
+
+    fun like(user: User, postId: String): Boolean {
+        val postIdLong = try {
+            postId.toLong()
+        } catch (exception: NumberFormatException) {
+            return false
+        }
+
+        if (!postRepository.existsById(postIdLong)) return false
+
+        val poster = postRepository.findPosterById(postIdLong)
+
+        if (!followService.follows(user, poster)) return false
+
+        val post = postRepository.getReferenceById(postIdLong)
+
+        if (likeRepository.existsByLikedByAndPost(user, post)) return false
+
+        likeRepository.save(Like(post, user))
+
+        return true
+    }
+
+    @Transactional
+    fun unlike(user: User, postId: String): Boolean {
+        val postIdLong = try {
+            postId.toLong()
+        } catch (exception: NumberFormatException) {
+            return false
+        }
+
+        if (!postRepository.existsById(postIdLong)) return false
+
+        val post = postRepository.getReferenceById(postIdLong)
+
+        val deleted = likeRepository.deleteByLikedByAndPost(user, post)
+
+        return deleted > 0
+    }
+
+    fun getLikedBy(user: User, postId: String, page: Int): List<UserDto>? {
+        val postIdLong = try {
+            postId.toLong()
+        } catch (exception: NumberFormatException) {
+            return null
+        }
+
+        if (!postRepository.existsById(postIdLong)) return null
+
+        val poster = postRepository.findPosterById(postIdLong)
+
+        if (!followService.follows(user, poster)) return null
+
+        val post = postRepository.getReferenceById(postIdLong)
+
+        return likeRepository.getLikedByByUserAndPost(user, post, PageRequest.of(page, Constants.LIKED_BY_PAGE)).map {
+            userDetailsServiceImpl.getAsDto(it)
+        }
     }
 }

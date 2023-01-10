@@ -40,5 +40,6 @@ class Constants {
         const val FEED_PAGE = 8
         const val VOTE_PAGE = 20
         const val BATTLE_PAGE = 10
+        const val LIKED_BY_PAGE = 20
     }
 }

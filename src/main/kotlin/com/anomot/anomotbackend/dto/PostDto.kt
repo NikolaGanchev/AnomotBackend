@@ -9,6 +9,7 @@ data class PostDto(
         val media: MediaDto?,
         val poster: UserDto?,
         val likes: Long, //TODO likes
+        val hasUserLiked: Boolean,
         val creationDate: Date,
         val id: String
 )

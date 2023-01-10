@@ -46,6 +46,7 @@ class BattleController @Autowired constructor(
                         null,
                         userDetailsServiceImpl.getAsDto(it.poster!!),
                         0,
+                        false,
                         it.creationDate,
                         it.id.toString())
             }, HttpStatus.CONFLICT)
@@ -68,6 +69,7 @@ class BattleController @Autowired constructor(
                         null,
                         userDetailsServiceImpl.getAsDto(selfPost.poster!!),
                         0,
+                        false,
                         selfPost.creationDate,
                         selfPost.id.toString()),
                 PostDto(enemyPost.type,
@@ -75,6 +77,7 @@ class BattleController @Autowired constructor(
                         null,
                         userDetailsServiceImpl.getAsDto(enemyPost.poster!!),
                         0,
+                        false,
                         enemyPost.creationDate,
                         enemyPost.id.toString()),
                 0,
@@ -99,6 +102,7 @@ class BattleController @Autowired constructor(
                     MediaDto(it.media!!.mediaType, it.media!!.name.toString()),
                     userDetailsServiceImpl.getAsDto(it.poster!!),
                     0,
+                    false,
                     it.creationDate,
                     it.id.toString())
         }, HttpStatus.CONFLICT)
@@ -122,6 +126,7 @@ class BattleController @Autowired constructor(
                         MediaDto(selfPost.media!!.mediaType, selfPost.media!!.name.toString()),
                         userDetailsServiceImpl.getAsDto(selfPost.poster!!),
                         0,
+                        false,
                         selfPost.creationDate,
                         selfPost.id.toString()),
                 PostDto(enemyPost.type,
@@ -129,6 +134,7 @@ class BattleController @Autowired constructor(
                         MediaDto(enemyPost.media!!.mediaType, enemyPost.media!!.name.toString()),
                         userDetailsServiceImpl.getAsDto(enemyPost.poster!!),
                         0,
+                        false,
                         enemyPost.creationDate,
                         enemyPost.id.toString()),
                 0,

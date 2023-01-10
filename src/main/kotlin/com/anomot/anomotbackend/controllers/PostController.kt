@@ -3,6 +3,7 @@ package com.anomot.anomotbackend.controllers
 import com.anomot.anomotbackend.dto.MediaDto
 import com.anomot.anomotbackend.dto.PostDto
 import com.anomot.anomotbackend.dto.TextPostDto
+import com.anomot.anomotbackend.dto.UserDto
 import com.anomot.anomotbackend.security.CustomUserDetails
 import com.anomot.anomotbackend.security.EmailVerified
 import com.anomot.anomotbackend.services.FollowService
@@ -49,13 +50,15 @@ class PostController @Autowired constructor(
         val posts = postService.getPostsForUser(
                 userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails),
                 page).map {
-                    PostDto(it.type,
-                            it.text,
-                            if (it.media != null) MediaDto(it.media!!.mediaType, it.media!!.name.toString()) else null,
-                            userDetailsServiceImpl.getAsDto(it.poster!!),
-                            0,
-                            it.creationDate,
-                            it.id.toString())
+                    val post = it.post
+                    PostDto(post!!.type,
+                            post.text,
+                            if (post.media != null) MediaDto(post.media!!.mediaType, post.media!!.name.toString()) else null,
+                            userDetailsServiceImpl.getAsDto(post.poster!!),
+                            it.likes,
+                            it.hasUserLiked,
+                            post.creationDate,
+                            post.id.toString())
         }
 
         return ResponseEntity(posts, HttpStatus.OK)
@@ -84,13 +87,15 @@ class PostController @Autowired constructor(
         val posts = postService.getPostsForUser(
                 otherUser,
                 page).map {
-            PostDto(it.type,
-                    it.text,
-                    if (it.media != null) MediaDto(it.media!!.mediaType, it.media!!.name.toString()) else null,
-                    userDetailsServiceImpl.getAsDto(it.poster!!),
-                    0,
-                    it.creationDate,
-                    it.id.toString())
+            val post = it.post
+            PostDto(post!!.type,
+                    post.text,
+                    if (post.media != null) MediaDto(post.media!!.mediaType, post.media!!.name.toString()) else null,
+                    userDetailsServiceImpl.getAsDto(post.poster!!),
+                    it.likes,
+                    it.hasUserLiked,
+                    post.creationDate,
+                    post.id.toString())
         }
 
         return ResponseEntity(posts, HttpStatus.OK)
@@ -103,17 +108,43 @@ class PostController @Autowired constructor(
         val posts = postService.getFeed(
                 user,
                 page).map {
-            if (it.poster == null) return@map null
+            val post = it.post
+            if (post!!.poster == null) return@map null
 
-            PostDto(it.type,
-                    it.text,
-                    if (it.media != null) MediaDto(it.media!!.mediaType, it.media!!.name.toString()) else null,
-                    userDetailsServiceImpl.getAsDto(it.poster!!),
-                    0,
-                    it.creationDate,
-                    it.id.toString())
+            PostDto(post.type,
+                    post.text,
+                    if (post.media != null) MediaDto(post.media!!.mediaType, post.media!!.name.toString()) else null,
+                    userDetailsServiceImpl.getAsDto(post.poster!!),
+                    it.likes,
+                    it.hasUserLiked,
+                    post.creationDate,
+                    post.id.toString())
         }.filterNotNull()
 
         return ResponseEntity(posts, HttpStatus.OK)
+    }
+
+    @PostMapping("/like")
+    fun like(@RequestParam("postId") postId: String, authentication: Authentication): ResponseEntity<String> {
+        val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
+
+        val result = postService.like(user, postId)
+        return ResponseEntity(if (result) HttpStatus.OK else HttpStatus.BAD_REQUEST)
+    }
+
+    @PostMapping("/unlike")
+    fun unlike(@RequestParam("postId") postId: String, authentication: Authentication): ResponseEntity<String> {
+        val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
+
+        val result = postService.unlike(user, postId)
+        return ResponseEntity(if (result) HttpStatus.OK else HttpStatus.BAD_REQUEST)
+    }
+
+    @GetMapping("/likes")
+    fun unlike(@RequestParam("page") page: Int, @RequestParam("postId") postId: String, authentication: Authentication): ResponseEntity<List<UserDto>> {
+        val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
+
+        val result = postService.getLikedBy(user, postId, page)
+        return ResponseEntity(result, if (result != null) HttpStatus.OK else HttpStatus.BAD_REQUEST)
     }
 }

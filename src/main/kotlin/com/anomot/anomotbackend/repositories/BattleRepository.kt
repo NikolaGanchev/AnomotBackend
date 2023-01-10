@@ -24,7 +24,11 @@ interface BattleRepository: JpaRepository<Battle, Long> {
 
     @Query("select new com.anomot.anomotbackend.dto.BattleIntermediate(b, " +
             "(select count (v1) from Vote v1 where v1.battle = b and v1.post.poster = ?1)," +
-            "(select count (v2) from Vote v2 where v2.battle = b and v2.post.poster <> ?1)) " +
+            "(select count (v2) from Vote v2 where v2.battle = b and v2.post.poster <> ?1)," +
+            "(select count (l) from Like l where l.post = b.goldPost)," +
+            "(select count (l) from Like l where l.post = b.redPost)," +
+            "(select count (l) > 0 from Like l where l.post = b.goldPost and l.likedBy = ?1)," +
+            "(select count (l) > 0 from Like l where l.post = b.redPost and l.likedBy = ?1)) " +
             "from Battle b where b.goldPost.poster = ?1 or b.redPost.poster = ?1")
     fun getAllBattlesByUser(user: User, pageable: Pageable): List<BattleIntermediate>
 
@@ -39,7 +43,7 @@ interface BattleRepository: JpaRepository<Battle, Long> {
             "not exists(select from vote where vote.battle_id = battle.id and voter_id = ?1)" +
             // Do not show 30 seconds before finish
             "and extract(epoch from (finish_date - now())) > 30", nativeQuery = true)
-    fun getBattle(userId: Long): Battle?
+    fun getBattle(userId: Long, pageable: Pageable): List<Battle?>
 
     @Query("from Battle b where b.id = ?1 and b.finished = false")
     fun getByIdAndFinishedFalse(id: Long): Battle?
