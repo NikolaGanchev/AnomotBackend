@@ -23,9 +23,7 @@ class FollowService @Autowired constructor(
             return false
         }
 
-        // TODO(Merge into 1 query)
-        if (!(followRepository.canFollowFromBattle(user, userToFollow) ||
-                        followRepository.canFollowFromVote(user, userToFollow))) return false
+        if (!followRepository.canSeeAccount(user, userToFollow)) return false
 
         val follow = Follow(userToFollow, user)
         followRepository.save(follow)

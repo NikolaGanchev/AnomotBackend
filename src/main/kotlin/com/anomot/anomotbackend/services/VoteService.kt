@@ -83,6 +83,7 @@ class VoteService @Autowired constructor(
         val otherPost = if (it.vote.battle.goldPost == it.vote.post) it.vote.battle.redPost else it.vote.battle.goldPost
         val votedUserDto = if (votedPost?.poster != null) userDetailsServiceImpl.getAsDto(votedPost.poster!!) else null
 
+
         return VotedBattleDto(
                 votedPost = if (votedPost == null) null else PostDto(votedPost.type,
                         votedPost.text,

@@ -51,4 +51,11 @@ interface FollowRepository: JpaRepository<Follow, Long> {
 
     @Query("select count(v)>0 from Vote v where v.voter = ?1 and v.post.poster = ?2")
     fun canFollowFromVote(user: User, userToFollow: User): Boolean
+
+    @Query("select count(b)>0 from Battle b, Vote v where " +
+            // Check if there is/was a battle between the two users
+            "((b.redPost.poster = ?1 and b.goldPost.poster = ?2) " +
+            "or (b.goldPost.poster = ?1 and b.redPost.poster = ?2)) or " +
+            "(v.voter = ?1 and v.post.poster = ?2)")
+    fun canSeeAccount(user: User, userToView: User): Boolean
 }
