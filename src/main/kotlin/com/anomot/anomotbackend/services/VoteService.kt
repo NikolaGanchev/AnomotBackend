@@ -83,14 +83,15 @@ class VoteService @Autowired constructor(
         val otherPost = if (it.vote.battle.goldPost == it.vote.post) it.vote.battle.redPost else it.vote.battle.goldPost
         val votedUserDto = if (votedPost?.poster != null) userDetailsServiceImpl.getAsDto(votedPost.poster!!) else null
 
+        val otherUserDto = if (it.canSeeOtherUser && otherPost?.poster != null) userDetailsServiceImpl.getAsDto(otherPost.poster!!) else null
 
         return VotedBattleDto(
                 votedPost = if (votedPost == null) null else PostDto(votedPost.type,
                         votedPost.text,
                         if (votedPost.media != null) MediaDto(votedPost.media!!.mediaType, votedPost.media!!.name.toString()) else null,
                         votedUserDto,
-                        -1,
-                        false,
+                        null,
+                        null,
                         votedPost.creationDate,
                         votedPost.id.toString()),
                 otherPost = if (otherPost == null) null else BattlePostDto(otherPost.type,
@@ -99,6 +100,7 @@ class VoteService @Autowired constructor(
                         otherPost.id.toString()),
                 votesForVoted = it.votesForVoted,
                 votesForOther = it.votesForOther,
+                otherUserDto,
                 isFinished = it.vote.battle.finished
         )
     }

@@ -98,34 +98,34 @@ class BattleService @Autowired constructor(
             val battle = it.battle
 
             val selfPost = if (battle.goldPost?.poster?.id == user.id) {
-                PostWithLikes(battle.goldPost, it.goldPostLikes, it.hasLikedGoldPost)
+                battle.goldPost
             } else {
-                PostWithLikes(battle.redPost, it.redPostLikes, it.hasLikedRedPost)
+                battle.redPost
             }
 
             val enemyPost = if (battle.goldPost?.poster?.id == user.id) {
-                PostWithLikes(battle.redPost, it.redPostLikes, it.hasLikedRedPost)
+                battle.redPost
             } else {
-                PostWithLikes(battle.goldPost, it.goldPostLikes, it.hasLikedGoldPost)
+                battle.goldPost
             }
 
             SelfBattleDto(
-                    if (selfPost.post == null) null else PostDto(selfPost.post.type,
-                            selfPost.post.text,
-                            if (selfPost.post.media != null) MediaDto(selfPost.post.media!!.mediaType, selfPost.post.media!!.name.toString()) else null,
-                            userDetailsServiceImpl.getAsDto(selfPost.post.poster!!),
-                            -1,
-                            false,
-                            selfPost.post.creationDate,
-                            selfPost.post.id.toString()),
-                    if (enemyPost.post == null) null else PostDto(enemyPost.post.type,
-                            enemyPost.post.text,
-                            if (enemyPost.post.media != null) MediaDto(enemyPost.post.media!!.mediaType, enemyPost.post.media!!.name.toString()) else null,
-                            if (enemyPost.post.poster == null) null else userDetailsServiceImpl.getAsDto(enemyPost.post.poster!!),
-                            -1,
-                            false,
-                            enemyPost.post.creationDate,
-                            enemyPost.post.id.toString()),
+                    if (selfPost == null) null else PostDto(selfPost.type,
+                            selfPost.text,
+                            if (selfPost.media != null) MediaDto(selfPost.media!!.mediaType, selfPost.media!!.name.toString()) else null,
+                            userDetailsServiceImpl.getAsDto(selfPost.poster!!),
+                            null,
+                            null,
+                            selfPost.creationDate,
+                            selfPost.id.toString()),
+                    if (enemyPost == null) null else PostDto(enemyPost.type,
+                            enemyPost.text,
+                            if (enemyPost.media != null) MediaDto(enemyPost.media!!.mediaType, enemyPost.media!!.name.toString()) else null,
+                            if (enemyPost.poster == null) null else userDetailsServiceImpl.getAsDto(enemyPost.poster!!),
+                            null,
+                            null,
+                            enemyPost.creationDate,
+                            enemyPost.id.toString()),
                     it.votesForSelf,
                     it.votesForOther,
                     battle.finished,

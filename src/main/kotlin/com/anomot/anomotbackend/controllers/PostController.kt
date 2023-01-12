@@ -49,6 +49,7 @@ class PostController @Autowired constructor(
     fun getSelfPosts(@RequestParam("page") page: Int, authentication: Authentication): ResponseEntity<List<PostDto>> {
         val posts = postService.getPostsForUser(
                 userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails),
+                userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails),
                 page).map {
                     val post = it.post
                     PostDto(post!!.type,
@@ -82,10 +83,11 @@ class PostController @Autowired constructor(
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
         val otherUser = userDetailsServiceImpl.getUserReferenceFromIdUnsafe(userId) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
 
-        if (!followService.follows(user, otherUser)) return ResponseEntity(HttpStatus.BAD_REQUEST)
+        if (!followService.canSeeOtherUser(user, otherUser)) return ResponseEntity(HttpStatus.BAD_REQUEST)
 
         val posts = postService.getPostsForUser(
                 otherUser,
+                userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails),
                 page).map {
             val post = it.post
             PostDto(post!!.type,

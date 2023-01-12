@@ -30,6 +30,10 @@ class FollowService @Autowired constructor(
         return true
     }
 
+    fun canSeeOtherUser(user: User, userToSee: User): Boolean {
+        return followRepository.canSeeAccount(user, userToSee)
+    }
+
     @Transactional
     fun unfollow(user: User, userToUnfollow: User): Boolean {
         if (user.id == userToUnfollow.id) {

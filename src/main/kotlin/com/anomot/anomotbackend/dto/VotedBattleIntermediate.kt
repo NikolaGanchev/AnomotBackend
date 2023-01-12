@@ -6,5 +6,4 @@ data class VotedBattleIntermediate(
         val vote: Vote,
         val votesForVoted: Long,
         val votesForOther: Long,
-        val votedLikes: Long,
-        val hasLikedVoted: Boolean)
+        val canSeeOtherUser: Boolean)

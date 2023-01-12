@@ -12,7 +12,6 @@ import com.anomot.anomotbackend.repositories.LikeRepository
 import com.anomot.anomotbackend.repositories.PostRepository
 import com.anomot.anomotbackend.utils.Constants
 import com.anomot.anomotbackend.utils.PostType
-import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.io.Decoders
 import io.jsonwebtoken.security.Keys
 import org.springframework.beans.factory.annotation.Autowired
@@ -22,7 +21,6 @@ import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 import java.lang.NumberFormatException
-import java.time.Instant
 import java.util.*
 import javax.crypto.SecretKey
 import javax.transaction.Transactional
@@ -107,8 +105,14 @@ class PostService @Autowired constructor(
         }
     }
 
-    fun getPostsForUser(user: User, page: Int): List<PostWithLikes> {
-        return postRepository.findAllByPoster(user, PageRequest.of(page, Constants.POST_PAGE, Sort.by("creationDate").descending()))
+    fun getPostsForUser(user: User, fromUser: User, page: Int): List<PostWithLikes> {
+
+        if (user.id == fromUser.id) {
+            return postRepository.findAllByPosterSelf(user, PageRequest.of(page, Constants.POST_PAGE, Sort.by("creationDate").descending()))
+        }
+        else {
+            return postRepository.findAllByPosterOther(user, fromUser, PageRequest.of(page, Constants.POST_PAGE, Sort.by("creationDate").descending()))
+        }
     }
 
     @Transactional
