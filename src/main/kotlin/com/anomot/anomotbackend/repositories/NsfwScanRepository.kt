@@ -11,8 +11,8 @@ import java.util.UUID
 interface NsfwScanRepository: JpaRepository<NsfwScan, Long> {
 
     @Query("select new com.anomot.anomotbackend.dto.NsfwScans(" +
-            "(from NsfwScan n where n.type = com.anomot.anomotbackend.utils.NsfwScanType.AVERAGE)," +
-            "(from NsfwScan n where n.type = com.anomot.anomotbackend.utils.NsfwScanType.MAX)) " +
+            "(select n from NsfwScan n where n.type = com.anomot.anomotbackend.utils.NsfwScanType.AVERAGE)," +
+            "(select n from NsfwScan n where n.type = com.anomot.anomotbackend.utils.NsfwScanType.MAX)) " +
             "from NsfwScan nsfw where nsfw.media.name = ?1")
     fun getMaxAndAverageByMediaName(name: UUID): NsfwScans
 }
