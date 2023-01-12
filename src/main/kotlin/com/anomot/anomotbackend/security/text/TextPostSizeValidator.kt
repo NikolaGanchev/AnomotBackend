@@ -1,6 +1,5 @@
 package com.anomot.anomotbackend.security.text
 
-import com.anomot.anomotbackend.utils.Constants
 import com.anomot.anomotbackend.utils.TextUtils
 import javax.validation.ConstraintValidator
 import javax.validation.ConstraintValidatorContext
