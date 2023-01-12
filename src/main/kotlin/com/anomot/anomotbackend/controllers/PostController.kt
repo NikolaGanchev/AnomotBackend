@@ -143,7 +143,7 @@ class PostController @Autowired constructor(
     }
 
     @GetMapping("/likes")
-    fun unlike(@RequestParam("page") page: Int, @RequestParam("postId") postId: String, authentication: Authentication): ResponseEntity<List<UserDto>> {
+    fun getLikes(@RequestParam("page") page: Int, @RequestParam("postId") postId: String, authentication: Authentication): ResponseEntity<List<UserDto>> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
 
         val result = postService.getLikedBy(user, postId, page)

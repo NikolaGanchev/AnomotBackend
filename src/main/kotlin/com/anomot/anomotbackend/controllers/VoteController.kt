@@ -31,7 +31,7 @@ class VoteController(
         }
     }
 
-    @GetMapping("/votes")
+    @GetMapping("/account/votes")
     fun getVoteHistory(@RequestParam("page") page: Int, authentication: Authentication): ResponseEntity<List<VotedBattleDto>> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
         return ResponseEntity(voteService.getVoteHistory(user, page), HttpStatus.OK)

@@ -17,7 +17,7 @@ class FollowController(
         private val userDetailsService: UserDetailsServiceImpl
 ) {
 
-    @PostMapping("/account/follow")
+    @PostMapping("/follow")
     @EmailVerified
     fun follow(@RequestParam("id") userId: String, authentication: Authentication): ResponseEntity<String> {
         val result = followService.follow(
@@ -27,7 +27,7 @@ class FollowController(
         return ResponseEntity(if (result) HttpStatus.OK else HttpStatus.BAD_REQUEST)
     }
 
-    @PostMapping("/account/unfollow")
+    @PostMapping("/unfollow")
     @EmailVerified
     fun unfollow(@RequestParam("id") userId: String, authentication: Authentication): ResponseEntity<String> {
         val result = followService.unfollow(
