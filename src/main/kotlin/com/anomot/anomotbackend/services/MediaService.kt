@@ -1,16 +1,15 @@
 package com.anomot.anomotbackend.services
 
 import com.anomot.anomotbackend.dto.*
-import com.anomot.anomotbackend.entities.File
-import com.anomot.anomotbackend.entities.Media
-import com.anomot.anomotbackend.entities.NsfwScan
-import com.anomot.anomotbackend.entities.User
+import com.anomot.anomotbackend.entities.*
 import com.anomot.anomotbackend.repositories.FileRepository
 import com.anomot.anomotbackend.repositories.MediaRepository
 import com.anomot.anomotbackend.repositories.NsfwScanRepository
+import com.anomot.anomotbackend.repositories.UrlRepository
 import com.anomot.anomotbackend.utils.Constants
 import com.anomot.anomotbackend.utils.MediaType
 import com.anomot.anomotbackend.utils.NsfwScanType
+import com.anomot.anomotbackend.utils.SecureRandomStringGenerator
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.io.ByteArrayResource
@@ -35,10 +34,13 @@ class MediaService @Autowired constructor(
         private val webClient: WebClient,
         private val mediaRepository: MediaRepository,
         private val nsfwScanRepository: NsfwScanRepository,
-        private val fileRepository: FileRepository
+        private val fileRepository: FileRepository,
+        private val urlRepository: UrlRepository
 ) {
     data class MediaUploadResult(val media: Media?, val avgNsfwScan: NsfwScan?, val maxNsfwScan: NsfwScan?)
     data class SquareImageSaveResult(val media: Media?, val avgNsfwScan: NsfwScan?)
+
+    val secureRandomStringGenerator = SecureRandomStringGenerator(SecureRandomStringGenerator.ALPHANUMERIC)
 
     @Value("\${environment.media_server_url}")
     private val mediaServerUrl: String? = null
@@ -277,6 +279,13 @@ class MediaService @Autowired constructor(
         return content.get()
     }
 
+    fun inNsfwRequirements(media: MediaResponse, name: String): Boolean {
+        val nsfwScan = nsfwScanRepository.getMaxAndAverageByMediaName(UUID.fromString(name))
+        val nsfwStats = nsfwScan.maxNsfwScans ?: nsfwScan.avgNsfwScan!!
+
+        return inNsfwRequirements(nsfwStats)
+    }
+
     fun inNsfwRequirements(nsfwScan: NsfwScan): Boolean {
         return nsfwScan.drawings <= Constants.MAX_DRAWING_TOLERANCE &&
                 nsfwScan.hentai <= Constants.MAX_HENTAI_TOLERANCE &&
@@ -287,5 +296,15 @@ class MediaService @Autowired constructor(
 
     fun getMediaByUser(user: User, page: Int): List<Media> {
         return mediaRepository.getMediaByPublisher(user, PageRequest.of(page, Constants.MEDIA_PAGE, Sort.by("creationDate").descending()))
+    }
+
+    fun uploadUrl(url: String, user: User): String {
+        val newUrl = urlRepository.save(Url(url, secureRandomStringGenerator.generate(Constants.URL_LENGTH), user))
+        return newUrl.inAppUrl
+    }
+
+    fun getRealUrl(inAppUrl: String): String? {
+        val newUrl = urlRepository.getByInAppUrl(inAppUrl)
+        return newUrl?.url
     }
 }

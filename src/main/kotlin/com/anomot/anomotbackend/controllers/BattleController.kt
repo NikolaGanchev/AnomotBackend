@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
+import javax.validation.Valid
 
 @RestController
 @RequestMapping
@@ -35,7 +36,7 @@ class BattleController @Autowired constructor(
     // returns either a battle dto if battle is successfully found, list of posts too similar if available or null
     @PostMapping("/account/battle/text")
     @EmailVerified
-    fun uploadTextBattle(@RequestBody textPostDto: TextPostDto, authentication: Authentication): ResponseEntity<Any> {
+    fun uploadTextBattle(@RequestBody @Valid textPostDto: TextPostDto, authentication: Authentication): ResponseEntity<Any> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
         val postCreateStatus = postService.createTextPost(textPostDto.text, user, true)
 

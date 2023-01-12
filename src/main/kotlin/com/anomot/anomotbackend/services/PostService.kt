@@ -50,11 +50,11 @@ class PostService @Autowired constructor(
 
     private val secretKey: SecretKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKeyString))
 
-    fun addTextPost(text: String, user: User): Post {
+    private fun addTextPost(text: String, user: User): Post {
         return postRepository.save(Post(user, null, text, PostType.TEXT))
     }
 
-    fun addMediaPost(media: Media, user: User): Post {
+    private fun addMediaPost(media: Media, user: User): Post {
         return postRepository.save(Post(user, media, null, PostType.MEDIA))
     }
 

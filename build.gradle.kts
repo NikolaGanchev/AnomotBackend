@@ -46,6 +46,8 @@ dependencies {
     implementation("com.maxmind.geoip2:geoip2:3.0.2")
     implementation("com.blueconic:browscap-java:1.3.13")
     implementation("io.jsonwebtoken:jjwt-api:0.11.5")
+    implementation("com.googlecode.owasp-java-html-sanitizer:owasp-java-html-sanitizer:20220608.1")
+    implementation("commons-validator:commons-validator:1.7")
     runtimeOnly("io.jsonwebtoken:jjwt-impl:0.11.5")
     runtimeOnly("io.jsonwebtoken:jjwt-jackson:0.11.5")
     runtimeOnly("com.h2database:h2")

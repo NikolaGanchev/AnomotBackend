@@ -16,6 +16,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
+import javax.validation.Valid
 
 @RestController
 @RequestMapping
@@ -26,9 +27,9 @@ class PostController @Autowired constructor(
 ) {
     @PostMapping("/account/post/text")
     @EmailVerified
-    fun uploadTextPost(@RequestBody textPostDto: TextPostDto, authentication: Authentication): ResponseEntity<String> {
+    fun uploadTextPost(@RequestBody @Valid textPostDto: TextPostDto, authentication: Authentication): ResponseEntity<String> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
-        postService.addTextPost(textPostDto.text, user)
+        postService.createTextPost(textPostDto.text, user, false)
         return ResponseEntity(HttpStatus.CREATED)
     }
 
