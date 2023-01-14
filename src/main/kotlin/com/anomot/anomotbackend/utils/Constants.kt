@@ -32,7 +32,7 @@ class Constants {
         const val MAX_SEXY_TOLERANCE = 0.90
         const val MAX_PORN_TOLERANCE = 0.87
         const val FOLLOWS_PER_PAGE = 30
-        const val MAX_POST_LENGTH = 8000
+        const val MAX_POST_LENGTH = 6200
         const val MIN_POST_LENGTH = 50
         const val MAX_ELO_DIFFERENCE = 800
         const val BATTLE_DURATION = 3 * 24 * 3600 // seconds

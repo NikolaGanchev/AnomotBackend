@@ -1,6 +1,7 @@
 package com.anomot.anomotbackend.controllers
 
 import com.anomot.anomotbackend.dto.MediaDto
+import com.anomot.anomotbackend.dto.UrlDto
 import com.anomot.anomotbackend.dto.UrlUploadDto
 import com.anomot.anomotbackend.security.CustomUserDetails
 import com.anomot.anomotbackend.services.MediaService
@@ -42,7 +43,7 @@ class MediaController(
         return ResponseEntity(mediaDto, HttpStatus.CREATED)
     }
 
-    @PostMapping("/url")
+    @PostMapping("/account/url")
     fun uploadUrl(@RequestBody @Valid urlUploadDto: UrlUploadDto, authentication: Authentication): ResponseEntity<String> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
 
@@ -50,12 +51,12 @@ class MediaController(
     }
 
     @GetMapping("/url/{url}")
-    fun getUrl(@PathVariable(value="url") @Min(Constants.MIN_URL_LENGTH.toLong()) @Max(Constants.URL_LENGTH.toLong()) url: String): ResponseEntity<String> {
+    fun getUrl(@PathVariable(value="url") @Min(Constants.MIN_URL_LENGTH.toLong()) @Max(Constants.URL_LENGTH.toLong()) url: String): ResponseEntity<UrlDto> {
         val realUrl = mediaService.getRealUrl(url)
         return if (realUrl == null) {
             ResponseEntity(HttpStatus.NOT_FOUND)
         } else {
-            ResponseEntity(realUrl, HttpStatus.OK)
+            ResponseEntity(UrlDto(realUrl, listOf()), HttpStatus.OK)
         }
     }
 
@@ -65,7 +66,7 @@ class MediaController(
                  authentication: Authentication): ResponseEntity<ByteArray> {
         val media = mediaService.getMediaFromServer(id) ?: return ResponseEntity(HttpStatus.NOT_FOUND)
 
-        if (showNsfw != null && showNsfw) {
+        if (showNsfw != null && !showNsfw) {
             if (!mediaService.inNsfwRequirements(media, id)) {
                 return ResponseEntity(HttpStatus.NO_CONTENT)
             }
