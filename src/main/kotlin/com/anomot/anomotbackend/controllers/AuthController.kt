@@ -110,7 +110,7 @@ class AuthController(private val userDetailsService: UserDetailsServiceImpl,
         return ResponseEntity(if (success) HttpStatus.OK else HttpStatus.CONFLICT)
     }
 
-    @DeleteMapping()
+    @DeleteMapping
     fun deleteAccount(@RequestBody @Valid deleteDto: AccountDeleteDto): ResponseEntity<String> {
         return try {
             userDetailsService.deleteUser(deleteDto.password)

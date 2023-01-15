@@ -45,7 +45,7 @@ class BattleController @Autowired constructor(
                 return@map PostDto(it.type,
                         it.text,
                         null,
-                        userDetailsServiceImpl.getAsDto(it.poster!!),
+                        userDetailsServiceImpl.getAsDto(it.poster),
                         0,
                         false,
                         it.creationDate,
@@ -58,7 +58,7 @@ class BattleController @Autowired constructor(
         val selfPost = getSelfPost(postCreateStatus.post!!, battle)
         val enemyPost = getEnemyPost(postCreateStatus.post!!, battle)
 
-        if (selfPost == null || enemyPost == null || enemyPost.poster == null)  {
+        if (selfPost == null || enemyPost == null)  {
             // TODO
             // Handle post rejection because of deleted user if ever happens
             return ResponseEntity(HttpStatus.CONFLICT)
@@ -68,7 +68,7 @@ class BattleController @Autowired constructor(
                 PostDto(selfPost.type,
                         selfPost.text,
                         null,
-                        userDetailsServiceImpl.getAsDto(selfPost.poster!!),
+                        userDetailsServiceImpl.getAsDto(selfPost.poster),
                         0,
                         false,
                         selfPost.creationDate,
@@ -76,7 +76,7 @@ class BattleController @Autowired constructor(
                 PostDto(enemyPost.type,
                         enemyPost.text,
                         null,
-                        userDetailsServiceImpl.getAsDto(enemyPost.poster!!),
+                        userDetailsServiceImpl.getAsDto(enemyPost.poster),
                         0,
                         false,
                         enemyPost.creationDate,
@@ -101,7 +101,7 @@ class BattleController @Autowired constructor(
             return@map PostDto(it.type,
                     null,
                     MediaDto(it.media!!.mediaType, it.media!!.name.toString()),
-                    userDetailsServiceImpl.getAsDto(it.poster!!),
+                    userDetailsServiceImpl.getAsDto(it.poster),
                     0,
                     false,
                     it.creationDate,
@@ -115,7 +115,7 @@ class BattleController @Autowired constructor(
         val selfPost = getSelfPost(post, battle)
         val enemyPost = getEnemyPost(post, battle)
 
-        if (selfPost == null || enemyPost == null || enemyPost.poster == null) {
+        if (selfPost == null || enemyPost == null) {
             // TODO
             // Handle post rejection because of deleted user if ever happens
             return ResponseEntity(HttpStatus.CONFLICT)
@@ -125,7 +125,7 @@ class BattleController @Autowired constructor(
                 PostDto(selfPost.type,
                         null,
                         MediaDto(selfPost.media!!.mediaType, selfPost.media!!.name.toString()),
-                        userDetailsServiceImpl.getAsDto(selfPost.poster!!),
+                        userDetailsServiceImpl.getAsDto(selfPost.poster),
                         0,
                         false,
                         selfPost.creationDate,
@@ -133,7 +133,7 @@ class BattleController @Autowired constructor(
                 PostDto(enemyPost.type,
                         null,
                         MediaDto(enemyPost.media!!.mediaType, enemyPost.media!!.name.toString()),
-                        userDetailsServiceImpl.getAsDto(enemyPost.poster!!),
+                        userDetailsServiceImpl.getAsDto(enemyPost.poster),
                         0,
                         false,
                         enemyPost.creationDate,

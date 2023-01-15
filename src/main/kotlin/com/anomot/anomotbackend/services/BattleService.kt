@@ -53,26 +53,24 @@ class BattleService @Autowired constructor(
     // Automatically adjusts elos and closes the battle
     @Transactional
     fun finish(battle: Battle) {
-        if (battle.goldPost == null || battle.redPost == null) {
-            return
-        }
-
         val votesGold = voteRepository.countVotesByBattleAndPost(battle, battle.goldPost!!)
         val votesRed = voteRepository.countVotesByBattleAndPost(battle, battle.redPost!!)
 
         val scoreGold = determineScore(votesGold, votesRed)
         val scoreRed = determineScore(votesRed, votesGold)
-        val goldUser = battle.goldPost!!.poster
-        val redUser = battle.redPost!!.poster
+        val goldUser = battle.goldPost?.poster
+        val redUser = battle.redPost?.poster
 
         if (goldUser == null && redUser != null) {
             if (votesRed >= votesGold) {
                 redUser.elo += 30
             } else redUser.elo -= 30
+            return
         } else if (goldUser != null && redUser == null) {
             if (votesGold >= votesRed) {
                 goldUser.elo += 30
             } else goldUser.elo -= 30
+            return
         } else if (goldUser == null && redUser == null) {
             return
         }
@@ -82,8 +80,8 @@ class BattleService @Autowired constructor(
         val goldNewElo = eloService.getNextRating(goldUser.elo, scoreGold, expected.goldUserProbability)
         val redNewElo = eloService.getNextRating(redUser.elo, scoreRed, expected.redUserProbability)
 
-        battle.goldPost!!.poster!!.elo = goldNewElo
-        battle.redPost!!.poster!!.elo = redNewElo
+        battle.goldPost!!.poster.elo = goldNewElo
+        battle.redPost!!.poster.elo = redNewElo
     }
 
     private fun determineScore(votes1: Long, votes2: Long): Double {
@@ -113,7 +111,7 @@ class BattleService @Autowired constructor(
                     if (selfPost == null) null else PostDto(selfPost.type,
                             selfPost.text,
                             if (selfPost.media != null) MediaDto(selfPost.media!!.mediaType, selfPost.media!!.name.toString()) else null,
-                            userDetailsServiceImpl.getAsDto(selfPost.poster!!),
+                            userDetailsServiceImpl.getAsDto(selfPost.poster),
                             null,
                             null,
                             selfPost.creationDate,
@@ -121,7 +119,7 @@ class BattleService @Autowired constructor(
                     if (enemyPost == null) null else PostDto(enemyPost.type,
                             enemyPost.text,
                             if (enemyPost.media != null) MediaDto(enemyPost.media!!.mediaType, enemyPost.media!!.name.toString()) else null,
-                            if (enemyPost.poster == null) null else userDetailsServiceImpl.getAsDto(enemyPost.poster!!),
+                            userDetailsServiceImpl.getAsDto(enemyPost.poster),
                             null,
                             null,
                             enemyPost.creationDate,
@@ -161,7 +159,7 @@ class BattleService @Autowired constructor(
             PostDto(it.post!!.type,
                     it.post.text,
                     if (it.post.media != null) MediaDto(it.post.media!!.mediaType, it.post.media!!.name.toString()) else null,
-                    userDetailsServiceImpl.getAsDto(it.post.poster!!),
+                    userDetailsServiceImpl.getAsDto(it.post.poster),
                     it.likes,
                     it.hasUserLiked,
                     it.post.creationDate,

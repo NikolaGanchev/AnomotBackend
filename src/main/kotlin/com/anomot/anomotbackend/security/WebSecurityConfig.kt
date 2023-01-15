@@ -164,7 +164,7 @@ class WebSecurityConfig {
         return source
     }
 
-    @Bean()
+    @Bean
     @Scope("prototype")
     fun authenticationProvider(): CustomAuthenticationProvider {
         val authProvider = CustomAuthenticationProvider(userDetailsService())

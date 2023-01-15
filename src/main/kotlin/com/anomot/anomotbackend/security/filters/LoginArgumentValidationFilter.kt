@@ -10,7 +10,7 @@ import javax.servlet.http.HttpServletResponse
 import javax.validation.Validation
 
 class LoginArgumentValidationFilter: OncePerRequestFilter() {
-    private var validator = Validation.buildDefaultValidatorFactory().getValidator()
+    private var validator = Validation.buildDefaultValidatorFactory().validator
 
     override fun doFilterInternal(request: HttpServletRequest, response: HttpServletResponse, filterChain: FilterChain) {
         val isValidUsernameAndPassword = validateUsernameAndPassword(

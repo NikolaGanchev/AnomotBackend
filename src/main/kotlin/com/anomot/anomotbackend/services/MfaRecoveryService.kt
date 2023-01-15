@@ -83,7 +83,7 @@ class MfaRecoveryService @Autowired constructor(
         return isSuccessful
     }
 
-    fun sendRecoveryCodeUsedEmail(user: CustomUserDetails, code: String,) {
+    fun sendRecoveryCodeUsedEmail(user: CustomUserDetails, code: String) {
         //TODO("implement when emails are available")
     }
 

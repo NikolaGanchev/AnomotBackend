@@ -10,7 +10,7 @@ import org.springframework.security.core.userdetails.UserDetails
 open class CustomUserDetails(user: User): UserDetails {
     // The naming of the variables needs to not conflict with the abstract methods
     val id: Long? = user.id
-    private val _authorities: MutableCollection<out GrantedAuthority> = user.authorities.map { it -> SimpleGrantedAuthority(it.authority) }.toCollection(mutableListOf())
+    private val _authorities: MutableCollection<out GrantedAuthority> = user.authorities.map { SimpleGrantedAuthority(it.authority) }.toCollection(mutableListOf())
     private val _password = user.password
     private val _username = user.username
     private val _email = user.email
@@ -58,7 +58,7 @@ open class CustomUserDetails(user: User): UserDetails {
     }
 
     private fun getAuthoritiesAsList(): List<String> {
-        return _authorities.map { it -> it.authority }.toCollection(mutableListOf())
+        return _authorities.map { it.authority }.toCollection(mutableListOf())
     }
 
     fun hasMfaMethod(mfaMethodValue: MfaMethodValue): Boolean {

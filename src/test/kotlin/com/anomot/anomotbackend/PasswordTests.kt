@@ -4,7 +4,7 @@ import com.anomot.anomotbackend.security.password.PasswordConstraintValidator
 import org.junit.jupiter.api.Test
 import java.security.SecureRandom
 
-class PasswordTests () {
+class PasswordTests {
 
     private val passwordConstraintValidator: PasswordConstraintValidator = PasswordConstraintValidator()
 

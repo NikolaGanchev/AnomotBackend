@@ -728,7 +728,7 @@ class AuthenticationWebTests @Autowired constructor(
     }
 
     @Test
-    @WithMockCustomUser()
+    @WithMockCustomUser
     fun `When activate email mfa then return 200`() {
         val mfaEnabledDto = MfaEnabledDto(true)
 

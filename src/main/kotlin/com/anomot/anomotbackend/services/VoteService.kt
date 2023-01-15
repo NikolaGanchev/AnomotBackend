@@ -46,7 +46,7 @@ class VoteService @Autowired constructor(
             val post = if (battle.goldPost?.id == forId.toLong()) battle.goldPost
                         else if (battle.redPost?.id == forId.toLong()) battle.redPost else null
 
-            if (post == null || post.poster?.id == user.id) return null
+            if (post == null || post.poster.id == user.id) return null
 
             if (voteRepository.existsByBattleAndVoter(battle, user)) return null
 
@@ -81,9 +81,9 @@ class VoteService @Autowired constructor(
     fun createVotedBattleFromIntermediate(it: VotedBattleIntermediate): VotedBattleDto {
         val votedPost = it.vote.post
         val otherPost = if (it.vote.battle.goldPost == it.vote.post) it.vote.battle.redPost else it.vote.battle.goldPost
-        val votedUserDto = if (votedPost?.poster != null) userDetailsServiceImpl.getAsDto(votedPost.poster!!) else null
+        val votedUserDto = if (votedPost?.poster != null) userDetailsServiceImpl.getAsDto(votedPost.poster) else null
 
-        val otherUserDto = if (it.canSeeOtherUser && otherPost?.poster != null) userDetailsServiceImpl.getAsDto(otherPost.poster!!) else null
+        val otherUserDto = if (it.canSeeOtherUser && otherPost?.poster != null) userDetailsServiceImpl.getAsDto(otherPost.poster) else null
 
         return VotedBattleDto(
                 votedPost = if (votedPost == null) null else PostDto(votedPost.type,

@@ -56,7 +56,7 @@ class PostController @Autowired constructor(
                     PostDto(post!!.type,
                             post.text,
                             if (post.media != null) MediaDto(post.media!!.mediaType, post.media!!.name.toString()) else null,
-                            userDetailsServiceImpl.getAsDto(post.poster!!),
+                            userDetailsServiceImpl.getAsDto(post.poster),
                             it.likes,
                             it.hasUserLiked,
                             post.creationDate,
@@ -94,7 +94,7 @@ class PostController @Autowired constructor(
             PostDto(post!!.type,
                     post.text,
                     if (post.media != null) MediaDto(post.media!!.mediaType, post.media!!.name.toString()) else null,
-                    userDetailsServiceImpl.getAsDto(post.poster!!),
+                    userDetailsServiceImpl.getAsDto(post.poster),
                     it.likes,
                     it.hasUserLiked,
                     post.creationDate,
@@ -111,13 +111,12 @@ class PostController @Autowired constructor(
         val posts = postService.getFeed(
                 user,
                 page).map {
-            val post = it.post
-            if (post!!.poster == null) return@map null
+            val post = it.post ?: return@map null
 
             PostDto(post.type,
                     post.text,
                     if (post.media != null) MediaDto(post.media!!.mediaType, post.media!!.name.toString()) else null,
-                    userDetailsServiceImpl.getAsDto(post.poster!!),
+                    userDetailsServiceImpl.getAsDto(post.poster),
                     it.likes,
                     it.hasUserLiked,
                     post.creationDate,

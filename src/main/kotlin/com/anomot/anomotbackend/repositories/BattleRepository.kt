@@ -16,7 +16,7 @@ interface BattleRepository: JpaRepository<Battle, Long> {
 
     @Query("update battle set finished = true where (finish_date < now() and finished = false) " + // select if battle finished normally
             // end early if one of the posts is deleted
-            "or (finished = false and (not exists(select * from post where post.id = battle.red_post_id or post.id = battle.gold_post_id))) " +
+            "or (finished = false and (not exists(select * from post where post.id = battle.red_post_id) or not exists(select * from post where post.id = battle.gold_post_id))) " +
             "returning *",
             nativeQuery = true)
     @Modifying
