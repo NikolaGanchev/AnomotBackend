@@ -20,15 +20,10 @@ interface CommentRepository: JpaRepository<Comment, Long> {
 
     fun existsByParentComment(comment: Comment): Boolean
 
-    @Query("update Comment c set c.text = '', c.commenter = null, c.isDeleted = true, c.isEdited = false " +
+    @Query("update Comment c set c.text = '', c.commenter = null, c.isDeleted = true, c.isEdited = false, c.creationDate = null " +
             "where c.commenter = ?1 and c.id = ?2")
     @Modifying
     fun setDeleted(user: User, commentId: Long)
 
     fun deleteByCommenterAndParentPostPoster(commenter: User, poster: User): Long
-
-    @Query("update Comment c set c.text = ?1, c.isEdited = true " +
-            "where c.id = ?2")
-    @Modifying
-    fun edit(newText: String, commentId: Long)
 }

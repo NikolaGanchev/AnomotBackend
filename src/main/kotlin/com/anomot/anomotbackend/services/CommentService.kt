@@ -1,6 +1,7 @@
 package com.anomot.anomotbackend.services
 
 import com.anomot.anomotbackend.dto.CommentDto
+import com.anomot.anomotbackend.dto.CommentEditDto
 import com.anomot.anomotbackend.entities.*
 import com.anomot.anomotbackend.repositories.CommentRepository
 import com.anomot.anomotbackend.repositories.PreviousCommentVersionRepository
@@ -11,6 +12,7 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import java.lang.NumberFormatException
+import java.util.*
 import javax.transaction.Transactional
 
 @Service
@@ -92,6 +94,10 @@ class CommentService @Autowired constructor(
             return false
         }
 
+        return canSeeCommentOrChild(user, comment)
+    }
+
+    private fun canSeeCommentOrChild(user: User, comment: Comment): Boolean {
         // Check if comment is on post and if can user can access it
         if (comment.parentPost != null) {
             if (!postService.canSeeUserAndPost(user, comment.parentPost!!)) return false
@@ -105,6 +111,7 @@ class CommentService @Autowired constructor(
         return true
     }
 
+    @Transactional
     fun deleteComment(user: User, commentId: String): Boolean {
         val comment = getCommentFromIdUnsafe(commentId) ?: return false
 
@@ -119,30 +126,32 @@ class CommentService @Autowired constructor(
         return true
     }
 
-    @Transactional
     fun editComment(user: User, newText: String, commentId: String): Boolean {
         val comment = getCommentFromIdUnsafe(commentId) ?: return false
 
         if (comment.commenter?.id != user.id) return false
 
         val oldText = comment.text
+        comment.text = newText
+        comment.isEdited = true
+        comment.creationDate = Date()
 
-        commentRepository.edit(newText, comment.id!!)
+        commentRepository.save(comment)
 
         previousCommentVersionRepository.save(PreviousCommentVersion(oldText, comment))
 
         return true
     }
 
-    fun getCommentHistory(user: User, commentId: String, page: Int): List<CommentDto>? {
+    fun getCommentHistory(user: User, commentId: String, page: Int): List<CommentEditDto>? {
         val comment = getCommentReferenceFromIdUnsafe(commentId) ?: return null
 
-        if (!canSeeComment(user, comment)) return null
+        if (!canSeeCommentOrChild(user, comment)) return null
 
         return previousCommentVersionRepository.findByComment(comment,
                 PageRequest.of(page,
                         Constants.COMMENTS_PAGE, Sort.by("creationDate"))).map {
-            return@map getAsDto(it.comment)
+            return@map CommentEditDto(it.text, it.creationDate, it.comment.id.toString())
         }
     }
 
@@ -174,7 +183,11 @@ class CommentService @Autowired constructor(
                 if (comment.isDeleted || comment.commenter == null) {
                     null
                 } else userDetailsServiceImpl.getAsDto(comment.commenter!!),
-                comment.isEdited
+                comment.isEdited,
+                // TODO
+                0,
+                comment.creationDate,
+                comment.id.toString()
         )
     }
 }

@@ -7,7 +7,7 @@ import javax.persistence.*
 @Entity
 class Comment(
         @Column(columnDefinition="TEXT")
-        val text: String,
+        var text: String,
         @ManyToOne
         val parentBattle: Battle?,
         @ManyToOne
@@ -17,7 +17,7 @@ class Comment(
         @ManyToOne
         val commenter: User?,
         val isDeleted: Boolean = false,
-        val isEdited: Boolean = false,
-        var creationDate: Date = Date(),
+        var isEdited: Boolean = false,
+        var creationDate: Date? = Date(),
         @Id @GeneratedValue(strategy = GenerationType.AUTO) var id: Long? = null
 ): Serializable

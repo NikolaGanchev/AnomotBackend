@@ -1,6 +1,7 @@
 package com.anomot.anomotbackend.controllers
 
 import com.anomot.anomotbackend.dto.CommentDto
+import com.anomot.anomotbackend.dto.CommentEditDto
 import com.anomot.anomotbackend.dto.CommentUploadDto
 import com.anomot.anomotbackend.security.CustomUserDetails
 import com.anomot.anomotbackend.services.CommentService
@@ -20,7 +21,7 @@ class CommentController@Autowired constructor(
 ) {
     @PostMapping("/post/comment")
     fun commentPost(@RequestBody @Valid commentUploadDto: CommentUploadDto,
-                    @RequestParam("post") postId: String,
+                    @RequestParam("id") postId: String,
                     authentication: Authentication): ResponseEntity<CommentDto> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
         val comment = commentService.addCommentToPost(commentUploadDto.text, user, postId)
@@ -34,7 +35,7 @@ class CommentController@Autowired constructor(
 
     @PostMapping("/battle/comment")
     fun commentBattle(@RequestBody @Valid commentUploadDto: CommentUploadDto,
-                    @RequestParam("battle") battleId: String,
+                    @RequestParam("id") battleId: String,
                     authentication: Authentication): ResponseEntity<CommentDto> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
         val comment = commentService.addCommentToBattle(commentUploadDto.text, user, battleId)
@@ -48,7 +49,7 @@ class CommentController@Autowired constructor(
 
     @PostMapping("/comment/comment")
     fun commentComment(@RequestBody @Valid commentUploadDto: CommentUploadDto,
-                      @RequestParam("comment") commentId: String,
+                      @RequestParam("id") commentId: String,
                       authentication: Authentication): ResponseEntity<CommentDto> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
         val comment = commentService.addCommentToComment(commentUploadDto.text, user, commentId)
@@ -61,7 +62,7 @@ class CommentController@Autowired constructor(
     }
 
     @GetMapping("/post/comment")
-    fun getCommentPost(@RequestParam("post") postId: String,
+    fun getCommentPost(@RequestParam("id") postId: String,
                        @RequestParam("page") page: Int,
                     authentication: Authentication): ResponseEntity<List<CommentDto>> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
@@ -75,7 +76,7 @@ class CommentController@Autowired constructor(
     }
 
     @GetMapping("/battle/comment")
-    fun getCommentBattle(@RequestParam("battle") battleId: String,
+    fun getCommentBattle(@RequestParam("id") battleId: String,
                          @RequestParam("page") page: Int,
                       authentication: Authentication): ResponseEntity<List<CommentDto>> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
@@ -89,7 +90,7 @@ class CommentController@Autowired constructor(
     }
 
     @GetMapping("/comment/comment")
-    fun getCommentComment(@RequestParam("comment") commentId: String,
+    fun getCommentComment(@RequestParam("id") commentId: String,
                           @RequestParam("page") page: Int,
                        authentication: Authentication): ResponseEntity<List<CommentDto>> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
@@ -104,22 +105,22 @@ class CommentController@Autowired constructor(
 
     @PostMapping("/comment/edit")
     fun editComment(@RequestBody @Valid commentUploadDto: CommentUploadDto,
-                    @RequestParam("comment") commentId: String,
+                    @RequestParam("id") commentId: String,
                     authentication: Authentication): ResponseEntity<CommentDto> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
         val comment = commentService.editComment(user, commentUploadDto.text, commentId)
 
         return if (comment) {
-            ResponseEntity(HttpStatus.BAD_REQUEST)
-        } else {
             ResponseEntity(HttpStatus.CREATED)
+        } else {
+            ResponseEntity(HttpStatus.BAD_REQUEST)
         }
     }
 
     @GetMapping("/comment/history")
-    fun getCommentHistory(@RequestParam("comment") commentId: String,
+    fun getCommentHistory(@RequestParam("id") commentId: String,
                           @RequestParam("page") page: Int,
-                    authentication: Authentication): ResponseEntity<List<CommentDto>> {
+                    authentication: Authentication): ResponseEntity<List<CommentEditDto>> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
         val comments = commentService.getCommentHistory(user, commentId, page)
 
@@ -127,6 +128,19 @@ class CommentController@Autowired constructor(
             ResponseEntity(HttpStatus.BAD_REQUEST)
         } else {
             ResponseEntity(comments, HttpStatus.OK)
+        }
+    }
+
+    @DeleteMapping("/comment")
+    fun getCommentComment(@RequestParam("id") commentId: String,
+                          authentication: Authentication): ResponseEntity<List<CommentDto>> {
+        val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
+        val comments = commentService.deleteComment(user, commentId)
+
+        return if (comments) {
+            ResponseEntity(HttpStatus.OK)
+        } else {
+            ResponseEntity(HttpStatus.BAD_REQUEST)
         }
     }
 }
