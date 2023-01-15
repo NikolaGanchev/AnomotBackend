@@ -106,13 +106,26 @@ class PostService @Autowired constructor(
     }
 
     fun getPostsForUser(user: User, fromUser: User, page: Int): List<PostWithLikes> {
-
-        if (user.id == fromUser.id) {
-            return postRepository.findAllByPosterSelf(user, PageRequest.of(page, Constants.POST_PAGE, Sort.by("creationDate").descending()))
+        return if (user.id == fromUser.id) {
+            postRepository.findAllByPosterSelf(user, PageRequest.of(page, Constants.POST_PAGE, Sort.by("creationDate").descending()))
         }
         else {
-            return postRepository.findAllByPosterOther(user, fromUser, PageRequest.of(page, Constants.POST_PAGE, Sort.by("creationDate").descending()))
+            postRepository.findAllByPosterOther(user, fromUser, PageRequest.of(page, Constants.POST_PAGE, Sort.by("creationDate").descending()))
         }
+    }
+
+    fun getPostReferenceFromIdUnsafe(id: String): Post? {
+        return try {
+            if (postRepository.existsById(id.toLong())) {
+                postRepository.getReferenceById(id.toLong())
+            } else null
+        } catch(numberFormatException: NumberFormatException) {
+            null
+        }
+    }
+
+    fun canSeeUserAndPost(user: User, post: Post): Boolean {
+        return followService.canSeeOtherUser(user, post.poster) && postRepository.canSeePost(user, post.poster)
     }
 
     @Transactional

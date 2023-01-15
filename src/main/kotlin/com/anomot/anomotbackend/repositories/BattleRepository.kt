@@ -46,6 +46,10 @@ interface BattleRepository: JpaRepository<Battle, Long> {
 
     @Query("select p from Post p, Battle b, BattleQueuePost bp where (b.redPost = p or b.goldPost = p or bp.post = p) " +
             "and p.poster = :user and " +
+            // check for same media type
+            "p.type = :#{#media.mediaType} and " +
+            // check for duration within 2 second if possible
+            "abs(isnull(p.media.duration, 0) - isnull(:#{#media.duration}, 0)) < 2 and " +
             "function('hamming_distance', p.media.phash, :#{#media.phash}) < 15")
     fun getSimilarMedia(user: User, media: Media): List<Post>
 

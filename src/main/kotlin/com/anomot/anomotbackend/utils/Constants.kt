@@ -46,5 +46,8 @@ class Constants {
         const val ABSOLUTE_POST_TEXT_MIN_SIZE_LIMIT = 1
         const val MIN_URL_LENGTH = 64
         const val URL_LENGTH = 64
+        const val COMMENTS_PAGE = 20
+        const val MAX_COMMENT_SIZE = 2000
+        const val MIN_COMMENT_SIZE = 1
     }
 }

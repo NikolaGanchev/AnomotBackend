@@ -4,7 +4,6 @@ import com.anomot.anomotbackend.dto.UserDto
 import com.anomot.anomotbackend.entities.Follow
 import com.anomot.anomotbackend.entities.User
 import com.anomot.anomotbackend.repositories.FollowRepository
-import com.anomot.anomotbackend.repositories.LikeRepository
 import com.anomot.anomotbackend.utils.Constants
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.PageRequest
@@ -15,8 +14,7 @@ import javax.transaction.Transactional
 @Service
 class FollowService @Autowired constructor(
         private val followRepository: FollowRepository,
-        private val userDetailsServiceImpl: UserDetailsServiceImpl,
-        private val likeRepository: LikeRepository
+        private val userDetailsServiceImpl: UserDetailsServiceImpl
 ) {
     fun follow(user: User, userToFollow: User): Boolean {
         if (user.id == userToFollow.id) {
@@ -40,7 +38,6 @@ class FollowService @Autowired constructor(
             return false
         }
         val num = followRepository.delete(user, userToUnfollow)
-        likeRepository.deleteByLikedByAndPostPoster(user, userToUnfollow)
         return num > 0
     }
 

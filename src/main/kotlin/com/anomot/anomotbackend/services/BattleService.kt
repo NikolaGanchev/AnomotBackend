@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
+import java.lang.NumberFormatException
 import java.util.*
 import javax.transaction.Transactional
 
@@ -164,6 +165,16 @@ class BattleService @Autowired constructor(
                     it.hasUserLiked,
                     it.post.creationDate,
                     it.post.id.toString())
+        }
+    }
+
+    fun getBattleReferenceFromIdUnsafe(battleId: String): Battle? {
+        return try {
+            return if (battleRepository.existsById(battleId.toLong())) {
+                battleRepository.getReferenceById(battleId.toLong())
+            } else null
+        } catch(numberFormatException: NumberFormatException) {
+            null
         }
     }
 }
