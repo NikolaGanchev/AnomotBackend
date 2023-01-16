@@ -157,7 +157,7 @@ class CommentService @Autowired constructor(
 
         return previousCommentVersionRepository.findByComment(comment,
                 PageRequest.of(page,
-                        Constants.COMMENTS_PAGE, Sort.by("creationDate"))).map {
+                        Constants.COMMENTS_PAGE, Sort.by("creationDate").descending())).map {
             return@map CommentEditDto(it.text, it.creationDate, it.comment.id.toString())
         }
     }

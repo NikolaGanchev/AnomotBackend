@@ -13,26 +13,31 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface CommentRepository: JpaRepository<Comment, Long> {
-
     @Query("select new com.anomot.anomotbackend.dto.CommentIntermediate(c," +
             "(select count(c1) from Comment c1 where c1.parentComment = c), " +
             "(select count(l) from CommentLike l where l.comment = c), " +
             "(select count(l) > 0 from CommentLike l where l.likedBy = ?2 and l.comment = c)) " +
-            "from Comment c where c.parentPost = ?1")
+            "from CommentLike cl right join cl.comment c where c.parentPost = ?1 " +
+            "group by c.id " +
+            "order by count(cl) desc, c.creationDate desc")
     fun getAllByParentPost(post: Post, user: User, pageable: Pageable): List<CommentIntermediate>
 
     @Query("select new com.anomot.anomotbackend.dto.CommentIntermediate(c," +
             "(select count(c1) from Comment c1 where c1.parentComment = c), " +
             "(select count(l) from CommentLike l where l.comment = c), " +
             "(select count(l) > 0 from CommentLike l where l.likedBy = ?2 and l.comment = c)) " +
-            "from Comment c where c.parentBattle = ?1")
+            "from CommentLike cl right join cl.comment c where c.parentBattle = ?1 " +
+            "group by c.id " +
+            "order by count(cl) desc, c.creationDate desc")
     fun getAllByParentBattle(battle: Battle, user: User, pageable: Pageable): List<CommentIntermediate>
 
     @Query("select new com.anomot.anomotbackend.dto.CommentIntermediate(c, " +
             "cast (0 as long)," +
             "(select count(l) from CommentLike l where l.comment = c), " +
             "(select count(l) > 0 from CommentLike l where l.likedBy = ?2 and l.comment = c)) " +
-            "from Comment c where c.parentComment = ?1")
+            "from CommentLike cl right join cl.comment c where c.parentComment = ?1 " +
+            "group by c.id " +
+            "order by count(cl) desc, c.creationDate desc")
     fun getAllByParentComment(comment: Comment, user: User, pageable: Pageable): List<CommentIntermediate>
 
     fun existsByParentComment(comment: Comment): Boolean
