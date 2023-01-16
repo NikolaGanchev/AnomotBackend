@@ -210,6 +210,16 @@ class AuthController(private val userDetailsService: UserDetailsServiceImpl,
         return ResponseEntity(loginInfoExtractorService.getByUser(user, pageRequest), HttpStatus.OK)
     }
 
+    @GetMapping("/security/login")
+    fun getLogin(@RequestParam("id") id: String, authentication: Authentication): ResponseEntity<LoginInfoDto> {
+        val user = (authentication.principal) as CustomUserDetails
+        val result = loginInfoExtractorService.getByUserAndId(user, id)
+
+        return if (result != null) {
+            ResponseEntity(result, HttpStatus.OK)
+        } else ResponseEntity(HttpStatus.BAD_REQUEST)
+    }
+
     @PostMapping("/avatar")
     @EmailVerified
     fun uploadProfilePicture(@RequestParam("file") file: MultipartFile,

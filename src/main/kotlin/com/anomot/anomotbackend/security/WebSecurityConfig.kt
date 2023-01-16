@@ -124,7 +124,7 @@ class WebSecurityConfig {
 
         // Store login info
         val successfulLogin = loginInfoExtractorService.getInfo(request.remoteAddr, request.getHeader("User-Agent"))
-        loginInfoExtractorService.saveLogin((authentication.principal as CustomUserDetails), successfulLogin)
+        loginInfoExtractorService.saveLoginAndSendNotification((authentication.principal as CustomUserDetails), successfulLogin)
 
         // Set up mapper
         val mapper = ObjectMapper()

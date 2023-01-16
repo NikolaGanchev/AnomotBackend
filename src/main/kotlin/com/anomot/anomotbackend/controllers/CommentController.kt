@@ -17,7 +17,7 @@ import javax.validation.Valid
 
 @RestController
 @RequestMapping
-class CommentController@Autowired constructor(
+class CommentController @Autowired constructor(
         private val commentService: CommentService,
         private val userDetailsServiceImpl: UserDetailsServiceImpl
 ) {

@@ -94,41 +94,7 @@ class BattleService @Autowired constructor(
     fun getBattles(user: User, page: Int): List<SelfBattleDto> {
         return battleRepository.getAllBattlesByUser(user,
                 PageRequest.of(page, Constants.BATTLE_PAGE, Sort.by("creationDate").descending())).map {
-            val battle = it.battle
-
-            val selfPost = if (battle.goldPost?.poster?.id == user.id) {
-                battle.goldPost
-            } else {
-                battle.redPost
-            }
-
-            val enemyPost = if (battle.goldPost?.poster?.id == user.id) {
-                battle.redPost
-            } else {
-                battle.goldPost
-            }
-
-            SelfBattleDto(
-                    if (selfPost == null) null else PostDto(selfPost.type,
-                            selfPost.text,
-                            if (selfPost.media != null) MediaDto(selfPost.media!!.mediaType, selfPost.media!!.name.toString()) else null,
-                            userDetailsServiceImpl.getAsDto(selfPost.poster),
-                            null,
-                            null,
-                            selfPost.creationDate,
-                            selfPost.id.toString()),
-                    if (enemyPost == null) null else PostDto(enemyPost.type,
-                            enemyPost.text,
-                            if (enemyPost.media != null) MediaDto(enemyPost.media!!.mediaType, enemyPost.media!!.name.toString()) else null,
-                            userDetailsServiceImpl.getAsDto(enemyPost.poster),
-                            null,
-                            null,
-                            enemyPost.creationDate,
-                            enemyPost.id.toString()),
-                    it.votesForSelf,
-                    it.votesForOther,
-                    battle.finished,
-                    battle.finishDate!!)
+            getSelfBattleDtoFromBattleIntermediate(it, user)
         }
     }
 
@@ -166,6 +132,57 @@ class BattleService @Autowired constructor(
                     it.post.creationDate,
                     it.post.id.toString())
         }
+    }
+
+    fun getSelfBattleDtoFromBattleIntermediate(battleIntermediate: BattleIntermediate, user: User): SelfBattleDto {
+        val battle = battleIntermediate.battle
+
+        val selfPost = if (battle.goldPost?.poster?.id == user.id) {
+            battle.goldPost
+        } else {
+            battle.redPost
+        }
+
+        val enemyPost = if (battle.goldPost?.poster?.id == user.id) {
+            battle.redPost
+        } else {
+            battle.goldPost
+        }
+
+        return SelfBattleDto(
+                if (selfPost == null) null else PostDto(selfPost.type,
+                        selfPost.text,
+                        if (selfPost.media != null) MediaDto(selfPost.media!!.mediaType, selfPost.media!!.name.toString()) else null,
+                        userDetailsServiceImpl.getAsDto(selfPost.poster),
+                        null,
+                        null,
+                        selfPost.creationDate,
+                        selfPost.id.toString()),
+                if (enemyPost == null) null else PostDto(enemyPost.type,
+                        enemyPost.text,
+                        if (enemyPost.media != null) MediaDto(enemyPost.media!!.mediaType, enemyPost.media!!.name.toString()) else null,
+                        userDetailsServiceImpl.getAsDto(enemyPost.poster),
+                        null,
+                        null,
+                        enemyPost.creationDate,
+                        enemyPost.id.toString()),
+                battleIntermediate.votesForSelf,
+                battleIntermediate.votesForOther,
+                battle.finished,
+                battle.finishDate!!)
+    }
+
+
+    fun getSelfBattle(user: User, battleId: String): SelfBattleDto? {
+        val battleLongId = try {
+            battleId.toLong()
+        } catch (numberFormatException: NumberFormatException) {
+            return null
+        }
+
+        val battleIntermediate = battleRepository.getBattleByUser(user, battleLongId) ?: return null
+
+        return getSelfBattleDtoFromBattleIntermediate(battleIntermediate, user)
     }
 
     fun getBattleReferenceFromIdUnsafe(battleId: String): Battle? {

@@ -95,7 +95,7 @@ class AuthenticationWebTests @Autowired constructor(
                 "",
                 "")
 
-        every { loginInfoExtractorService.saveLogin(any(), any()) } returns Unit
+        every { loginInfoExtractorService.saveLoginAndSendNotification(any(), any()) } returns Unit
         every { loginInfoExtractorService.getByUser(any(), any()) } returns listOf()
     }
 

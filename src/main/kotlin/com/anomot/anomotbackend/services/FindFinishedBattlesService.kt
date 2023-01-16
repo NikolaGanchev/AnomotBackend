@@ -9,16 +9,19 @@ import org.springframework.transaction.annotation.Transactional
 @Component
 class FindFinishedBattlesService@Autowired constructor(
         val battleRepository: BattleRepository,
-        val battleService: BattleService
+        val battleService: BattleService,
+        val notificationService: NotificationService
 ) {
 
     @Scheduled(fixedRate = 5 * 1000)
     @Transactional
     fun findFinishedBattles() {
         val battles = battleRepository.getUnprocessedFinishedBattlesAndUpdate()
-        battles.forEach {
+        battles.parallelStream().forEach {
             try {
                 battleService.finish(it)
+                if (it.goldPost != null) notificationService.sendBattleEndNotification(it.goldPost!!.poster, it)
+                if (it.redPost != null) notificationService.sendBattleEndNotification(it.redPost!!.poster, it)
             } catch (_: Exception) {}
         }
     }

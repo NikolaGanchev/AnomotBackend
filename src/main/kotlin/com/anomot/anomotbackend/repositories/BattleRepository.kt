@@ -28,6 +28,12 @@ interface BattleRepository: JpaRepository<Battle, Long> {
             "from Battle b where b.goldPost.poster = ?1 or b.redPost.poster = ?1")
     fun getAllBattlesByUser(user: User, pageable: Pageable): List<BattleIntermediate>
 
+    @Query("select new com.anomot.anomotbackend.dto.BattleIntermediate(b, " +
+            "(select count (v1) from Vote v1 where v1.battle = b and v1.post.poster = ?1)," +
+            "(select count (v2) from Vote v2 where v2.battle = b and v2.post.poster <> ?1))" +
+            "from Battle b where b.id = ?2 and (b.goldPost.poster = ?1 or b.redPost.poster = ?1)")
+    fun getBattleByUser(user: User, id: Long): BattleIntermediate?
+
     @Query("select * from battle where " +
             // Ignore if you are the poster
             "not exists(select from post where id = battle.red_post_id and poster_id = ?1) and " +

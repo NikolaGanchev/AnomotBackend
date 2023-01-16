@@ -9,4 +9,6 @@ import org.springframework.stereotype.Repository
 @Repository
 interface SuccessfulLoginRepository: JpaRepository<SuccessfulLogin, Long> {
     fun findAllByUser(user: User, pageable: Pageable): List<SuccessfulLogin>
+
+    fun findByUserAndId(user: User, id: Long): SuccessfulLogin?
 }

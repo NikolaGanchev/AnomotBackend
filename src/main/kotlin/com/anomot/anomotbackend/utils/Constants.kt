@@ -49,5 +49,6 @@ class Constants {
         const val COMMENTS_PAGE = 20
         const val MAX_COMMENT_SIZE = 2000
         const val MIN_COMMENT_SIZE = 1
+        const val NOTIFICATION_PAGE = 20
     }
 }

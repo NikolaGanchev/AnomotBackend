@@ -1,0 +1,37 @@
+package com.anomot.anomotbackend.services
+
+import com.anomot.anomotbackend.dto.NotificationDto
+import com.anomot.anomotbackend.entities.*
+import com.anomot.anomotbackend.repositories.NotificationRepository
+import com.anomot.anomotbackend.utils.Constants
+import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
+import org.springframework.stereotype.Service
+
+@Service
+class NotificationService @Autowired constructor(
+        private val notificationRepository: NotificationRepository
+) {
+    fun sendBattleEndNotification(user: User, battle: Battle) {
+        // TODO push notifications
+        notificationRepository.save(BattleEndNotification(user, battle))
+    }
+
+    fun sendNewLoginNotification(user: User, successfulLogin: SuccessfulLogin) {
+        // TODO push notifications
+        notificationRepository.save(NewLoginNotification(user, successfulLogin))
+
+    }
+
+    fun getNotifications(user: User, page: Int): List<NotificationDto> {
+        return notificationRepository.findAllByUser(user, PageRequest.of(page, Constants.NOTIFICATION_PAGE, Sort.by("creationDate").descending())).map {
+            val payload: Any = when(it) {
+                is BattleEndNotification -> it.battle.id.toString()
+                is NewLoginNotification -> it.successfulLogin.id.toString()
+                else -> {}
+            }
+            NotificationDto(it.type, payload)
+        }
+    }
+}

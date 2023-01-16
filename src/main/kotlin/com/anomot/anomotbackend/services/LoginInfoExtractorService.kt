@@ -26,7 +26,8 @@ import java.util.*
 @Service
 class LoginInfoExtractorService @Autowired constructor(
         private val successfulLoginRepository: SuccessfulLoginRepository,
-        private val userRepository: UserRepository
+        private val userRepository: UserRepository,
+        private val notificationService: NotificationService
 ) {
     private var dbReader: DatabaseReader? = null
     private val userAgentParser: UserAgentParser
@@ -88,15 +89,30 @@ class LoginInfoExtractorService @Autowired constructor(
                 browserVersion = capabilities.browserMajorVersion)
     }
 
-    fun saveLogin(userDetails: CustomUserDetails, successfulLogin: SuccessfulLogin) {
-        successfulLogin.user = userRepository.getReferenceById(userDetails.id!!)
+    fun saveLoginAndSendNotification(userDetails: CustomUserDetails, successfulLogin: SuccessfulLogin) {
+        val user = userRepository.getReferenceById(userDetails.id!!)
+        successfulLogin.user = user
         successfulLogin.date = Date()
-        successfulLoginRepository.save(successfulLogin)
+        val saved = successfulLoginRepository.save(successfulLogin)
+        notificationService.sendNewLoginNotification(user, saved)
     }
 
     fun getByUser(userDetails: CustomUserDetails, pageRequest: PageRequest): List<LoginInfoDto> {
         val user = userRepository.getReferenceById(userDetails.id!!)
 
         return successfulLoginRepository.findAllByUser(user, pageRequest).map(LoginInfoDto.Companion::from)
+    }
+
+    fun getByUserAndId(userDetails: CustomUserDetails, id: String): LoginInfoDto? {
+        val user = userRepository.getReferenceById(userDetails.id!!)
+        val idLong = try {
+            id.toLong()
+        } catch (e: NumberFormatException) {
+            return null
+        }
+
+        val result = successfulLoginRepository.findByUserAndId(user, idLong) ?: return null
+
+        return LoginInfoDto.from(result)
     }
 }
