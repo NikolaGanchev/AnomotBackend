@@ -2,6 +2,7 @@ package com.anomot.anomotbackend.services
 
 import com.anomot.anomotbackend.dto.CommentDto
 import com.anomot.anomotbackend.dto.CommentEditDto
+import com.anomot.anomotbackend.dto.CommentIntermediate
 import com.anomot.anomotbackend.entities.*
 import com.anomot.anomotbackend.repositories.CommentRepository
 import com.anomot.anomotbackend.repositories.PreviousCommentVersionRepository
@@ -46,6 +47,10 @@ class CommentService @Autowired constructor(
     fun addCommentToComment(text: String, user: User, commentId: String): CommentDto? {
         val comment = getCommentFromIdUnsafe(commentId) ?: return null
 
+        if (comment.parentComment != null) {
+            return null
+        }
+
         if (!canSeeComment(user, comment)) return null
 
         return addComment(text, user, null, null, comment)
@@ -54,7 +59,7 @@ class CommentService @Autowired constructor(
     private fun addComment(text: String, user: User, parentBattle: Battle?, parentPost: Post?, parentComment: Comment?): CommentDto {
         val comment = Comment(text, parentBattle, parentPost, parentComment, user)
         val savedComment = commentRepository.save(comment)
-        return getAsDto(savedComment)
+        return getAsDto(CommentIntermediate(savedComment, 0))
     }
 
     fun getPostComments(user: User, postId: String, page: Int): List<CommentDto>? {
@@ -81,6 +86,10 @@ class CommentService @Autowired constructor(
     fun getCommentComments(user: User, commentId: String, page: Int): List<CommentDto>? {
         val comment = getCommentFromIdUnsafe(commentId) ?: return null
 
+        if (comment.parentComment != null) {
+            return null
+        }
+
         if (!canSeeComment(user, comment)) return null
 
         return commentRepository.getAllByParentComment(comment, PageRequest.of(page, Constants.COMMENTS_PAGE)).map {
@@ -89,15 +98,12 @@ class CommentService @Autowired constructor(
     }
 
     private fun canSeeComment(user: User, comment: Comment): Boolean {
-        // Check if comment is not a child already
+
+        // If child comment, check if user can see parent
         if (comment.parentComment != null) {
-            return false
+            return canSeeComment(user, comment.parentComment!!)
         }
 
-        return canSeeCommentOrChild(user, comment)
-    }
-
-    private fun canSeeCommentOrChild(user: User, comment: Comment): Boolean {
         // Check if comment is on post and if can user can access it
         if (comment.parentPost != null) {
             if (!postService.canSeeUserAndPost(user, comment.parentPost!!)) return false
@@ -146,7 +152,7 @@ class CommentService @Autowired constructor(
     fun getCommentHistory(user: User, commentId: String, page: Int): List<CommentEditDto>? {
         val comment = getCommentReferenceFromIdUnsafe(commentId) ?: return null
 
-        if (!canSeeCommentOrChild(user, comment)) return null
+        if (!canSeeComment(user, comment)) return null
 
         return previousCommentVersionRepository.findByComment(comment,
                 PageRequest.of(page,
@@ -177,7 +183,8 @@ class CommentService @Autowired constructor(
         }
     }
 
-    private fun getAsDto(comment: Comment): CommentDto {
+    private fun getAsDto(commentIntermediate: CommentIntermediate): CommentDto {
+        val comment = commentIntermediate.comment
         return CommentDto(
                 comment.text,
                 if (comment.isDeleted || comment.commenter == null) {
@@ -185,7 +192,7 @@ class CommentService @Autowired constructor(
                 } else userDetailsServiceImpl.getAsDto(comment.commenter!!),
                 comment.isEdited,
                 // TODO
-                0,
+                commentIntermediate.responseCount.toInt(),
                 comment.creationDate,
                 comment.id.toString()
         )

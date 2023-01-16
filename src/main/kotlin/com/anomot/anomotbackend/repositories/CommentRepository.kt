@@ -1,5 +1,6 @@
 package com.anomot.anomotbackend.repositories
 
+import com.anomot.anomotbackend.dto.CommentIntermediate
 import com.anomot.anomotbackend.entities.Battle
 import com.anomot.anomotbackend.entities.Comment
 import com.anomot.anomotbackend.entities.Post
@@ -12,11 +13,20 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface CommentRepository: JpaRepository<Comment, Long> {
-    fun getAllByParentPost(post: Post, pageable: Pageable): List<Comment>
 
-    fun getAllByParentBattle(battle: Battle, pageable: Pageable): List<Comment>
+    @Query("select new com.anomot.anomotbackend.dto.CommentIntermediate(c," +
+            "(select count(c1) from Comment c1 where c1.parentComment = c)) " +
+            "from Comment c where c.parentPost = ?1")
+    fun getAllByParentPost(post: Post, pageable: Pageable): List<CommentIntermediate>
 
-    fun getAllByParentComment(comment: Comment, pageable: Pageable): List<Comment>
+    @Query("select new com.anomot.anomotbackend.dto.CommentIntermediate(c," +
+            "(select count(c1) from Comment c1 where c1.parentComment = c)) " +
+            "from Comment c where c.parentBattle = ?1")
+    fun getAllByParentBattle(battle: Battle, pageable: Pageable): List<CommentIntermediate>
+
+    @Query("select new com.anomot.anomotbackend.dto.CommentIntermediate(c, cast (0 as long)) " +
+            "from Comment c where c.parentComment = ?1")
+    fun getAllByParentComment(comment: Comment, pageable: Pageable): List<CommentIntermediate>
 
     fun existsByParentComment(comment: Comment): Boolean
 
