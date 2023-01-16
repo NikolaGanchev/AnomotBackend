@@ -7,6 +7,8 @@ data class CommentDto(
         val commenter: UserDto?,
         val isEdited: Boolean,
         val responseCount: Int?,
+        val likes: Long,
+        val hasUserLiked: Boolean,
         val lastChangeDate: Date?,
         val id: String
 )

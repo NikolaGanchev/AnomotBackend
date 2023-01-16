@@ -17,6 +17,8 @@ interface LikeRepository: JpaRepository<Like, Long> {
 
     fun deleteByLikedByAndPost(likedBy: User, post: Post): Long
 
+    fun deleteByPostAndPostPoster(post: Post, user: User): Long
+
     @Query("select distinct(l.likedBy) from Like l, Follow f where l.post = ?2 and (l.likedBy = ?1 or (f.followed = l.likedBy and f.follower = ?1))")
     fun getLikedByByUserAndPost(user: User, post: Post, pageable: Pageable): List<User>
 }

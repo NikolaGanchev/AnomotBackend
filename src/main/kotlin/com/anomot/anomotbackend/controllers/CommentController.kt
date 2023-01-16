@@ -3,7 +3,9 @@ package com.anomot.anomotbackend.controllers
 import com.anomot.anomotbackend.dto.CommentDto
 import com.anomot.anomotbackend.dto.CommentEditDto
 import com.anomot.anomotbackend.dto.CommentUploadDto
+import com.anomot.anomotbackend.dto.UserDto
 import com.anomot.anomotbackend.security.CustomUserDetails
+import com.anomot.anomotbackend.security.EmailVerified
 import com.anomot.anomotbackend.services.CommentService
 import com.anomot.anomotbackend.services.UserDetailsServiceImpl
 import org.springframework.beans.factory.annotation.Autowired
@@ -20,6 +22,7 @@ class CommentController@Autowired constructor(
         private val userDetailsServiceImpl: UserDetailsServiceImpl
 ) {
     @PostMapping("/post/comment")
+    @EmailVerified
     fun commentPost(@RequestBody @Valid commentUploadDto: CommentUploadDto,
                     @RequestParam("id") postId: String,
                     authentication: Authentication): ResponseEntity<CommentDto> {
@@ -34,6 +37,7 @@ class CommentController@Autowired constructor(
     }
 
     @PostMapping("/battle/comment")
+    @EmailVerified
     fun commentBattle(@RequestBody @Valid commentUploadDto: CommentUploadDto,
                     @RequestParam("id") battleId: String,
                     authentication: Authentication): ResponseEntity<CommentDto> {
@@ -48,6 +52,7 @@ class CommentController@Autowired constructor(
     }
 
     @PostMapping("/comment/comment")
+    @EmailVerified
     fun commentComment(@RequestBody @Valid commentUploadDto: CommentUploadDto,
                       @RequestParam("id") commentId: String,
                       authentication: Authentication): ResponseEntity<CommentDto> {
@@ -142,5 +147,29 @@ class CommentController@Autowired constructor(
         } else {
             ResponseEntity(HttpStatus.BAD_REQUEST)
         }
+    }
+
+    @PostMapping("/comment/like")
+    fun like(@RequestParam("id") commentId: String, authentication: Authentication): ResponseEntity<String> {
+        val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
+
+        val result = commentService.like(user, commentId)
+        return ResponseEntity(if (result) HttpStatus.OK else HttpStatus.BAD_REQUEST)
+    }
+
+    @PostMapping("/comment/unlike")
+    fun unlike(@RequestParam("id") commentId: String, authentication: Authentication): ResponseEntity<String> {
+        val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
+
+        val result = commentService.unlike(user, commentId)
+        return ResponseEntity(if (result) HttpStatus.OK else HttpStatus.BAD_REQUEST)
+    }
+
+    @GetMapping("/comment/likes")
+    fun getLikes(@RequestParam("id") commentId: String, @RequestParam("page") page: Int, authentication: Authentication): ResponseEntity<List<UserDto>> {
+        val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
+
+        val result = commentService.getLikedBy(user, commentId, page)
+        return ResponseEntity(result, if (result != null) HttpStatus.OK else HttpStatus.BAD_REQUEST)
     }
 }

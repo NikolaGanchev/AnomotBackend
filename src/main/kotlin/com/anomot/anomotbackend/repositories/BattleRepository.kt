@@ -57,4 +57,8 @@ interface BattleRepository: JpaRepository<Battle, Long> {
             "((b.goldPost.poster = :user and b.goldPost.text = :text) or " +
             "(b.redPost.poster = :user and b.redPost.text = :text))")
     fun getWithSameText(user: User, text: String): List<Post>
+
+    @Query("select case when (count(b) > 0 or count(v) > 0) then true else false end " +
+            "from Battle b, Vote v where (v.battle = ?2 and v.voter = ?1) or (b = ?2 and (b.goldPost.poster = ?1 or b.redPost.poster = ?1))")
+    fun canSeeBattle(user: User, battle: Battle): Boolean
 }

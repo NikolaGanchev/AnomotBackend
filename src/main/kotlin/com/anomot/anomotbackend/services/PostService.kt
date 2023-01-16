@@ -134,7 +134,11 @@ class PostService @Autowired constructor(
             return false
         }
 
+        val post = postRepository.getReferenceById(postId)
+        if (post.poster.id != user.id) return false
+
         battleQueueRepository.deletePostByIdAndUser(postId, user.id!!)
+        likeRepository.deleteByPostAndPostPoster(post, user)
         val num = postRepository.deleteByIdAndPoster(postId, user)
 
         return num != (0).toLong()

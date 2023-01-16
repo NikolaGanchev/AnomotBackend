@@ -4,5 +4,7 @@ import com.anomot.anomotbackend.entities.Comment
 
 data class CommentIntermediate(
         val comment: Comment,
-        val responseCount: Long
+        val responseCount: Long,
+        val likes: Long,
+        val hasUserLiked: Boolean
 )

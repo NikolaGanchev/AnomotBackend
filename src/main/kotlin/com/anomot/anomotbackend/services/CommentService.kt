@@ -3,10 +3,9 @@ package com.anomot.anomotbackend.services
 import com.anomot.anomotbackend.dto.CommentDto
 import com.anomot.anomotbackend.dto.CommentEditDto
 import com.anomot.anomotbackend.dto.CommentIntermediate
+import com.anomot.anomotbackend.dto.UserDto
 import com.anomot.anomotbackend.entities.*
-import com.anomot.anomotbackend.repositories.CommentRepository
-import com.anomot.anomotbackend.repositories.PreviousCommentVersionRepository
-import com.anomot.anomotbackend.repositories.VoteRepository
+import com.anomot.anomotbackend.repositories.*
 import com.anomot.anomotbackend.utils.Constants
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.PageRequest
@@ -23,7 +22,9 @@ class CommentService @Autowired constructor(
         private val voteRepository: VoteRepository,
         private val postService: PostService,
         private val previousCommentVersionRepository: PreviousCommentVersionRepository,
-        private val battleService: BattleService
+        private val battleService: BattleService,
+        private val commentLikeRepository: CommentLikeRepository,
+        private val battleRepository: BattleRepository
 ) {
     @Transactional
     fun addCommentToPost(text: String, user: User, postId: String): CommentDto? {
@@ -59,7 +60,7 @@ class CommentService @Autowired constructor(
     private fun addComment(text: String, user: User, parentBattle: Battle?, parentPost: Post?, parentComment: Comment?): CommentDto {
         val comment = Comment(text, parentBattle, parentPost, parentComment, user)
         val savedComment = commentRepository.save(comment)
-        return getAsDto(CommentIntermediate(savedComment, 0))
+        return getAsDto(CommentIntermediate(savedComment, 0, 0, false))
     }
 
     fun getPostComments(user: User, postId: String, page: Int): List<CommentDto>? {
@@ -67,7 +68,7 @@ class CommentService @Autowired constructor(
 
         if (!postService.canSeeUserAndPost(user, post)) return null
 
-        return commentRepository.getAllByParentPost(post, PageRequest.of(page, Constants.COMMENTS_PAGE)).map {
+        return commentRepository.getAllByParentPost(post, user, PageRequest.of(page, Constants.COMMENTS_PAGE)).map {
             getAsDto(it)
         }
     }
@@ -77,7 +78,7 @@ class CommentService @Autowired constructor(
 
         if (!voteRepository.existsByBattleAndVoter(battle, user)) return null
 
-        return commentRepository.getAllByParentBattle(battle, PageRequest.of(page, Constants.COMMENTS_PAGE)).map {
+        return commentRepository.getAllByParentBattle(battle, user, PageRequest.of(page, Constants.COMMENTS_PAGE)).map {
             getAsDto(it)
         }
     }
@@ -92,7 +93,7 @@ class CommentService @Autowired constructor(
 
         if (!canSeeComment(user, comment)) return null
 
-        return commentRepository.getAllByParentComment(comment, PageRequest.of(page, Constants.COMMENTS_PAGE)).map {
+        return commentRepository.getAllByParentComment(comment, user, PageRequest.of(page, Constants.COMMENTS_PAGE)).map {
             getAsDto(it)
         }
     }
@@ -111,7 +112,7 @@ class CommentService @Autowired constructor(
 
         // Check if comment is on battle and if user can access it
         if (comment.parentBattle != null) {
-            if (!voteRepository.existsByBattleAndVoter(comment.parentBattle!!, user)) return false
+            if (!battleRepository.canSeeBattle(user, comment.parentBattle!!)) return false
         }
 
         return true
@@ -161,6 +162,36 @@ class CommentService @Autowired constructor(
         }
     }
 
+    fun like(user: User, commentId: String): Boolean {
+        val comment = getCommentFromIdUnsafe(commentId) ?: return false
+
+        if (!canSeeComment(user, comment)) return false
+
+        if (commentLikeRepository.existsByLikedByAndComment(user, comment)) return false
+
+        commentLikeRepository.save(CommentLike(comment, user))
+
+        return true
+    }
+
+    @Transactional
+    fun unlike(user: User, commentId: String): Boolean {
+        val comment = getCommentReferenceFromIdUnsafe(commentId) ?: return false
+
+        val result = commentLikeRepository.deleteByLikedByAndComment(user, comment)
+
+        return result > 0
+    }
+
+    fun getLikedBy(user: User, commentId: String, page: Int): List<UserDto>? {
+        val comment = getCommentReferenceFromIdUnsafe(commentId) ?: return null
+
+        return commentLikeRepository.getLikedByByUserAndComment(user, comment,
+                PageRequest.of(page, Constants.LIKED_BY_PAGE)).map {
+            return@map userDetailsServiceImpl.getAsDto(it)
+        }
+    }
+
     private fun getCommentFromIdUnsafe(commentId: String): Comment? {
         return try {
             val comment = commentRepository.findById(commentId.toLong())
@@ -193,6 +224,8 @@ class CommentService @Autowired constructor(
                 comment.isEdited,
                 // TODO
                 commentIntermediate.responseCount.toInt(),
+                commentIntermediate.likes,
+                commentIntermediate.hasUserLiked,
                 comment.creationDate,
                 comment.id.toString()
         )

@@ -5,9 +5,9 @@ import java.util.*
 import javax.persistence.*
 
 @Entity
-class Like(
+class CommentLike(
         @ManyToOne
-        val post: Post,
+        val comment: Comment,
         @ManyToOne
         val likedBy: User,
         var creationDate: Date = Date(),
