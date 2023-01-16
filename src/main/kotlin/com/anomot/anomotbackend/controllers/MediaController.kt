@@ -11,7 +11,6 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
-import org.springframework.web.multipart.MultipartFile
 import javax.validation.Valid
 import javax.validation.constraints.Max
 import javax.validation.constraints.Min
@@ -22,26 +21,6 @@ class MediaController(
         private val mediaService: MediaService,
         private val userDetailsServiceImpl: UserDetailsServiceImpl
 ) {
-
-    @PostMapping("/account/media")
-    fun uploadMedia(@RequestParam("file") file: MultipartFile, authentication: Authentication): ResponseEntity<MediaDto> {
-        val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
-        val media = mediaService.uploadMedia(file, false, true, user)
-
-        if (media?.media == null) {
-            return ResponseEntity(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
-        }
-
-        val mediaDto = MediaDto(media.media.mediaType, media.media.name.toString())
-
-        val nsfwStats = media.maxNsfwScan ?: media.avgNsfwScan!!
-
-        if (!mediaService.inNsfwRequirements(nsfwStats)) {
-            return ResponseEntity(mediaDto, HttpStatus.BAD_REQUEST)
-        }
-
-        return ResponseEntity(mediaDto, HttpStatus.CREATED)
-    }
 
     @PostMapping("/account/url")
     fun uploadUrl(@RequestBody @Valid urlUploadDto: UrlUploadDto, authentication: Authentication): ResponseEntity<String> {
@@ -62,15 +41,8 @@ class MediaController(
 
     @GetMapping("/media")
     fun getMedia(@RequestParam @Min(36) @Max(36) id: String,
-                 @RequestParam(required = false) showNsfw: Boolean?,
                  authentication: Authentication): ResponseEntity<ByteArray> {
         val media = mediaService.getMediaFromServer(id) ?: return ResponseEntity(HttpStatus.NOT_FOUND)
-
-        if (showNsfw != null && !showNsfw) {
-            if (!mediaService.inNsfwRequirements(media, id)) {
-                return ResponseEntity(HttpStatus.NO_CONTENT)
-            }
-        }
 
         return ResponseEntity.ok()
                 .contentType(media.contentType)
