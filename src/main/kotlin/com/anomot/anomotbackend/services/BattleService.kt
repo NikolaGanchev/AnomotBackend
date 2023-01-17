@@ -54,27 +54,24 @@ class BattleService @Autowired constructor(
     // Automatically adjusts elos and closes the battle
     @Transactional
     fun finish(battle: Battle) {
+        val goldUser = battle.goldPost?.poster
+        val redUser = battle.redPost?.poster
+
+        if (goldUser == null && redUser != null) {
+            redUser.elo += 15
+            return
+        } else if (goldUser != null && redUser == null) {
+            goldUser.elo += 15
+            return
+        } else if (goldUser == null && redUser == null) {
+            return
+        }
+
         val votesGold = voteRepository.countVotesByBattleAndPost(battle, battle.goldPost!!)
         val votesRed = voteRepository.countVotesByBattleAndPost(battle, battle.redPost!!)
 
         val scoreGold = determineScore(votesGold, votesRed)
         val scoreRed = determineScore(votesRed, votesGold)
-        val goldUser = battle.goldPost?.poster
-        val redUser = battle.redPost?.poster
-
-        if (goldUser == null && redUser != null) {
-            if (votesRed >= votesGold) {
-                redUser.elo += 30
-            } else redUser.elo -= 30
-            return
-        } else if (goldUser != null && redUser == null) {
-            if (votesGold >= votesRed) {
-                goldUser.elo += 30
-            } else goldUser.elo -= 30
-            return
-        } else if (goldUser == null && redUser == null) {
-            return
-        }
 
         val expected = eloService.getUserProbability(goldUser!!, redUser!!)
 

@@ -23,14 +23,14 @@ interface BattleRepository: JpaRepository<Battle, Long> {
     fun getUnprocessedFinishedBattlesAndUpdate(): List<Battle>
 
     @Query("select new com.anomot.anomotbackend.dto.BattleIntermediate(b, " +
-            "(select count (v1) from Vote v1 where v1.battle = b and v1.post.poster = ?1)," +
-            "(select count (v2) from Vote v2 where v2.battle = b and v2.post.poster <> ?1))" +
+            "(select count (v1) from Vote v1 where v1.battle = b and v1.voteFor = ?1)," +
+            "(select count (v2) from Vote v2 where v2.battle = b and v2.voteFor <> ?1))" +
             "from Battle b where b.goldPost.poster = ?1 or b.redPost.poster = ?1")
     fun getAllBattlesByUser(user: User, pageable: Pageable): List<BattleIntermediate>
 
     @Query("select new com.anomot.anomotbackend.dto.BattleIntermediate(b, " +
-            "(select count (v1) from Vote v1 where v1.battle = b and v1.post.poster = ?1)," +
-            "(select count (v2) from Vote v2 where v2.battle = b and v2.post.poster <> ?1))" +
+            "(select count (v1) from Vote v1 where v1.battle = b and v1.voteFor = ?1)," +
+            "(select count (v2) from Vote v2 where v2.battle = b and v2.voteFor <> ?1))" +
             "from Battle b where b.id = ?2 and (b.goldPost.poster = ?1 or b.redPost.poster = ?1)")
     fun getBattleByUser(user: User, id: Long): BattleIntermediate?
 
@@ -67,4 +67,13 @@ interface BattleRepository: JpaRepository<Battle, Long> {
     @Query("select case when (count(b) > 0 or count(v) > 0) then true else false end " +
             "from Battle b, Vote v where (v.battle = ?2 and v.voter = ?1) or (b = ?2 and (b.goldPost.poster = ?1 or b.redPost.poster = ?1))")
     fun canSeeBattle(user: User, battle: Battle): Boolean
+
+    @Query("update Battle b set " +
+            "b.goldPost = case when (b.goldPost = ?1) then NULL else b.goldPost end, " +
+            "b.redPost = case when(b.redPost = ?1) then NULL else b.redPost end where b.redPost = ?1 or b.goldPost = ?1")
+    @Modifying
+    fun setPostToNull(post: Post): Int
+
+    @Query("from Battle b where b.redPost = ?1 or b.goldPost = ?1")
+    fun getByRedPostOrGoldPost(post: Post): Battle?
 }

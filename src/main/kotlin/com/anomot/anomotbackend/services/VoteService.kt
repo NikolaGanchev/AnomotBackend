@@ -50,7 +50,7 @@ class VoteService @Autowired constructor(
 
             if (voteRepository.existsByBattleAndVoter(battle, user)) return null
 
-            voteRepository.save(Vote(battle, post, user))
+            voteRepository.save(Vote(battle, post, user, post.poster))
 
             val it = voteRepository.getByVoterAndBattle(user, battle)
             return createVotedBattleFromIntermediate(it)

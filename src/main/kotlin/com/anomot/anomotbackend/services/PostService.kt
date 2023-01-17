@@ -4,21 +4,16 @@ import com.anomot.anomotbackend.dto.MediaDto
 import com.anomot.anomotbackend.dto.PostDto
 import com.anomot.anomotbackend.dto.PostWithLikes
 import com.anomot.anomotbackend.dto.UserDto
-import com.anomot.anomotbackend.entities.Like
-import com.anomot.anomotbackend.entities.Media
-import com.anomot.anomotbackend.entities.Post
-import com.anomot.anomotbackend.entities.User
+import com.anomot.anomotbackend.entities.*
 import com.anomot.anomotbackend.repositories.*
 import com.anomot.anomotbackend.utils.Constants
 import com.anomot.anomotbackend.utils.PostType
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 import java.lang.NumberFormatException
-import java.util.*
 import javax.transaction.Transactional
 
 enum class PostCreateStatus {
@@ -41,7 +36,7 @@ class PostService @Autowired constructor(
         private val followService: FollowService,
         private val likeRepository: LikeRepository,
         private val userDetailsServiceImpl: UserDetailsServiceImpl,
-        private val mediaRepository: MediaRepository
+        private val voteRepository: VoteRepository
 ) {
     private fun addTextPost(text: String, user: User): Post {
         return postRepository.save(Post(user, null, text, PostType.TEXT))
@@ -121,6 +116,8 @@ class PostService @Autowired constructor(
         return followService.canSeeOtherUser(user, post.poster) && postRepository.canSeePost(user, post.poster)
     }
 
+    // Comes with a 30 elo subtraction if the post was in a battle
+    // Deleting a post from a battle doesn't mean people who have already voted for you lose access to your account
     @Transactional
     fun deletePost(postId: Long, user: User): Boolean {
         if (!postRepository.existsById(postId)) {
@@ -132,10 +129,25 @@ class PostService @Autowired constructor(
 
         battleQueueRepository.deletePostByIdAndUser(postId, user.id!!)
         likeRepository.deleteByPostAndPostPoster(post, user)
+        voteRepository.setPostToNull(post)
+        val battle = battleRepository.getByRedPostOrGoldPost(post)
+        if (battle != null) {
+            val otherPost = if (battle.goldPost?.id == post.id) {
+                battle.redPost
+            } else if (battle.redPost?.poster?.id == post.id) {
+                battle.goldPost
+            } else {
+                null
+            }
+            if (otherPost != null) {
+                voteRepository.save(Vote(battle, otherPost, user, otherPost.poster))
+            }
+            battleRepository.setPostToNull(post)
+            user.elo -= 30
+        }
 
         if (post.media != null) {
-            mediaRepository.delete(post.media!!)
-            mediaService.deleteMediaFromServer(post.media!!.name.toString())
+            mediaService.deleteMedia(post.media!!)
         }
 
         val num = postRepository.deleteByIdAndPoster(postId, user)

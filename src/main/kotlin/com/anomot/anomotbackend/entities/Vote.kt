@@ -12,6 +12,8 @@ class Vote(
         val post: Post?,
         @ManyToOne
         val voter: User,
+        @ManyToOne
+        val voteFor: User,
         var creationDate: Date = Date(),
         @Id @GeneratedValue(strategy = GenerationType.AUTO) var id: Long? = null
 ): Serializable

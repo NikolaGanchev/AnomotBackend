@@ -307,4 +307,12 @@ class MediaService @Autowired constructor(
         val newUrl = urlRepository.getByInAppUrl(inAppUrl)
         return newUrl?.url
     }
+
+    @Transactional
+    fun deleteMedia(media: Media): Boolean {
+        nsfwScanRepository.deleteByMedia(media)
+        mediaRepository.delete(media)
+
+        return deleteMediaFromServer(media.name.toString())
+    }
 }
