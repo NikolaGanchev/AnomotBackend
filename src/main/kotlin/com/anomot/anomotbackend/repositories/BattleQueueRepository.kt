@@ -14,11 +14,17 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface BattleQueueRepository: JpaRepository<BattleQueuePost, Long> {
-    @Query("from BattleQueuePost p where p.post.type = :#{#post.post.type} " +
-            "and p.post <> :#{#post.post} " +
-            "and p.post.poster <> :#{#post.post.poster} " +
-            "and abs(p.post.poster.elo - :#{#post.post.poster.elo}) < ${Constants.MAX_ELO_DIFFERENCE} " +
-            "order by abs(p.post.poster.elo - :#{#post.post.poster.elo}) asc")
+    @Query("select bp.* from battle_queue_post bp join post p on bp.post_id = p.id join users u on p.poster_id = u.id " +
+            "where p.type = :#{#post.post.type.ordinal()} " +
+            "and p.id <> :#{#post.post.id} " +
+            "and p.poster_id <> :#{#post.post.poster.id} " +
+            "and abs(u.elo - :#{#post.post.poster.elo}) < case " +
+            // 1 minute
+            "when (extract(epoch from now() - p.creation_date) < 60) then ${Constants.MAX_ELO_1_MINUTE} " +
+            "when (extract(epoch from now() - p.creation_date) < 60 * 5) then ${Constants.MAX_ELO_5_MINUTES} " +
+            "when (extract(epoch from now() - p.creation_date) < 60 * 60) then ${Constants.MAX_ELO_1_HOUR} " +
+            "else ${Constants.MAX_ELO_DIFFERENCE} end " +
+            "order by abs(u.elo - :#{#post.post.poster.elo}) asc, p.creation_date asc", nativeQuery = true)
     fun findSimilarByElo(@Param("post") post: BattleQueuePost, pageable: Pageable =
         PageRequest.of(0, 1)): List<BattleQueuePost>
 

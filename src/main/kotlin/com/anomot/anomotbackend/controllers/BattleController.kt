@@ -118,6 +118,7 @@ class BattleController @Autowired constructor(
         if (selfPost == null || enemyPost == null) {
             // TODO
             // Handle post rejection because of deleted user if ever happens
+            // That shouldn't be possible as deleting a user also deletes their posts
             return ResponseEntity(HttpStatus.CONFLICT)
         }
 

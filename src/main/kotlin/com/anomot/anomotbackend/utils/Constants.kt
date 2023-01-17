@@ -34,7 +34,10 @@ class Constants {
         const val FOLLOWS_PER_PAGE = 30
         const val MAX_POST_LENGTH = 6200
         const val MIN_POST_LENGTH = 50
-        const val MAX_ELO_DIFFERENCE = 800
+        const val MAX_ELO_1_MINUTE = 150
+        const val MAX_ELO_5_MINUTES = 300
+        const val MAX_ELO_1_HOUR = 600
+        const val MAX_ELO_DIFFERENCE = 1200
         const val BATTLE_DURATION = 3 * 24 * 3600 // seconds
         const val MEDIA_PAGE = 9
         const val POST_PAGE = 9
