@@ -14,6 +14,7 @@ class Notification(
         val user: User,
         @Enumerated(EnumType.ORDINAL)
         val type: NotificationType,
+        val isRead: Boolean = false,
         var creationDate: Date = Date(),
         @Id @GeneratedValue(strategy = GenerationType.AUTO) var id: Long? = null
 ): Serializable

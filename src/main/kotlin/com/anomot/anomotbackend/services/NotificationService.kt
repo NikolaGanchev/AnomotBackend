@@ -8,6 +8,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
+import javax.transaction.Transactional
 
 @Service
 class NotificationService @Autowired constructor(
@@ -31,7 +32,35 @@ class NotificationService @Autowired constructor(
                 is NewLoginNotification -> it.successfulLogin.id.toString()
                 else -> {}
             }
-            NotificationDto(it.type, payload)
+            NotificationDto(it.type, it.isRead, payload, it.id.toString())
         }
+    }
+
+    @Transactional
+    fun toggleReadNotification(user: User, notificationId: String, isRead: Boolean): Boolean {
+        val idLong = try {
+            notificationId.toLong()
+        } catch (e: NumberFormatException) {
+            return false
+        }
+
+        val result = notificationRepository.setReadByUserAndId(user, idLong, isRead)
+
+        return result > 0
+    }
+
+    @Transactional
+    fun toggleReadNotifications(user: User, notificationIds: List<String>, isRead: Boolean): Boolean {
+        val notificationIdsLong = notificationIds.map {
+            try {
+                return@map it.toLong()
+            } catch (e: NumberFormatException) {
+                return false
+            }
+        }
+
+        val result = notificationRepository.setReadByUserAndIds(user, notificationIdsLong, isRead)
+
+        return result > 0
     }
 }
