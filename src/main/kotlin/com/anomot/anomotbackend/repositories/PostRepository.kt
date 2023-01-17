@@ -69,4 +69,11 @@ interface PostRepository: JpaRepository<Post, Long> {
 
     @Query("select p.poster from Post p where p.id = ?1")
     fun findPosterById(id: Long): User
+
+    @Query("select new com.anomot.anomotbackend.dto.PostWithLikes(p, " +
+            "(select count(l) from Like l where l.post = p), " +
+            // TODO could use exists here
+            "(select count(l) > 0 from Like l where l.post = p and l.likedBy = ?1)) " +
+            "from Post p where p = ?2")
+    fun getWithLikesByPostId(user: User, post: Post): PostWithLikes?
 }

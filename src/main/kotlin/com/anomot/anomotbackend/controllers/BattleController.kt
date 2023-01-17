@@ -158,9 +158,9 @@ class BattleController @Autowired constructor(
     }
 
     @GetMapping("/account/battle")
-    fun getSelfBattle(@RequestParam("id") battleId: String, authentication: Authentication): ResponseEntity<SelfBattleDto> {
+    fun getBattleById(@RequestParam("id") battleId: String, authentication: Authentication): ResponseEntity<Any> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
-        val result = battleService.getSelfBattle(user, battleId)
+        val result = battleService.getBattleById(user, battleId)
         return if (result != null) {
             ResponseEntity(result, HttpStatus.OK)
         } else ResponseEntity(HttpStatus.BAD_REQUEST)

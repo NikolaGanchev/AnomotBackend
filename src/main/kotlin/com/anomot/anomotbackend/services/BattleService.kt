@@ -111,12 +111,12 @@ class BattleService @Autowired constructor(
                      battle.goldPost!!.type,
                      battle.goldPost!!.text,
                     if (battle.goldPost!!.media != null) MediaDto(battle.goldPost!!.media!!.mediaType, battle.goldPost!!.media!!.name.toString()) else null,
-                    battle.goldPost!!.id.toString()),
+                    battle.goldPost!!.id.toString(), null),
              BattlePostDto(
                      battle.redPost!!.type,
                      battle.redPost!!.text,
                      if (battle.redPost!!.media != null) MediaDto(battle.redPost!!.media!!.mediaType, battle.redPost!!.media!!.name.toString()) else null,
-                    battle.redPost!!.id.toString()),
+                    battle.redPost!!.id.toString(), null),
                     voteService.genVoteJwt(user, battle)
         )
     }
@@ -173,14 +173,8 @@ class BattleService @Autowired constructor(
     }
 
 
-    fun getSelfBattle(user: User, battleId: String): SelfBattleDto? {
-        val battleLongId = try {
-            battleId.toLong()
-        } catch (numberFormatException: NumberFormatException) {
-            return null
-        }
-
-        val battleIntermediate = battleRepository.getBattleByUser(user, battleLongId) ?: return null
+    fun getSelfBattle(user: User, battleId: Long): SelfBattleDto? {
+        val battleIntermediate = battleRepository.getBattleByUser(user, battleId) ?: return null
 
         return getSelfBattleDtoFromBattleIntermediate(battleIntermediate, user)
     }
@@ -192,6 +186,24 @@ class BattleService @Autowired constructor(
             } else null
         } catch(numberFormatException: NumberFormatException) {
             null
+        }
+    }
+
+    fun getBattleById(user: User, battleId: String): Any? {
+        val battleLongId = try {
+            battleId.toLong()
+        } catch (numberFormatException: NumberFormatException) {
+            return null
+        }
+
+        val battle = battleRepository.getReferenceById(battleLongId)
+
+        if (!battleRepository.canSeeBattle(user, battle)) return null
+
+        return if (battle.goldPost?.poster?.id == user.id || battle.redPost?.poster?.id == user.id) {
+            getSelfBattle(user, battleLongId)
+        } else {
+            voteService.createVotedBattleFromIntermediate(voteRepository.getByVoterAndBattle(user, battle))
         }
     }
 }

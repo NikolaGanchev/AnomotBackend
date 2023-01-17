@@ -8,6 +8,7 @@ import com.anomot.anomotbackend.entities.Vote
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
+import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
 
 @Repository
@@ -20,9 +21,10 @@ interface VoteRepository: JpaRepository<Vote, Long> {
             "(select count (v2) from Vote v2 where v2.battle = v.battle and v2.post <> v.post)," +
             // Can see other user
             "(select count(b)>0 from Battle b, Vote v where " +
-            "((b.redPost.poster = ?1 and b.goldPost.poster = ?2) or " +
-            "(b.goldPost.poster = ?1 and b.redPost.poster = ?2)) or " +
-            "(v.voter = ?1 and v.post.poster = ?2))) " +
+            "((b.redPost.poster = ?1 and b.goldPost.poster = v.battle.goldPost.poster) or " +
+            "(b.goldPost.poster = ?1 and b.redPost.poster = v.battle.redPost.poster)) or " +
+            "(exists(from Vote v where v.voter = ?1 and v.post.poster = b.goldPost.poster) " +
+            "and exists(from Vote v where v.voter = ?1 and v.post.poster = b.redPost.poster)))) "+
             "from Vote v where v.voter = ?1")
     fun getAllByVoter(voter: User, pageable: Pageable): List<VotedBattleIntermediate>
 
@@ -31,11 +33,12 @@ interface VoteRepository: JpaRepository<Vote, Long> {
             "(select count (v2) from Vote v2 where v2.battle = v.battle and v2.post <> v.post)," +
             // Can see other user
             "(select count(b)>0 from Battle b, Vote v where " +
-            "((b.redPost.poster = ?1 and b.goldPost.poster = ?2) or " +
-            "(b.goldPost.poster = ?1 and b.redPost.poster = ?2)) or " +
-            "(v.voter = ?1 and v.post.poster = ?2))) " +
+            "((b.redPost.poster = ?1 and b.goldPost.poster = :#{#battle.goldPost.poster}) or " +
+            "(b.goldPost.poster = ?1 and b.redPost.poster = :#{#battle.redPost.poster})) or " +
+            "(exists(from Vote v where v.voter = ?1 and v.post.poster = b.goldPost.poster) " +
+            "and exists(from Vote v where v.voter = ?1 and v.post.poster = b.redPost.poster)))) "+
             "from Vote v where v.voter = ?1 and v.battle = ?2")
-    fun getByVoterAndBattle(voter: User, battle: Battle): VotedBattleIntermediate
+    fun getByVoterAndBattle(voter: User, @Param("battle") battle: Battle): VotedBattleIntermediate
 
     fun existsByBattleAndVoter(battle: Battle, user: User): Boolean
 }

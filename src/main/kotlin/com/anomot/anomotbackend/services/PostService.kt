@@ -1,19 +1,16 @@
 package com.anomot.anomotbackend.services
 
+import com.anomot.anomotbackend.dto.MediaDto
+import com.anomot.anomotbackend.dto.PostDto
 import com.anomot.anomotbackend.dto.PostWithLikes
 import com.anomot.anomotbackend.dto.UserDto
 import com.anomot.anomotbackend.entities.Like
 import com.anomot.anomotbackend.entities.Media
 import com.anomot.anomotbackend.entities.Post
 import com.anomot.anomotbackend.entities.User
-import com.anomot.anomotbackend.repositories.BattleQueueRepository
-import com.anomot.anomotbackend.repositories.BattleRepository
-import com.anomot.anomotbackend.repositories.LikeRepository
-import com.anomot.anomotbackend.repositories.PostRepository
+import com.anomot.anomotbackend.repositories.*
 import com.anomot.anomotbackend.utils.Constants
 import com.anomot.anomotbackend.utils.PostType
-import io.jsonwebtoken.io.Decoders
-import io.jsonwebtoken.security.Keys
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.domain.PageRequest
@@ -22,7 +19,6 @@ import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 import java.lang.NumberFormatException
 import java.util.*
-import javax.crypto.SecretKey
 import javax.transaction.Transactional
 
 enum class PostCreateStatus {
@@ -38,18 +34,15 @@ enum class PostCreateStatus {
 
 @Service
 class PostService @Autowired constructor(
-        @Value("\${vote.jwt.private-key}") private val secretKeyString: String,
         private val postRepository: PostRepository,
         private val mediaService: MediaService,
         private val battleQueueRepository: BattleQueueRepository,
         private val battleRepository: BattleRepository,
         private val followService: FollowService,
         private val likeRepository: LikeRepository,
-        private val userDetailsServiceImpl: UserDetailsServiceImpl
+        private val userDetailsServiceImpl: UserDetailsServiceImpl,
+        private val mediaRepository: MediaRepository
 ) {
-
-    private val secretKey: SecretKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKeyString))
-
     private fun addTextPost(text: String, user: User): Post {
         return postRepository.save(Post(user, null, text, PostType.TEXT))
     }
@@ -139,6 +132,12 @@ class PostService @Autowired constructor(
 
         battleQueueRepository.deletePostByIdAndUser(postId, user.id!!)
         likeRepository.deleteByPostAndPostPoster(post, user)
+
+        if (post.media != null) {
+            mediaRepository.delete(post.media!!)
+            mediaService.deleteMediaFromServer(post.media!!.name.toString())
+        }
+
         val num = postRepository.deleteByIdAndPoster(postId, user)
 
         return num != (0).toLong()
@@ -205,5 +204,21 @@ class PostService @Autowired constructor(
         return likeRepository.getLikedByByUserAndPost(user, post, PageRequest.of(page, Constants.LIKED_BY_PAGE)).map {
             userDetailsServiceImpl.getAsDto(it)
         }
+    }
+
+    fun getPost(user: User, post: Post): PostDto? {
+        if (!canSeeUserAndPost(user, post)) return null
+
+        val postWithLikes = postRepository.getWithLikesByPostId(user, post) ?: return null
+        val p = postWithLikes.post ?: return null
+
+        return PostDto(p.type,
+                p.text,
+                if (p.media != null) MediaDto(p.media!!.mediaType, p.media!!.name.toString()) else null,
+                userDetailsServiceImpl.getAsDto(p.poster),
+                postWithLikes.likes,
+                postWithLikes.hasUserLiked,
+                p.creationDate,
+                p.id.toString())
     }
 }

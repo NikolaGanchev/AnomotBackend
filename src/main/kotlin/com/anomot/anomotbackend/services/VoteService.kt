@@ -97,10 +97,10 @@ class VoteService @Autowired constructor(
                 otherPost = if (otherPost == null) null else BattlePostDto(otherPost.type,
                         otherPost.text,
                         if (otherPost.media != null) MediaDto(otherPost.media!!.mediaType, otherPost.media!!.name.toString()) else null,
-                        otherPost.id.toString()),
+                        otherPost.id.toString(),
+                        otherUserDto),
                 votesForVoted = it.votesForVoted,
                 votesForOther = it.votesForOther,
-                otherUserDto,
                 isFinished = it.vote.battle.finished
         )
     }

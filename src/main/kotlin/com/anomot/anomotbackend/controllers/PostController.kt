@@ -104,6 +104,21 @@ class PostController @Autowired constructor(
         return ResponseEntity(posts, HttpStatus.OK)
     }
 
+    @GetMapping("/post")
+    fun getPost(@RequestParam("id") id: String, authentication: Authentication): ResponseEntity<PostDto> {
+        val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
+        val post = postService.getPostReferenceFromIdUnsafe(id) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+
+        val postDto = postService.getPost(user, post)
+
+        return if (postDto != null) {
+            ResponseEntity(postDto, HttpStatus.OK)
+        } else {
+            ResponseEntity(HttpStatus.BAD_REQUEST)
+        }
+
+    }
+
     @GetMapping("/feed")
     fun getFeed(@RequestParam("page") page: Int, authentication: Authentication): ResponseEntity<List<PostDto>> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)

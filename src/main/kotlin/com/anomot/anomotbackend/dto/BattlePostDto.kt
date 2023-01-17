@@ -6,5 +6,6 @@ data class BattlePostDto(
         val type: PostType,
         val text: String?,
         val media: MediaDto?,
-        val id: String
+        val id: String,
+        val user: UserDto?,
 )
