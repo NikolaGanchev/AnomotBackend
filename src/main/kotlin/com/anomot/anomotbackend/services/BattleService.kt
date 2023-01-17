@@ -19,7 +19,8 @@ class BattleService @Autowired constructor(
         private val eloService: EloService,
         private val voteRepository: VoteRepository,
         private val userDetailsServiceImpl: UserDetailsServiceImpl,
-        private val voteService: VoteService
+        private val voteService: VoteService,
+        private val notificationService: NotificationService
 ) {
 
     @Transactional
@@ -39,6 +40,7 @@ class BattleService @Autowired constructor(
                 finishDate = Date.from(Date().toInstant().plusSeconds(Constants.BATTLE_DURATION.toLong())))
 
         val savedBattle = battleRepository.save(battle)
+        notificationService.sendBattleBeginNotification(candidate.post.poster, savedBattle)
         battleQueueRepository.delete(battleQueuePost)
         battleQueueRepository.delete(candidate)
 

@@ -22,7 +22,11 @@ class NotificationService @Autowired constructor(
     fun sendNewLoginNotification(user: User, successfulLogin: SuccessfulLogin) {
         // TODO push notifications
         notificationRepository.save(NewLoginNotification(user, successfulLogin))
+    }
 
+    fun sendBattleBeginNotification(user: User, battle: Battle) {
+        // TODO push notifications
+        notificationRepository.save(BattleBeginNotification(user, battle))
     }
 
     fun getNotifications(user: User, page: Int): List<NotificationDto> {
