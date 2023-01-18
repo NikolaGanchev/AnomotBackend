@@ -60,7 +60,7 @@ class CommentService @Autowired constructor(
     private fun addComment(text: String, user: User, parentBattle: Battle?, parentPost: Post?, parentComment: Comment?): CommentDto {
         val comment = Comment(text, parentBattle, parentPost, parentComment, user)
         val savedComment = commentRepository.save(comment)
-        return getAsDto(CommentIntermediate(savedComment, 0, 0, false))
+        return getAsDto(CommentIntermediate(savedComment, 0, 0, false, true))
     }
 
     fun getPostComments(user: User, postId: String, page: Int): List<CommentDto>? {
@@ -218,7 +218,7 @@ class CommentService @Autowired constructor(
         val comment = commentIntermediate.comment
         return CommentDto(
                 comment.text,
-                if (comment.isDeleted || comment.commenter == null) {
+                if (comment.isDeleted || comment.commenter == null || !commentIntermediate.followsCommenter) {
                     null
                 } else userDetailsServiceImpl.getAsDto(comment.commenter!!),
                 comment.isEdited,

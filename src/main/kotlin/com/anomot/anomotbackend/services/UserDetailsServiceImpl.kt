@@ -273,18 +273,6 @@ class UserDetailsServiceImpl: UserDetailsService {
     }
 
     @Transactional
-    fun deleteUser(password: String) {
-        val user = SecurityContextHolder.getContext().authentication
-                ?: throw AccessDeniedException("No authentication present")
-
-        if (authenticationService.verifyAuthenticationWithoutMfa(user, password) == null) {
-            throw BadCredentialsException("Bad credentials")
-        }
-
-        userRepository.deleteById((user.principal as CustomUserDetails).id!!)
-    }
-
-    @Transactional
     fun changeAvatar(file: MultipartFile, left: Int, top: Int, cropSize: Int): Boolean {
         val user = SecurityContextHolder.getContext().authentication
                 ?: throw AccessDeniedException("No authentication present")

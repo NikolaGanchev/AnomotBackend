@@ -92,8 +92,8 @@ class MediaService @Autowired constructor(
     }
 
     @Transactional
-    fun saveFile(fileUploadDto: FileUploadDto): File {
-        val file = File(fileUploadDto.name, fileUploadDto.id, fileUploadDto.threat)
+    fun saveFile(fileUploadDto: FileUploadDto, user: User): File {
+        val file = File(fileUploadDto.name, UUID.fromString(fileUploadDto.id), fileUploadDto.threat, user)
 
         return fileRepository.saveAndFlush(file)
     }
@@ -294,8 +294,12 @@ class MediaService @Autowired constructor(
                 nsfwScan.porn <= Constants.MAX_PORN_TOLERANCE
     }
 
-    fun getMediaByUser(user: User, page: Int): List<Media> {
-        return mediaRepository.getMediaByPublisher(user, PageRequest.of(page, Constants.MEDIA_PAGE, Sort.by("creationDate").descending()))
+    fun getMediaByUser(user: User, page: Int, pageSize: Int = Constants.MEDIA_PAGE): List<Media> {
+        return mediaRepository.getMediaByPublisher(user, PageRequest.of(page, pageSize, Sort.by("creationDate").descending()))
+    }
+
+    fun getFilesByUser(user: User, page: Int, pageSize: Int = Constants.MEDIA_PAGE): List<File> {
+        return fileRepository.getFilesByUploader(user, PageRequest.of(page, pageSize, Sort.by("creationDate").descending()))
     }
 
     fun uploadUrl(url: String, user: User): String {
@@ -314,5 +318,31 @@ class MediaService @Autowired constructor(
         mediaRepository.delete(media)
 
         return deleteMediaFromServer(media.name.toString())
+    }
+
+    fun deleteMediaByUserWithoutNsfwScans(user: User) {
+        var page = 0
+        do {
+            val result = getFilesByUser(user, page, 20)
+            result.parallelStream().forEach {
+                deleteFileFromServer(it.name.toString())
+            }
+            page++
+        } while (result.isNotEmpty())
+
+        mediaRepository.deleteByUser(user)
+    }
+
+    fun deleteFilesByUser(user: User) {
+        var page = 0
+        do {
+            val result = getFilesByUser(user, page, 20)
+            result.parallelStream().forEach {
+                deleteMediaFromServer(it.name.toString())
+            }
+            page++
+        } while (result.isNotEmpty())
+
+        fileRepository.deleteByUser(user)
     }
 }

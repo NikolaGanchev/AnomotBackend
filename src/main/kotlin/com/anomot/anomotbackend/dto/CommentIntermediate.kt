@@ -6,5 +6,6 @@ data class CommentIntermediate(
         val comment: Comment,
         val responseCount: Long,
         val likes: Long,
-        val hasUserLiked: Boolean
+        val hasUserLiked: Boolean,
+        val followsCommenter: Boolean,
 )

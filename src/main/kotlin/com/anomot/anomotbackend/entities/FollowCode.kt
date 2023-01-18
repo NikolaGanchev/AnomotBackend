@@ -11,6 +11,6 @@ class FollowCode(
         val user: User,
         @Column(length = Constants.FOLLOW_CODE_LENGTH, unique = true)
         var code: String,
-        val creationDate: Date,
+        var creationDate: Date,
         @Id @GeneratedValue(strategy = GenerationType.AUTO) var id: Long? = null
 ): Serializable

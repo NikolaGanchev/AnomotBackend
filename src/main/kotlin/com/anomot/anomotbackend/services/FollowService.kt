@@ -101,6 +101,7 @@ class FollowService @Autowired constructor(
 
         val follow = Follow(userToFollow, user)
         followCode.code = codeGenerator.generate(Constants.FOLLOW_CODE_LENGTH)
+        followCode.creationDate = Date()
         followRepository.save(follow)
 
         return userDetailsServiceImpl.getAsDto(userToFollow)

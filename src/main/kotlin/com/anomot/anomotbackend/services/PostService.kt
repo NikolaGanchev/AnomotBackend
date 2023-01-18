@@ -7,6 +7,7 @@ import com.anomot.anomotbackend.dto.UserDto
 import com.anomot.anomotbackend.entities.*
 import com.anomot.anomotbackend.repositories.*
 import com.anomot.anomotbackend.utils.Constants
+import com.anomot.anomotbackend.utils.MediaType
 import com.anomot.anomotbackend.utils.PostType
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.PageRequest
@@ -77,7 +78,10 @@ class PostService @Autowired constructor(
         }
 
         if (shouldHash) {
-            val similar = battleRepository.getSimilarMedia(user, media.media)
+            val similar = battleRepository.getSimilarMedia(user, media.media,
+                    if (media.media.mediaType == MediaType.VIDEO && media.media.duration != null) {
+                        media.media.duration
+                    } else 0f)
             if (similar.isNotEmpty()) {
                 return PostCreateStatus.SIMILAR_FOUND.also {
                     it.similar = similar

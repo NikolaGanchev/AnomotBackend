@@ -5,6 +5,7 @@ import com.anomot.anomotbackend.entities.Post
 import com.anomot.anomotbackend.entities.User
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
+import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
 
@@ -76,4 +77,8 @@ interface PostRepository: JpaRepository<Post, Long> {
             "(select count(l) > 0 from Like l where l.post = p and l.likedBy = ?1)) " +
             "from Post p where p = ?2")
     fun getWithLikesByPostId(user: User, post: Post): PostWithLikes?
+
+    @Modifying
+    @Query("delete from Post p where p.poster = ?1")
+    fun deleteByUser(user: User)
 }

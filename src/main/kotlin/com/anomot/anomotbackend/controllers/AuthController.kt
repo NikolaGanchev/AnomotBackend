@@ -33,7 +33,8 @@ class AuthController(private val userDetailsService: UserDetailsServiceImpl,
                     private val mfaEmailTokenService: MfaEmailTokenService,
                     private val mfaRecoveryService: MfaRecoveryService,
                     private val passwordResetService: PasswordResetService,
-                    private val loginInfoExtractorService: LoginInfoExtractorService) {
+                    private val loginInfoExtractorService: LoginInfoExtractorService,
+                    private val userDeletionService: UserDeletionService) {
 
     @PostMapping("/new")
     fun registerUser(@RequestBody @Valid userRegisterDTO: UserRegisterDto): ResponseEntity<SelfUserDto> {
@@ -113,7 +114,7 @@ class AuthController(private val userDetailsService: UserDetailsServiceImpl,
     @DeleteMapping
     fun deleteAccount(@RequestBody @Valid deleteDto: AccountDeleteDto): ResponseEntity<String> {
         return try {
-            userDetailsService.deleteUser(deleteDto.password)
+            userDeletionService.deleteUser(deleteDto.password)
             ResponseEntity(HttpStatus.OK)
         } catch (exception: BadCredentialsException) {
             ResponseEntity(HttpStatus.UNAUTHORIZED)

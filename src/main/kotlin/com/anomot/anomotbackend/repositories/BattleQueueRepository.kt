@@ -28,7 +28,7 @@ interface BattleQueueRepository: JpaRepository<BattleQueuePost, Long> {
     fun findSimilarByElo(@Param("post") post: BattleQueuePost, pageable: Pageable =
         PageRequest.of(0, 1)): List<BattleQueuePost>
 
-    @Query("delete from BattleQueuePost p where p.post.id = ?1 and p.post.id in (select post.id from Post post where post.poster.id = ?2)")
+    @Query("delete from BattleQueuePost p where p.post.id = ?1 and p.post.poster.id = ?2")
     @Modifying
     fun deletePostByIdAndUser(postId: Long, userId: Long): Int
 
@@ -37,4 +37,8 @@ interface BattleQueueRepository: JpaRepository<BattleQueuePost, Long> {
             "(select count(l) > 0 from Like l where l.likedBy = ?2)) " +
             "from BattleQueuePost p where p.post.poster = ?1")
     fun getAllByPostPoster(poster: User, requester: User, pageable: Pageable): List<PostWithLikes>
+
+    @Modifying
+    @Query("delete from BattleQueuePost p where p.post.id in (select p.id from Post p where p.poster = ?1)")
+    fun deleteByUser(user: User)
 }

@@ -1,6 +1,7 @@
 package com.anomot.anomotbackend.repositories
 
 import com.anomot.anomotbackend.entities.RememberMeToken
+import com.anomot.anomotbackend.entities.User
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
@@ -20,4 +21,8 @@ interface RememberMeTokenRepository: JpaRepository<RememberMeToken, Long> {
     @Modifying
     @Query("delete from RememberMeToken token where token.date < ?1")
     fun deleteOldTokens(expiry: Date): Int
+
+    @Modifying
+    @Query("delete from RememberMeToken token where token.email = :#{#user.email}")
+    fun deleteByUser(user: User)
 }

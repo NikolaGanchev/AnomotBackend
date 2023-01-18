@@ -19,4 +19,8 @@ interface NotificationRepository: JpaRepository<Notification, Long> {
     @Query("update Notification n set n.isRead = ?3 where cast(n.id as long) in ?2 and n.user = ?1")
     @Modifying
     fun setReadByUserAndIds(user: User, ids: List<Long>, isRead: Boolean): Int
+
+    @Modifying
+    @Query("delete from Notification n where n.user = ?1")
+    fun deleteByUser(user: User)
 }

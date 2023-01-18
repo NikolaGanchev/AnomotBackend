@@ -31,9 +31,5 @@ interface UserRepository: JpaRepository<User, Long> {
     @Query("update User user set user.avatar = ?1 where user.id = ?2")
     fun setAvatar(newAvatar: Media, id: Long): Int
 
-    @Modifying
-    @Query("update User user set user.elo = ?1 where user.id = ?2")
-    fun setElo(newElo: Int, id: Long)
-
     fun existsByEmail(email: String): Boolean
 }

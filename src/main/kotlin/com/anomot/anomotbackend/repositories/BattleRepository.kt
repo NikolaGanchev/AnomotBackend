@@ -53,19 +53,17 @@ interface BattleRepository: JpaRepository<Battle, Long> {
     @Query("select p from Post p, Battle b, BattleQueuePost bp where (b.redPost = p or b.goldPost = p or bp.post = p) " +
             "and p.poster = :user and " +
             // check for same media type
-            "p.type = :#{#media.mediaType} and " +
+            "p.media.mediaType = :#{#media.mediaType} and " +
             // check for duration within 2 second if possible
-            "abs(isnull(p.media.duration, 0) - isnull(:#{#media.duration}, 0)) < 2 and " +
-            "function('hamming_distance', p.media.phash, :#{#media.phash}) < 15")
-    fun getSimilarMedia(user: User, media: Media): List<Post>
+            "abs(coalesce(p.media.duration, 0) - :duration) < 2 and " +
+            "function('hamming_distance', p.media.phash, :#{#media.phash}) < 6")
+    fun getSimilarMedia(user: User, media: Media, duration: Float?): List<Post>
 
     @Query("select p from Post p where " +
             "p.id in (select b.goldPost.id from Battle b where b.goldPost.poster = ?1 and b.goldPost.text = ?2) or " +
             "p.id in (select b.redPost.id from Battle b where b.redPost.poster = ?1 and b.redPost.text = ?2) or " +
             "p.id in (select bp.post.id from BattleQueuePost bp where bp.post.poster = ?1 and bp.post.text = ?2)")
     fun getWithSameText(user: User, text: String): List<Post>
-
-
 
     @Query("select case when (count(b) > 0 or count(v) > 0) then true else false end " +
             "from Battle b, Vote v where (v.battle = ?2 and v.voter = ?1) or (b = ?2 and (b.goldPost.poster = ?1 or b.redPost.poster = ?1))")
@@ -79,4 +77,11 @@ interface BattleRepository: JpaRepository<Battle, Long> {
 
     @Query("select count(b) > 0 from Battle b where b.redPost = ?1 or b.goldPost = ?1")
     fun existsByRedPostOrGoldPost(post: Post): Boolean
+
+    @Modifying
+    @Query("update Battle b set " +
+            "b.goldPost = case when (b.goldPost.id in (select p.id from Post p where p.poster = ?1)) then NULL else b.goldPost end, " +
+            "b.redPost = case when(b.redPost.id in (select p.id from Post p where p.poster = ?1)) then NULL else b.redPost end " +
+            "where b.redPost.id in (select p.id from Post p where p.poster = ?1) or b.goldPost.id in (select p.id from Post p where p.poster = ?1)")
+    fun setPostsByUserToNull(user: User)
 }

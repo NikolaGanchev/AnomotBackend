@@ -46,4 +46,8 @@ interface VoteRepository: JpaRepository<Vote, Long> {
     @Query("update Vote v set v.post = NULL where v.post = ?1")
     @Modifying
     fun setPostToNull(post: Post)
+
+    @Modifying
+    @Query("delete from Vote v where v.voter = ?1")
+    fun deleteByUser(user: User)
 }

@@ -43,10 +43,6 @@ interface FollowRepository: JpaRepository<Follow, Long> {
     @Query("delete from Follow f where f.followed = ?2 and f.follower = ?1")
     fun delete(user: User, userToUnfollow: User): Int
 
-
-    /*
-
-     */
     @Query("select count(b) > 0" +
             " from Battle b where " +
             // Check if there is/was a battle between the two users
@@ -57,4 +53,8 @@ interface FollowRepository: JpaRepository<Follow, Long> {
             // or a follow
             "(exists(select f from Follow f where f.follower = ?1 and f.followed = ?2))")
     fun canSeeAccount(user: User, userToView: User): Boolean
+
+    @Modifying
+    @Query("delete from Follow f where f.follower = ?1 or f.followed = ?1")
+    fun deleteByUser(user: User)
 }
