@@ -17,7 +17,7 @@ interface CommentRepository: JpaRepository<Comment, Long> {
             "(select count(c1) from Comment c1 where c1.parentComment = c), " +
             "(select count(l) from CommentLike l where l.comment = c), " +
             "(select count(l) > 0 from CommentLike l where l.likedBy = ?2 and l.comment = c), " +
-            "(select count(f) > 0 from Follow f where f.followed = c.commenter and f.follower = ?2)) " +
+            "((select count(f) > 0 from Follow f where f.followed = c.commenter and f.follower = ?2) or c.commenter = ?2)) " +
             "from CommentLike cl right join cl.comment c where c.parentPost = ?1 " +
             "group by c.id " +
             "order by count(cl) desc, c.creationDate desc")
@@ -27,7 +27,7 @@ interface CommentRepository: JpaRepository<Comment, Long> {
             "(select count(c1) from Comment c1 where c1.parentComment = c), " +
             "(select count(l) from CommentLike l where l.comment = c), " +
             "(select count(l) > 0 from CommentLike l where l.likedBy = ?2 and l.comment = c), " +
-            "(select count(f) > 0 from Follow f where f.followed = c.commenter and f.follower = ?2)) " +
+            "((select count(f) > 0 from Follow f where f.followed = c.commenter and f.follower = ?2) or c.commenter = ?2)) " +
             "from CommentLike cl right join cl.comment c where c.parentBattle = ?1 " +
             "group by c.id " +
             "order by count(cl) desc, c.creationDate desc")
@@ -37,7 +37,7 @@ interface CommentRepository: JpaRepository<Comment, Long> {
             "cast (0 as long)," +
             "(select count(l) from CommentLike l where l.comment = c), " +
             "(select count(l) > 0 from CommentLike l where l.likedBy = ?2 and l.comment = c), " +
-            "(select count(f) > 0 from Follow f where f.followed = c.commenter and f.follower = ?2)) " +
+            "((select count(f) > 0 from Follow f where f.followed = c.commenter and f.follower = ?2) or c.commenter = ?2)) " +
             "from CommentLike cl right join cl.comment c where c.parentComment = ?1 " +
             "group by c.id " +
             "order by count(cl) desc, c.creationDate desc")
