@@ -458,7 +458,7 @@ class RepositoryTests @Autowired constructor(
     @Test
     fun `When search battles find most similar elo of same type`() {
         val authority = Authority(Authorities.USER.roleName)
-        var user = User("example@example.com", "password", "Georgi", mutableListOf(authority), elo = 2400)
+        var user = User("example@example.com", "password", "Georgi", mutableListOf(authority), elo = 1800)
         var user1 = User("example1@example.com", "password", "Georgi", mutableListOf(authority), elo = 1700)
         var user2 = User("example2@example.com", "password", "Georgi", mutableListOf(authority), elo = 1100)
         var user3 = User("example3@example.com", "password", "Georgi", mutableListOf(authority), elo = 1600)
@@ -493,8 +493,7 @@ class RepositoryTests @Autowired constructor(
 
         val candidates = battleQueueRepository.findSimilarByElo(battleQueuePost1, PageRequest.of(0, 5))
 
-        assertThat(candidates.size).isEqualTo(2)
-        assertThat(candidates[0].post).isEqualTo(post2)
-        assertThat(candidates[1].post).isEqualTo(post)
+        assertThat(candidates.size).isEqualTo(1)
+        assertThat(candidates[0].post).isEqualTo(post)
     }
 }

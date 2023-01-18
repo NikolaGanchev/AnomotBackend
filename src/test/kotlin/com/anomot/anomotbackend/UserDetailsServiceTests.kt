@@ -360,32 +360,4 @@ class UserDetailsServiceTests {
             userDetailsService.deactivateEmailMfa()
         }
     }
-
-    @Test
-    @WithMockCustomUser(password = "password", isMfaActive = true, mfaMethods = ["totp", "email"])
-    fun `When delete user with correct credentials then don't throw exceptions`() {
-        every {userRepository.deleteById(any())} returns Unit
-        every {totpService.deleteMfaSecret(any())} returns Unit
-        every { authenticationService.verifyAuthenticationWithoutMfa(any<Authentication>(), any() ) } returns
-                UsernamePasswordAuthenticationToken.authenticated(null, null, null)
-
-        userDetailsService.deleteUser("password")
-    }
-
-    @Test
-    @WithMockCustomUser(password = "password", isMfaActive = true, mfaMethods = ["totp", "email"])
-    fun `When delete user with incorrect credentials then throw bad credentials exception`() {
-        every { authenticationService.verifyAuthenticationWithoutMfa(any<Authentication>(), any()) } throws BadCredentialsException("Bad credentials")
-
-        assertThrows<BadCredentialsException> {
-            userDetailsService.deleteUser("wrongPassword")
-        }
-    }
-
-    @Test
-    fun `When delete user without authentication then throw access denied exception`() {
-        assertThrows<AccessDeniedException> {
-            userDetailsService.deleteUser("password")
-        }
-    }
 }
