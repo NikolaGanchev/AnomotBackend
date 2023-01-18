@@ -76,7 +76,7 @@ class CommentService @Autowired constructor(
     fun getBattleComments(user: User, battleId: String, page: Int): List<CommentDto>? {
         val battle = battleService.getBattleReferenceFromIdUnsafe(battleId) ?: return null
 
-        if (!voteRepository.existsByBattleAndVoter(battle, user)) return null
+        if (!battleRepository.canSeeBattle(user, battle)) return null
 
         return commentRepository.getAllByParentBattle(battle, user, PageRequest.of(page, Constants.COMMENTS_PAGE)).map {
             getAsDto(it, user)
