@@ -1,5 +1,6 @@
 package com.anomot.anomotbackend.controllers
 
+import com.anomot.anomotbackend.dto.FollowCodeDto
 import com.anomot.anomotbackend.dto.UserDto
 import com.anomot.anomotbackend.security.CustomUserDetails
 import com.anomot.anomotbackend.security.EmailVerified
@@ -9,6 +10,7 @@ import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
+import javax.validation.Valid
 
 @RestController
 @RequestMapping
@@ -95,4 +97,21 @@ class FollowController(
         return ResponseEntity(result, HttpStatus.OK)
     }
 
+    @GetMapping("/follow/code")
+    fun getFollowCode(authentication: Authentication): ResponseEntity<FollowCodeDto> {
+        val user = userDetailsService.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
+
+        val result = followService.getFollowCode(user)
+
+        return ResponseEntity(result, HttpStatus.OK)
+    }
+
+    @PostMapping("/follow/code")
+    fun useFollowCode(@RequestBody @Valid followCodeDto: FollowCodeDto, authentication: Authentication): ResponseEntity<UserDto> {
+        val user = userDetailsService.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
+
+        val result = followService.useFollowCode(user, followCodeDto.code) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+
+        return ResponseEntity(result, HttpStatus.OK)
+    }
 }

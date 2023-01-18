@@ -24,8 +24,8 @@ interface VoteRepository: JpaRepository<Vote, Long> {
             "(select count(b)>0 from Battle b, Vote v where " +
             "((b.redPost.poster = ?1 and b.goldPost.poster = v.battle.goldPost.poster) or " +
             "(b.goldPost.poster = ?1 and b.redPost.poster = v.battle.redPost.poster)) or " +
-            "(exists(from Vote v where v.voter = ?1 and v.voteFor = b.goldPost.poster) " +
-            "and exists(from Vote v where v.voter = ?1 and v.voteFor = b.redPost.poster)))) "+
+            "(exists(from Vote v where v.voter = ?1 and v.post.poster = b.goldPost.poster) " +
+            "and exists(from Vote v where v.voter = ?1 and v.post.poster = b.redPost.poster)))) "+
             "from Vote v where v.voter = ?1")
     fun getAllByVoter(voter: User, pageable: Pageable): List<VotedBattleIntermediate>
 
@@ -36,8 +36,8 @@ interface VoteRepository: JpaRepository<Vote, Long> {
             "(select count(b)>0 from Battle b, Vote v where " +
             "((b.redPost.poster = ?1 and b.goldPost.poster = :#{#battle.goldPost.poster}) or " +
             "(b.goldPost.poster = ?1 and b.redPost.poster = :#{#battle.redPost.poster})) or " +
-            "(exists(from Vote v where v.voter = ?1 and v.voteFor = b.goldPost.poster) " +
-            "and exists(from Vote v where v.voter = ?1 and v.voteFor = b.redPost.poster)))) "+
+            "(exists(from Vote v where v.voter = ?1 and v.post.poster = b.goldPost.poster) " +
+            "and exists(from Vote v where v.voter = ?1 and v.post.poster = b.redPost.poster)))) "+
             "from Vote v where v.voter = ?1 and v.battle = ?2")
     fun getByVoterAndBattle(voter: User, @Param("battle") battle: Battle): VotedBattleIntermediate
 

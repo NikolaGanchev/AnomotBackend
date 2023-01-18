@@ -23,14 +23,14 @@ interface BattleRepository: JpaRepository<Battle, Long> {
     fun getUnprocessedFinishedBattlesAndUpdate(): List<Battle>
 
     @Query("select new com.anomot.anomotbackend.dto.BattleIntermediate(b, " +
-            "(select count (v1) from Vote v1 where v1.battle = b and v1.voteFor = ?1)," +
-            "(select count (v2) from Vote v2 where v2.battle = b and v2.voteFor <> ?1))" +
+            "(select count (v1) from Vote v1 where v1.battle = b and v1.post.poster = ?1)," +
+            "(select count (v2) from Vote v2 where v2.battle = b and v2.post.poster <> ?1))" +
             "from Battle b where b.goldPost.poster = ?1 or b.redPost.poster = ?1")
     fun getAllBattlesByUser(user: User, pageable: Pageable): List<BattleIntermediate>
 
     @Query("select new com.anomot.anomotbackend.dto.BattleIntermediate(b, " +
-            "(select count (v1) from Vote v1 where v1.battle = b and v1.voteFor = ?1)," +
-            "(select count (v2) from Vote v2 where v2.battle = b and v2.voteFor <> ?1))" +
+            "(select count (v1) from Vote v1 where v1.battle = b and v1.post.poster = ?1)," +
+            "(select count (v2) from Vote v2 where v2.battle = b and v2.post.poster <> ?1))" +
             "from Battle b where b.id = ?2 and (b.goldPost.poster = ?1 or b.redPost.poster = ?1)")
     fun getBattleByUser(user: User, id: Long): BattleIntermediate?
 
@@ -77,6 +77,6 @@ interface BattleRepository: JpaRepository<Battle, Long> {
     @Modifying
     fun setPostToNull(post: Post): Int
 
-    @Query("from Battle b where b.redPost = ?1 or b.goldPost = ?1")
-    fun getByRedPostOrGoldPost(post: Post): Battle?
+    @Query("select count(b) > 0 from Battle b where b.redPost = ?1 or b.goldPost = ?1")
+    fun existsByRedPostOrGoldPost(post: Post): Boolean
 }

@@ -117,7 +117,9 @@ class PostService @Autowired constructor(
     }
 
     // Comes with a 30 elo subtraction if the post was in a battle
-    // Deleting a post from a battle doesn't mean people who have already voted for you lose access to your account
+    // Deleting a post will make everyone who has voted for you or has had a battle against you but hasn't followed you lose access to your account
+    // unless they gained it from another battle or vote
+    // Followers will still have access
     @Transactional
     fun deletePost(postId: Long, user: User): Boolean {
         if (!postRepository.existsById(postId)) {
@@ -130,18 +132,8 @@ class PostService @Autowired constructor(
         battleQueueRepository.deletePostByIdAndUser(postId, user.id!!)
         likeRepository.deleteByPostAndPostPoster(post, user)
         voteRepository.setPostToNull(post)
-        val battle = battleRepository.getByRedPostOrGoldPost(post)
-        if (battle != null) {
-            val otherPost = if (battle.goldPost?.id == post.id) {
-                battle.redPost
-            } else if (battle.redPost?.poster?.id == post.id) {
-                battle.goldPost
-            } else {
-                null
-            }
-            if (otherPost != null) {
-                voteRepository.save(Vote(battle, otherPost, user, otherPost.poster))
-            }
+        val existsBattle = battleRepository.existsByRedPostOrGoldPost(post)
+        if (existsBattle) {
             battleRepository.setPostToNull(post)
             user.elo -= 30
         }
