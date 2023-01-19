@@ -1,13 +1,7 @@
 package com.anomot.anomotbackend.services
 
-import com.anomot.anomotbackend.dto.TotpDto
-import com.anomot.anomotbackend.dto.SelfUserDto
-import com.anomot.anomotbackend.dto.UserDto
-import com.anomot.anomotbackend.dto.UserRegisterDto
-import com.anomot.anomotbackend.entities.Authority
-import com.anomot.anomotbackend.entities.MfaMethod
-import com.anomot.anomotbackend.entities.MfaTotpSecret
-import com.anomot.anomotbackend.entities.User
+import com.anomot.anomotbackend.dto.*
+import com.anomot.anomotbackend.entities.*
 import com.anomot.anomotbackend.exceptions.UserAlreadyExistsException
 import com.anomot.anomotbackend.repositories.AuthorityRepository
 import com.anomot.anomotbackend.repositories.MfaMethodRepository
@@ -33,6 +27,11 @@ import java.nio.charset.StandardCharsets
 import java.time.Duration
 import java.time.Instant
 import javax.transaction.Transactional
+
+data class AvatarResult(
+        val avatarId: String,
+        val hasNsfw: Boolean
+)
 
 @Service
 class UserDetailsServiceImpl: UserDetailsService {
@@ -273,27 +272,27 @@ class UserDetailsServiceImpl: UserDetailsService {
     }
 
     @Transactional
-    fun changeAvatar(file: MultipartFile, left: Int, top: Int, cropSize: Int): Boolean {
+    fun changeAvatar(file: MultipartFile, left: Int, top: Int, cropSize: Int): AvatarResult? {
         val user = SecurityContextHolder.getContext().authentication
                 ?: throw AccessDeniedException("No authentication present")
 
         val result = mediaService.uploadSquareImageToServer(file, Constants.PROFILE_PIC_SIZE, left, top, cropSize)
-                ?: return false
+                ?: return null
 
         val saveResult = mediaService.saveSquareImage(result,
                 getUserReferenceFromDetails((user.principal as CustomUserDetails)))
 
         if (saveResult.media == null ||
-                saveResult.avgNsfwScan == null ||
-                !mediaService.inNsfwRequirements(saveResult.avgNsfwScan)) return false
+                saveResult.avgNsfwScan == null) return null
+        if (!mediaService.inNsfwRequirements(saveResult.avgNsfwScan)) return AvatarResult(saveResult.media.name.toString(), true)
 
         val changedRows = userRepository.setAvatar(saveResult.media, (user.principal as CustomUserDetails).id!!)
 
-        if (changedRows != 1) return false
+        if (changedRows != 1) return null
 
         authenticationService.reAuthenticate(user)
 
-        return true
+        return AvatarResult(saveResult.media.name.toString(), false)
     }
 
     fun requestData(password: String) {

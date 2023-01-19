@@ -229,9 +229,15 @@ class AuthController(private val userDetailsService: UserDetailsServiceImpl,
                              @RequestParam("left") left: Int,
                              @RequestParam("top") top: Int,
                              @RequestParam("cropSize") cropSize: Int,
-                             authentication: Authentication): ResponseEntity<String> {
+                             authentication: Authentication): ResponseEntity<AvatarResult> {
         val result = userDetailsService.changeAvatar(file, left, top, cropSize)
 
-        return ResponseEntity(if (result) HttpStatus.OK else HttpStatus.BAD_REQUEST)
+        return if (result == null) {
+            ResponseEntity(HttpStatus.BAD_REQUEST)
+        } else if (result.hasNsfw) {
+            ResponseEntity(result, HttpStatus.NOT_ACCEPTABLE)
+        } else {
+            ResponseEntity(result, HttpStatus.OK)
+        }
     }
 }
