@@ -26,7 +26,7 @@ class NotificationController  @Autowired constructor(
     }
 
     @PostMapping("/account/notifications/mark")
-    fun markNotifications(@RequestBody @Valid notificationMarkDto: NotificationMarkDto, authentication: Authentication): ResponseEntity<List<NotificationDto>> {
+    fun markNotifications(@RequestBody @Valid notificationMarkDto: NotificationMarkDto, authentication: Authentication): ResponseEntity<String> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
 
         val result = if(notificationMarkDto.notificationIds.size == 1) {

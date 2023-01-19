@@ -43,14 +43,14 @@ class Constants {
         const val MEDIA_PAGE = 9
         const val POST_PAGE = 9
         const val FEED_PAGE = 8
-        const val VOTE_PAGE = 20
+        const val VOTE_PAGE = 10
         const val BATTLE_PAGE = 10
         const val LIKED_BY_PAGE = 20
         const val ABSOLUTE_POST_TEXT_MAX_SIZE_LIMIT = 30_000
         const val ABSOLUTE_POST_TEXT_MIN_SIZE_LIMIT = 1
         const val MIN_URL_LENGTH = 64
         const val URL_LENGTH = 64
-        const val COMMENTS_PAGE = 20
+        const val COMMENTS_PAGE = 10
         const val MAX_COMMENT_SIZE = 2000
         const val MIN_COMMENT_SIZE = 1
         const val NOTIFICATION_PAGE = 20

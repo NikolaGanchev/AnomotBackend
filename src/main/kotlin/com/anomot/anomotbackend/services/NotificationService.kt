@@ -3,6 +3,7 @@ package com.anomot.anomotbackend.services
 import com.anomot.anomotbackend.dto.NotificationDto
 import com.anomot.anomotbackend.entities.*
 import com.anomot.anomotbackend.repositories.NotificationRepository
+import com.anomot.anomotbackend.repositories.VoteRepository
 import com.anomot.anomotbackend.utils.Constants
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.PageRequest
@@ -12,11 +13,23 @@ import javax.transaction.Transactional
 
 @Service
 class NotificationService @Autowired constructor(
-        private val notificationRepository: NotificationRepository
+        private val notificationRepository: NotificationRepository,
+        private val voteRepository: VoteRepository
 ) {
     fun sendBattleEndNotification(user: User, battle: Battle) {
         // TODO push notifications
         notificationRepository.save(BattleEndNotification(user, battle))
+    }
+
+    fun sendBattleEndNotificationToVotersAndPost(battle: Battle, post: Post) {
+        val notifications = mutableListOf<BattleEndNotification>()
+        val votes = voteRepository.findAllByBattleAndPost(battle, post)
+
+        votes.forEach {
+            notifications.add(BattleEndNotification(it.voter, battle))
+        }
+
+        notificationRepository.saveAll(notifications)
     }
 
     fun sendNewLoginNotification(user: User, successfulLogin: SuccessfulLogin) {

@@ -84,6 +84,7 @@ class PostService @Autowired constructor(
                     } else 0f)
             if (similar.isNotEmpty()) {
                 return PostCreateStatus.SIMILAR_FOUND.also {
+                    it.media = media
                     it.similar = similar
                 }
             }
@@ -164,11 +165,9 @@ class PostService @Autowired constructor(
 
         if (!postRepository.existsById(postIdLong)) return false
 
-        val poster = postRepository.findPosterById(postIdLong)
-
-        if (!followService.follows(user, poster)) return false
-
         val post = postRepository.getReferenceById(postIdLong)
+
+        if (!canSeeUserAndPost(user, post)) return false
 
         if (likeRepository.existsByLikedByAndPost(user, post)) return false
 
@@ -189,6 +188,8 @@ class PostService @Autowired constructor(
 
         val post = postRepository.getReferenceById(postIdLong)
 
+        if (!canSeeUserAndPost(user, post)) return false
+
         val deleted = likeRepository.deleteByLikedByAndPost(user, post)
 
         return deleted > 0
@@ -203,11 +204,9 @@ class PostService @Autowired constructor(
 
         if (!postRepository.existsById(postIdLong)) return null
 
-        val poster = postRepository.findPosterById(postIdLong)
-
-        if (!followService.follows(user, poster)) return null
-
         val post = postRepository.getReferenceById(postIdLong)
+
+        if (!canSeeUserAndPost(user, post)) return null
 
         return likeRepository.getLikedByByUserAndPost(user, post, PageRequest.of(page, Constants.LIKED_BY_PAGE)).map {
             userDetailsServiceImpl.getAsDto(it)

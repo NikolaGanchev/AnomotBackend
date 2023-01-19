@@ -24,10 +24,9 @@ class CommentController @Autowired constructor(
     @PostMapping("/post/comment")
     @EmailVerified
     fun commentPost(@RequestBody @Valid commentUploadDto: CommentUploadDto,
-                    @RequestParam("id") postId: String,
                     authentication: Authentication): ResponseEntity<CommentDto> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
-        val comment = commentService.addCommentToPost(commentUploadDto.text, user, postId)
+        val comment = commentService.addCommentToPost(commentUploadDto.text, user, commentUploadDto.id)
 
         return if (comment == null) {
             ResponseEntity(HttpStatus.BAD_REQUEST)
@@ -39,10 +38,9 @@ class CommentController @Autowired constructor(
     @PostMapping("/battle/comment")
     @EmailVerified
     fun commentBattle(@RequestBody @Valid commentUploadDto: CommentUploadDto,
-                    @RequestParam("id") battleId: String,
                     authentication: Authentication): ResponseEntity<CommentDto> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
-        val comment = commentService.addCommentToBattle(commentUploadDto.text, user, battleId)
+        val comment = commentService.addCommentToBattle(commentUploadDto.text, user, commentUploadDto.id)
 
         return if (comment == null) {
             ResponseEntity(HttpStatus.BAD_REQUEST)
@@ -54,10 +52,9 @@ class CommentController @Autowired constructor(
     @PostMapping("/comment/comment")
     @EmailVerified
     fun commentComment(@RequestBody @Valid commentUploadDto: CommentUploadDto,
-                      @RequestParam("id") commentId: String,
                       authentication: Authentication): ResponseEntity<CommentDto> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
-        val comment = commentService.addCommentToComment(commentUploadDto.text, user, commentId)
+        val comment = commentService.addCommentToComment(commentUploadDto.text, user, commentUploadDto.id)
 
         return if (comment == null) {
             ResponseEntity(HttpStatus.BAD_REQUEST)
@@ -111,12 +108,11 @@ class CommentController @Autowired constructor(
     @PostMapping("/comment/edit")
     @EmailVerified
     fun editComment(@RequestBody @Valid commentUploadDto: CommentUploadDto,
-                    @RequestParam("id") commentId: String,
-                    authentication: Authentication): ResponseEntity<CommentDto> {
+                    authentication: Authentication): ResponseEntity<String> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
-        val comment = commentService.editComment(user, commentUploadDto.text, commentId)
+        val result = commentService.editComment(user, commentUploadDto.text, commentUploadDto.id)
 
-        return if (comment) {
+        return if (result) {
             ResponseEntity(HttpStatus.CREATED)
         } else {
             ResponseEntity(HttpStatus.BAD_REQUEST)
@@ -138,8 +134,8 @@ class CommentController @Autowired constructor(
     }
 
     @DeleteMapping("/comment")
-    fun getCommentComment(@RequestParam("id") commentId: String,
-                          authentication: Authentication): ResponseEntity<List<CommentDto>> {
+    fun deleteComment(@RequestParam("id") commentId: String,
+                          authentication: Authentication): ResponseEntity<String> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
         val comments = commentService.deleteComment(user, commentId)
 

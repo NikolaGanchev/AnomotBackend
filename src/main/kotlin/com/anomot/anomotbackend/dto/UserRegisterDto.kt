@@ -14,5 +14,5 @@ data class UserRegisterDto (@NotNull @NotEmpty
                     val password: String,
                     @NotNull
                     @NotEmpty
-                    @Size(max = 40, message = "Username is too long")
+                    @Size(min = 1, max = 40, message = "Username is too long")
                     val username: String)

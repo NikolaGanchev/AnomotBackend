@@ -662,7 +662,7 @@ class AuthenticationWebTests @Autowired constructor(
     }
 
     @Test
-    @WithMockCustomUser
+    @WithMockCustomUser(isEmailVerified = true)
     fun `When activate totp then return 200 and TotpDto`() {
         val mfaEnabledDto = MfaEnabledDto(true)
 
@@ -676,7 +676,7 @@ class AuthenticationWebTests @Autowired constructor(
     }
 
     @Test
-    @WithMockCustomUser
+    @WithMockCustomUser(isEmailVerified = true)
     fun `When activate totp and already active then return 409`() {
         val mfaEnabledDto = MfaEnabledDto(true)
 
@@ -703,7 +703,7 @@ class AuthenticationWebTests @Autowired constructor(
     }
 
     @Test
-    @WithMockCustomUser
+    @WithMockCustomUser(isEmailVerified = true)
     fun `When disable totp then return 200`() {
         val mfaEnabledDto = MfaEnabledDto(false)
 
@@ -717,7 +717,7 @@ class AuthenticationWebTests @Autowired constructor(
     }
 
     @Test
-    @WithMockCustomUser
+    @WithMockCustomUser(isEmailVerified = true)
     fun `When disable totp and already disabled then return 409`() {
         val mfaEnabledDto = MfaEnabledDto(false)
 
@@ -731,7 +731,7 @@ class AuthenticationWebTests @Autowired constructor(
     }
 
     @Test
-    @WithMockCustomUser
+    @WithMockCustomUser(isEmailVerified = true)
     fun `When activate email mfa then return 200`() {
         val mfaEnabledDto = MfaEnabledDto(true)
 
@@ -745,7 +745,7 @@ class AuthenticationWebTests @Autowired constructor(
     }
 
     @Test
-    @WithMockCustomUser
+    @WithMockCustomUser(isEmailVerified = true)
     fun `When activate email mfa and already activated then return 409`() {
         val mfaEnabledDto = MfaEnabledDto(true)
 
@@ -772,7 +772,7 @@ class AuthenticationWebTests @Autowired constructor(
     }
 
     @Test
-    @WithMockCustomUser
+    @WithMockCustomUser(isEmailVerified = true)
     fun `When disable email mfa then return 200`() {
         val mfaEnabledDto = MfaEnabledDto(false)
 
@@ -786,7 +786,7 @@ class AuthenticationWebTests @Autowired constructor(
     }
 
     @Test
-    @WithMockCustomUser
+    @WithMockCustomUser(isEmailVerified = true)
     fun `When disable email mfa and already disabled then return 409`() {
         val mfaEnabledDto = MfaEnabledDto(false)
 

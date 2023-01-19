@@ -50,4 +50,5 @@ interface VoteRepository: JpaRepository<Vote, Long> {
     @Modifying
     @Query("delete from Vote v where v.voter = ?1")
     fun deleteByUser(user: User)
+    fun findAllByBattleAndPost(battle: Battle, post: Post): List<Vote>
 }

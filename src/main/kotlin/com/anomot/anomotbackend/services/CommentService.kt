@@ -122,6 +122,8 @@ class CommentService @Autowired constructor(
     fun deleteComment(user: User, commentId: String): Boolean {
         val comment = getCommentFromIdUnsafe(commentId) ?: return false
 
+        if (comment.commenter!!.id != user.id) return false
+
         if (commentRepository.existsByParentComment(comment)) {
             previousCommentVersionRepository.deleteAllByComment(comment)
             commentRepository.setDeleted(user, comment.id!!)
@@ -185,6 +187,8 @@ class CommentService @Autowired constructor(
 
     fun getLikedBy(user: User, commentId: String, page: Int): List<UserDto>? {
         val comment = getCommentReferenceFromIdUnsafe(commentId) ?: return null
+
+        if (!canSeeComment(user, comment)) return null
 
         return commentLikeRepository.getLikedByByUserAndComment(user, comment,
                 PageRequest.of(page, Constants.LIKED_BY_PAGE)).map {

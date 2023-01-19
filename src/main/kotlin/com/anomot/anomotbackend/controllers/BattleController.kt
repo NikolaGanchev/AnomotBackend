@@ -96,17 +96,19 @@ class BattleController @Autowired constructor(
         val response = postService.createMediaPost(file, user, true)
 
         if (response == PostCreateStatus.MEDIA_UNSUPPORTED) return ResponseEntity(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
-        else if (response == PostCreateStatus.NSFW_FOUND) return ResponseEntity(HttpStatus.BAD_REQUEST)
-        else if (response == PostCreateStatus.SIMILAR_FOUND) return ResponseEntity(response.similar?.map {
-            return@map PostDto(it.type,
-                    null,
-                    MediaDto(it.media!!.mediaType, it.media!!.name.toString()),
-                    userDetailsServiceImpl.getAsDto(it.poster),
-                    0,
-                    false,
-                    it.creationDate,
-                    it.id.toString())
-        }, HttpStatus.CONFLICT)
+        else if (response == PostCreateStatus.NSFW_FOUND) return ResponseEntity(response.media, HttpStatus.NOT_ACCEPTABLE)
+        else if (response == PostCreateStatus.SIMILAR_FOUND) return ResponseEntity(
+                SimilarMediaFoundDto(MediaDto(response.media!!.media!!.mediaType, response.media!!.media!!.name.toString()),
+                        response.similar?.map {
+                            return@map PostDto(it.type,
+                                    null,
+                                    MediaDto(it.media!!.mediaType, it.media!!.name.toString()),
+                                    userDetailsServiceImpl.getAsDto(it.poster),
+                                    0,
+                                    false,
+                                    it.creationDate,
+                                    it.id.toString())
+        }), HttpStatus.CONFLICT)
 
         val post = response.post ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
 

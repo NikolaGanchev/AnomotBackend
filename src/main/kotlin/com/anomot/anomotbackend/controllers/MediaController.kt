@@ -3,6 +3,7 @@ package com.anomot.anomotbackend.controllers
 import com.anomot.anomotbackend.dto.MediaDto
 import com.anomot.anomotbackend.dto.UrlDto
 import com.anomot.anomotbackend.dto.UrlUploadDto
+import com.anomot.anomotbackend.dto.UrlUploadedDto
 import com.anomot.anomotbackend.security.CustomUserDetails
 import com.anomot.anomotbackend.security.EmailVerified
 import com.anomot.anomotbackend.services.MediaService
@@ -25,10 +26,10 @@ class MediaController(
 
     @PostMapping("/account/url")
     @EmailVerified
-    fun uploadUrl(@RequestBody @Valid urlUploadDto: UrlUploadDto, authentication: Authentication): ResponseEntity<String> {
+    fun uploadUrl(@RequestBody @Valid urlUploadDto: UrlUploadDto, authentication: Authentication): ResponseEntity<UrlUploadedDto> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
 
-        return ResponseEntity(mediaService.uploadUrl(urlUploadDto.url, user), HttpStatus.CREATED)
+        return ResponseEntity(UrlUploadedDto(mediaService.uploadUrl(urlUploadDto.url, user)), HttpStatus.CREATED)
     }
 
     @GetMapping("/url/{url}")
@@ -41,8 +42,8 @@ class MediaController(
         }
     }
 
-    @GetMapping("/media")
-    fun getMedia(@RequestParam @Min(36) @Max(36) id: String,
+    @GetMapping("/media/{id}")
+    fun getMedia(@PathVariable(value="id") @Min(36) @Max(36) id: String,
                  authentication: Authentication): ResponseEntity<ByteArray> {
         val media = mediaService.getMediaFromServer(id) ?: return ResponseEntity(HttpStatus.NOT_FOUND)
 

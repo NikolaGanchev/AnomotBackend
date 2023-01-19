@@ -35,13 +35,13 @@ class PostController @Autowired constructor(
 
     @PostMapping("/account/post/media")
     @EmailVerified
-    fun uploadMediaPost(@RequestParam("file") file: MultipartFile, authentication: Authentication): ResponseEntity<String> {
+    fun uploadMediaPost(@RequestParam("file") file: MultipartFile, authentication: Authentication): ResponseEntity<MediaDto> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
 
-        return when (postService.createMediaPost(file, user, false)) {
+        return when (val result = postService.createMediaPost(file, user, false)) {
             PostCreateStatus.OK -> ResponseEntity(HttpStatus.CREATED)
             PostCreateStatus.MEDIA_UNSUPPORTED -> ResponseEntity(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
-            PostCreateStatus.NSFW_FOUND -> ResponseEntity(HttpStatus.BAD_REQUEST)
+            PostCreateStatus.NSFW_FOUND -> ResponseEntity(MediaDto(result.media!!.media!!.mediaType, result.media!!.media!!.name.toString()), HttpStatus.NOT_ACCEPTABLE)
             PostCreateStatus.SIMILAR_FOUND -> ResponseEntity(HttpStatus.BAD_REQUEST)
         }
     }
@@ -79,7 +79,7 @@ class PostController @Autowired constructor(
 
     @GetMapping("/posts")
     @EmailVerified
-    fun getOtherUserPosts(@RequestParam("userId") userId: String,
+    fun getOtherUserPosts(@RequestParam("id") userId: String,
                       @RequestParam("page") page: Int,
                       authentication: Authentication): ResponseEntity<List<PostDto>> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
@@ -144,7 +144,7 @@ class PostController @Autowired constructor(
 
     @PostMapping("/like")
     @EmailVerified
-    fun like(@RequestParam("postId") postId: String, authentication: Authentication): ResponseEntity<String> {
+    fun like(@RequestParam("id") postId: String, authentication: Authentication): ResponseEntity<String> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
 
         val result = postService.like(user, postId)
@@ -153,7 +153,7 @@ class PostController @Autowired constructor(
 
     @PostMapping("/unlike")
     @EmailVerified
-    fun unlike(@RequestParam("postId") postId: String, authentication: Authentication): ResponseEntity<String> {
+    fun unlike(@RequestParam("id") postId: String, authentication: Authentication): ResponseEntity<String> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
 
         val result = postService.unlike(user, postId)
@@ -161,7 +161,7 @@ class PostController @Autowired constructor(
     }
 
     @GetMapping("/likes")
-    fun getLikes(@RequestParam("page") page: Int, @RequestParam("postId") postId: String, authentication: Authentication): ResponseEntity<List<UserDto>> {
+    fun getLikes(@RequestParam("page") page: Int, @RequestParam("id") postId: String, authentication: Authentication): ResponseEntity<List<UserDto>> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
 
         val result = postService.getLikedBy(user, postId, page)
