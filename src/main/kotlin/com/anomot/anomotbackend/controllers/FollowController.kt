@@ -78,7 +78,7 @@ class FollowController(
         val user = userDetailsService.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
         val otherUser = userDetailsService.getUserReferenceFromIdUnsafe(userId) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
 
-        if (!followService.follows(user, otherUser)) return ResponseEntity(HttpStatus.FORBIDDEN)
+        if (!followService.canSeeOtherUser(user, otherUser)) return ResponseEntity(HttpStatus.FORBIDDEN)
 
         val result = followService.getFollowerCount(otherUser)
 
@@ -90,7 +90,7 @@ class FollowController(
         val user = userDetailsService.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
         val otherUser = userDetailsService.getUserReferenceFromIdUnsafe(userId) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
 
-        if (!followService.follows(user, otherUser)) return ResponseEntity(HttpStatus.FORBIDDEN)
+        if (!followService.canSeeOtherUser(user, otherUser)) return ResponseEntity(HttpStatus.FORBIDDEN)
 
         val result = followService.getFollowedCount(otherUser)
 
