@@ -107,6 +107,7 @@ class FollowController(
     }
 
     @PostMapping("/follow/code")
+    @EmailVerified
     fun useFollowCode(@RequestBody @Valid followCodeDto: FollowCodeDto, authentication: Authentication): ResponseEntity<UserDto> {
         val user = userDetailsService.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
 

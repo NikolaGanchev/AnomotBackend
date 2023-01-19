@@ -90,6 +90,7 @@ class AuthController(private val userDetailsService: UserDetailsServiceImpl,
     }
 
     @PutMapping("/mfa/totp")
+    @EmailVerified
     fun updateTotpStatus(@RequestBody @Valid mfaEnabledDto: MfaEnabledDto): ResponseEntity<TotpDto> {
         return if (mfaEnabledDto.isMfaEnabled) {
             val totpDto = userDetailsService.activateTotpMfa()
@@ -101,6 +102,7 @@ class AuthController(private val userDetailsService: UserDetailsServiceImpl,
     }
 
     @PutMapping("/mfa/email")
+    @EmailVerified
     fun updateEmailMfaStatus(@RequestBody @Valid mfaEnabledDto: MfaEnabledDto): ResponseEntity<String> {
         val success = if (mfaEnabledDto.isMfaEnabled) {
             userDetailsService.activateEmailMfa()

@@ -67,6 +67,7 @@ class PostController @Autowired constructor(
     }
 
     @DeleteMapping("/account/post")
+    @EmailVerified
     fun deleteSelfPost(@RequestParam("id") id: String, authentication: Authentication): ResponseEntity<String> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
         return try {
@@ -142,6 +143,7 @@ class PostController @Autowired constructor(
     }
 
     @PostMapping("/like")
+    @EmailVerified
     fun like(@RequestParam("postId") postId: String, authentication: Authentication): ResponseEntity<String> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
 
@@ -150,6 +152,7 @@ class PostController @Autowired constructor(
     }
 
     @PostMapping("/unlike")
+    @EmailVerified
     fun unlike(@RequestParam("postId") postId: String, authentication: Authentication): ResponseEntity<String> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
 

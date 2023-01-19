@@ -4,6 +4,7 @@ import com.anomot.anomotbackend.dto.MediaDto
 import com.anomot.anomotbackend.dto.UrlDto
 import com.anomot.anomotbackend.dto.UrlUploadDto
 import com.anomot.anomotbackend.security.CustomUserDetails
+import com.anomot.anomotbackend.security.EmailVerified
 import com.anomot.anomotbackend.services.MediaService
 import com.anomot.anomotbackend.services.UserDetailsServiceImpl
 import com.anomot.anomotbackend.utils.Constants
@@ -23,6 +24,7 @@ class MediaController(
 ) {
 
     @PostMapping("/account/url")
+    @EmailVerified
     fun uploadUrl(@RequestBody @Valid urlUploadDto: UrlUploadDto, authentication: Authentication): ResponseEntity<String> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
 

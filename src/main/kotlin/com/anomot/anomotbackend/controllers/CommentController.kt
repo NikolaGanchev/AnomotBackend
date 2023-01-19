@@ -109,6 +109,7 @@ class CommentController @Autowired constructor(
     }
 
     @PostMapping("/comment/edit")
+    @EmailVerified
     fun editComment(@RequestBody @Valid commentUploadDto: CommentUploadDto,
                     @RequestParam("id") commentId: String,
                     authentication: Authentication): ResponseEntity<CommentDto> {
@@ -150,6 +151,7 @@ class CommentController @Autowired constructor(
     }
 
     @PostMapping("/comment/like")
+    @EmailVerified
     fun like(@RequestParam("id") commentId: String, authentication: Authentication): ResponseEntity<String> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
 
@@ -158,6 +160,7 @@ class CommentController @Autowired constructor(
     }
 
     @PostMapping("/comment/unlike")
+    @EmailVerified
     fun unlike(@RequestParam("id") commentId: String, authentication: Authentication): ResponseEntity<String> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
 
