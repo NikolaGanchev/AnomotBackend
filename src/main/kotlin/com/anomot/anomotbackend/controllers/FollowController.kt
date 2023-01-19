@@ -1,5 +1,6 @@
 package com.anomot.anomotbackend.controllers
 
+import com.anomot.anomotbackend.dto.CountDto
 import com.anomot.anomotbackend.dto.FollowCodeDto
 import com.anomot.anomotbackend.dto.UserDto
 import com.anomot.anomotbackend.security.CustomUserDetails
@@ -58,23 +59,23 @@ class FollowController(
     }
 
     @GetMapping("/account/followers/count")
-    fun getSelfFollowerCount(authentication: Authentication): ResponseEntity<Long> {
+    fun getSelfFollowerCount(authentication: Authentication): ResponseEntity<CountDto> {
         val result = followService.getFollowerCount(
                 userDetailsService.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails))
 
-        return ResponseEntity(result, HttpStatus.OK)
+        return ResponseEntity(CountDto(result), HttpStatus.OK)
     }
 
     @GetMapping("/account/followed/count")
-    fun getSelfFollowedCount(authentication: Authentication): ResponseEntity<Long> {
+    fun getSelfFollowedCount(authentication: Authentication): ResponseEntity<CountDto> {
         val result = followService.getFollowedCount(
                 userDetailsService.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails))
 
-        return ResponseEntity(result, HttpStatus.OK)
+        return ResponseEntity(CountDto(result), HttpStatus.OK)
     }
 
     @GetMapping("/followers/count")
-    fun getFollowerCount(@RequestParam("id") userId: String, authentication: Authentication): ResponseEntity<Long> {
+    fun getFollowerCount(@RequestParam("id") userId: String, authentication: Authentication): ResponseEntity<CountDto> {
         val user = userDetailsService.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
         val otherUser = userDetailsService.getUserReferenceFromIdUnsafe(userId) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
 
@@ -82,11 +83,11 @@ class FollowController(
 
         val result = followService.getFollowerCount(otherUser)
 
-        return ResponseEntity(result, HttpStatus.OK)
+        return ResponseEntity(CountDto(result), HttpStatus.OK)
     }
 
     @GetMapping("/followed/count")
-    fun getFollowedCount(@RequestParam("id") userId: String, authentication: Authentication): ResponseEntity<Long> {
+    fun getFollowedCount(@RequestParam("id") userId: String, authentication: Authentication): ResponseEntity<CountDto> {
         val user = userDetailsService.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
         val otherUser = userDetailsService.getUserReferenceFromIdUnsafe(userId) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
 
@@ -94,7 +95,7 @@ class FollowController(
 
         val result = followService.getFollowedCount(otherUser)
 
-        return ResponseEntity(result, HttpStatus.OK)
+        return ResponseEntity(CountDto(result), HttpStatus.OK)
     }
 
     @GetMapping("/follow/code")
