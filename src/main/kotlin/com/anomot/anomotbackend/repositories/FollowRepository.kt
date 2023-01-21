@@ -49,9 +49,7 @@ interface FollowRepository: JpaRepository<Follow, Long> {
             "((b.redPost.poster = ?1 and b.goldPost.poster = ?2) " +
             "or (b.goldPost.poster = ?1 and b.redPost.poster = ?2)) or " +
             // or a vote
-            "(exists(select v from Vote v where v.voter = ?1 and v.post.poster = ?2 and b = v.battle)) or " +
-            // or a follow
-            "(exists(select f from Follow f where f.follower = ?1 and f.followed = ?2))")
+            "(exists(select v from Vote v where v.voter = ?1 and v.post.poster = ?2 and b = v.battle))")
     fun canSeeAccount(user: User, userToView: User): Boolean
 
     @Modifying

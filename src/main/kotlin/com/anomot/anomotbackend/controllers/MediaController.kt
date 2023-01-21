@@ -60,4 +60,18 @@ class MediaController(
         }
         return ResponseEntity(media, HttpStatus.OK)
     }
+
+    @PostMapping("/account/media/promote/battle/{id}")
+    fun promoteToBattle(@PathVariable(value="id") @Min(36) @Max(36) id: String) {
+        //TODO
+        //Check if not in battle, battle queue or post
+        //normal upload process
+    }
+
+    @PostMapping("/account/media/promote/post/{id}")
+    fun promoteToPost(@PathVariable(value="id") @Min(36) @Max(36) id: String) {
+        //TODO
+        //Check if not in battle, battle queue or post
+        //normal upload process
+    }
 }

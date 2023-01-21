@@ -1,20 +1,16 @@
 package com.anomot.anomotbackend.services
 
-import com.anomot.anomotbackend.dto.MediaDto
-import com.anomot.anomotbackend.dto.PostDto
-import com.anomot.anomotbackend.dto.PostWithLikes
-import com.anomot.anomotbackend.dto.UserDto
+import com.anomot.anomotbackend.dto.*
 import com.anomot.anomotbackend.entities.*
 import com.anomot.anomotbackend.repositories.*
-import com.anomot.anomotbackend.utils.Constants
-import com.anomot.anomotbackend.utils.MediaType
-import com.anomot.anomotbackend.utils.PostType
+import com.anomot.anomotbackend.utils.*
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 import java.lang.NumberFormatException
+import java.util.*
 import javax.transaction.Transactional
 
 enum class PostCreateStatus {
@@ -37,7 +33,8 @@ class PostService @Autowired constructor(
         private val followService: FollowService,
         private val likeRepository: LikeRepository,
         private val userDetailsServiceImpl: UserDetailsServiceImpl,
-        private val voteRepository: VoteRepository
+        private val voteRepository: VoteRepository,
+        private val reportRepository: ReportRepository
 ) {
     private fun addTextPost(text: String, user: User): Post {
         return postRepository.save(Post(user, null, text, PostType.TEXT))
@@ -228,4 +225,45 @@ class PostService @Autowired constructor(
                 p.creationDate,
                 p.id.toString())
     }
+
+    fun report(postReportDto: PostReportDto, user: User): Boolean {
+        val post = getPostReferenceFromIdUnsafe(postReportDto.postId) ?: return false
+
+        if (post.poster.id == user.id) return false
+
+        if (!canSeeUserAndPost(user, post)) return false
+
+        if (reportRepository.existByReporterAndPostAndReason(user, post, ReportReason.from(postReportDto.reason))) return false
+
+        val reportId = reportRepository.getIdByReporterAndPost(user, post) ?: UUID.randomUUID()
+
+        reportRepository.save(Report(
+                user,
+                ReportType.POST,
+                post,
+                null,
+                null,
+                null,
+                ReportReason.from(postReportDto.reason),
+                postReportDto.other,
+                reportId,
+                false,
+                null
+        ))
+
+        return true
+    }
+
+    fun getReport(user: User, postId: String): ReportDto? {
+        val post = getPostReferenceFromIdUnsafe(postId) ?: return null
+
+        val reports = reportRepository.getByReporterAndPost(user, post)
+
+        val singleReportedDtos = reports.map {
+            SingleReportDto(it.reportReason, it.other)
+        }.toTypedArray()
+
+        return ReportDto(singleReportedDtos, ReportType.POST)
+    }
+
 }

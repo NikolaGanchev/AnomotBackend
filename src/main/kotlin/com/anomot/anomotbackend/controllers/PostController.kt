@@ -1,9 +1,6 @@
 package com.anomot.anomotbackend.controllers
 
-import com.anomot.anomotbackend.dto.MediaDto
-import com.anomot.anomotbackend.dto.PostDto
-import com.anomot.anomotbackend.dto.TextPostDto
-import com.anomot.anomotbackend.dto.UserDto
+import com.anomot.anomotbackend.dto.*
 import com.anomot.anomotbackend.security.CustomUserDetails
 import com.anomot.anomotbackend.security.EmailVerified
 import com.anomot.anomotbackend.services.FollowService
@@ -166,5 +163,27 @@ class PostController @Autowired constructor(
 
         val result = postService.getLikedBy(user, postId, page)
         return ResponseEntity(result, if (result != null) HttpStatus.OK else HttpStatus.BAD_REQUEST)
+    }
+
+    @PostMapping("/post/report")
+    fun reportPost(@RequestBody @Valid postReportDto: PostReportDto, authentication: Authentication): ResponseEntity<String> {
+        val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
+
+        val result = postService.report(postReportDto, user)
+
+        return ResponseEntity(if (result) HttpStatus.OK else HttpStatus.NOT_FOUND)
+    }
+
+    @GetMapping("/post/report")
+    fun getPostReport(@RequestParam("id") postId: String, authentication: Authentication): ResponseEntity<ReportDto> {
+        val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
+
+        val result = postService.getReport(user, postId)
+
+        return if (result != null) {
+            ResponseEntity(result, HttpStatus.OK)
+        } else {
+            ResponseEntity(HttpStatus.BAD_REQUEST)
+        }
     }
 }

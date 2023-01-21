@@ -4,6 +4,8 @@ import com.anomot.anomotbackend.dto.*
 import com.anomot.anomotbackend.entities.*
 import com.anomot.anomotbackend.repositories.*
 import com.anomot.anomotbackend.utils.Constants
+import com.anomot.anomotbackend.utils.ReportReason
+import com.anomot.anomotbackend.utils.ReportType
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
@@ -20,7 +22,9 @@ class BattleService @Autowired constructor(
         private val voteRepository: VoteRepository,
         private val userDetailsServiceImpl: UserDetailsServiceImpl,
         private val voteService: VoteService,
-        private val notificationService: NotificationService
+        private val notificationService: NotificationService,
+        private val postService: PostService,
+        private val reportRepository: ReportRepository
 ) {
 
     @Transactional
@@ -207,4 +211,46 @@ class BattleService @Autowired constructor(
             voteService.createVotedBattleFromIntermediate(voteRepository.getByVoterAndBattle(user, battle))
         }
     }
+    fun report(battleReportDto: BattleReportDto, user: User): Boolean {
+        val battle = getBattleReferenceFromIdUnsafe(battleReportDto.battleId) ?: return false
+        val post = postService.getPostReferenceFromIdUnsafe(battleReportDto.postId) ?: return false
+
+        if (post.poster.id == user.id) return false
+
+        if (!battleRepository.canSeeBattle(user, battle)) return false
+
+        if (reportRepository.existByReporterAndPostAndBattleAndReason(user, post, battle, ReportReason.from(battleReportDto.reason))) return false
+
+        val reportId = reportRepository.getIdByReporterAndPostAndBattle(user, post, battle) ?: UUID.randomUUID()
+
+        reportRepository.save(Report(
+                user,
+                ReportType.BATTLE,
+                post,
+                battle,
+                null,
+                null,
+                ReportReason.from(battleReportDto.reason),
+                battleReportDto.other,
+                reportId,
+                false,
+                null
+        ))
+
+        return true
+    }
+
+    fun getReport(user: User, postId: String, battleId: String): ReportDto? {
+        val battle = getBattleReferenceFromIdUnsafe(battleId) ?: return null
+        val post = postService.getPostReferenceFromIdUnsafe(postId) ?: return null
+
+        val reports = reportRepository.getByReporterAndPostAndBattle(user, post, battle)
+
+        val singleReportedDtos = reports.map {
+            SingleReportDto(it.reportReason, it.other)
+        }.toTypedArray()
+
+        return ReportDto(singleReportedDtos, ReportType.BATTLE)
+    }
+
 }

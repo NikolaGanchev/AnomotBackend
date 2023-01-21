@@ -1,12 +1,11 @@
 package com.anomot.anomotbackend.services
 
-import com.anomot.anomotbackend.dto.CommentDto
-import com.anomot.anomotbackend.dto.CommentEditDto
-import com.anomot.anomotbackend.dto.CommentIntermediate
-import com.anomot.anomotbackend.dto.UserDto
+import com.anomot.anomotbackend.dto.*
 import com.anomot.anomotbackend.entities.*
 import com.anomot.anomotbackend.repositories.*
 import com.anomot.anomotbackend.utils.Constants
+import com.anomot.anomotbackend.utils.ReportReason
+import com.anomot.anomotbackend.utils.ReportType
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
@@ -24,7 +23,8 @@ class CommentService @Autowired constructor(
         private val previousCommentVersionRepository: PreviousCommentVersionRepository,
         private val battleService: BattleService,
         private val commentLikeRepository: CommentLikeRepository,
-        private val battleRepository: BattleRepository
+        private val battleRepository: BattleRepository,
+        private val reportRepository: ReportRepository
 ) {
     @Transactional
     fun addCommentToPost(text: String, user: User, postId: String): CommentDto? {
@@ -208,7 +208,7 @@ class CommentService @Autowired constructor(
         }
     }
 
-    private fun getCommentReferenceFromIdUnsafe(commentId: String): Comment? {
+    fun getCommentReferenceFromIdUnsafe(commentId: String): Comment? {
         return try {
             return if (commentRepository.existsById(commentId.toLong())) {
                 commentRepository.getReferenceById(commentId.toLong())
@@ -235,5 +235,47 @@ class CommentService @Autowired constructor(
                 comment.creationDate,
                 comment.id.toString()
         )
+    }
+
+    fun report(commentReportDto: CommentReportDto, user: User): Boolean {
+        val comment = getCommentReferenceFromIdUnsafe(commentReportDto.commentId) ?: return false
+
+        if (comment.isDeleted) return false
+
+        if (comment.commenter?.id == user.id) return false
+
+        if (!canSeeComment(user, comment)) return false
+
+        if (reportRepository.existByReporterAndCommentAndReason(user, comment, ReportReason.from(commentReportDto.reason))) return false
+
+        val reportId = reportRepository.getIdByReporterAndComment(user, comment) ?: UUID.randomUUID()
+
+        reportRepository.save(Report(
+                user,
+                ReportType.COMMENT,
+                null,
+                null,
+                comment,
+                null,
+                ReportReason.from(commentReportDto.reason),
+                commentReportDto.other,
+                reportId,
+                false,
+                null
+        ))
+
+        return true
+    }
+
+    fun getReport(user: User, commentId: String): ReportDto? {
+        val comment = getCommentReferenceFromIdUnsafe(commentId) ?: return null
+
+        val reports = reportRepository.getByReporterAndComment(user, comment)
+
+        val singleReportedDtos = reports.map {
+            SingleReportDto(it.reportReason, it.other)
+        }.toTypedArray()
+
+        return ReportDto(singleReportedDtos, ReportType.COMMENT)
     }
 }

@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
+import java.lang.Exception
 import java.time.Instant
 import java.util.*
 import javax.transaction.Transactional
@@ -67,7 +68,11 @@ class EmailVerificationService @Autowired constructor(
             val editedRows = userRepository.setIsEmailVerifiedByEmail(true,
                     emailVerificationToken.user.email)
 
-            emailVerificationTokenRepository.delete(emailVerificationToken)
+            try {
+                emailVerificationTokenRepository.delete(emailVerificationToken)
+            } catch (e: Exception) {
+                return false
+            }
 
             editedRows != 0
         } else {

@@ -174,4 +174,28 @@ class BattleController @Autowired constructor(
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
         return ResponseEntity(battleService.getPostsInQueue(user, page), HttpStatus.OK)
     }
+
+    @PostMapping("/battle/report")
+    fun reportBattle(@RequestBody @Valid battleReportDto: BattleReportDto, authentication: Authentication): ResponseEntity<String> {
+        val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
+
+        val result = battleService.report(battleReportDto, user)
+
+        return ResponseEntity(if (result) HttpStatus.OK else HttpStatus.NOT_FOUND)
+    }
+
+    @GetMapping("/battle/report")
+    fun getBattleReport(@RequestParam("postId") postId: String,
+                        @RequestParam("battletId") battleId: String,
+                        authentication: Authentication): ResponseEntity<ReportDto> {
+        val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
+
+        val result = battleService.getReport(user, postId, battleId)
+
+        return if (result != null) {
+            ResponseEntity(result, HttpStatus.OK)
+        } else {
+            ResponseEntity(HttpStatus.BAD_REQUEST)
+        }
+    }
 }
