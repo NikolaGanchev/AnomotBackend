@@ -116,4 +116,14 @@ class FollowController(
 
         return ResponseEntity(result, HttpStatus.OK)
     }
+
+    @GetMapping("/user")
+    fun getUser(@RequestParam("id") userId: String, authentication: Authentication): ResponseEntity<UserDto> {
+        val user = userDetailsService.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
+        val otherUser = userDetailsService.getUserReferenceFromIdUnsafe(userId) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+
+        if (!followService.canSeeOtherUser(user, otherUser)) return ResponseEntity(HttpStatus.BAD_REQUEST)
+
+        return ResponseEntity(UserDto(otherUser.username, otherUser.id.toString(), otherUser.avatar?.name.toString()), HttpStatus.OK)
+    }
 }

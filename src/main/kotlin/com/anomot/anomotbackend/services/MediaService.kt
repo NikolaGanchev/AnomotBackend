@@ -35,15 +35,14 @@ class MediaService @Autowired constructor(
         private val mediaRepository: MediaRepository,
         private val nsfwScanRepository: NsfwScanRepository,
         private val fileRepository: FileRepository,
-        private val urlRepository: UrlRepository
+        private val urlRepository: UrlRepository,
+        @Value("\${environment.media_server_url}")
+        private val mediaServerUrl: String
 ) {
     data class MediaUploadResult(val media: Media?, val avgNsfwScan: NsfwScan?, val maxNsfwScan: NsfwScan?)
     data class SquareImageSaveResult(val media: Media?, val avgNsfwScan: NsfwScan?)
 
     val secureRandomStringGenerator = SecureRandomStringGenerator(SecureRandomStringGenerator.ALPHANUMERIC)
-
-    @Value("\${environment.media_server_url}")
-    private val mediaServerUrl: String? = null
 
     fun uploadMedia(file: MultipartFile,
                     shouldHash: Boolean = true,
