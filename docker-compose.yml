@@ -14,7 +14,6 @@ services:
       - SPRING_REDIS_URL=redis://redis-host:6379
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db-host:5432/anomot
       - MEDIA_SERVER_URL=media:5000
-      - VOTE_JWT_PRIVATE_KEY=bIT4YrzpcYo8vPQGniA3dEvhmwhq4kGgQX75kkhqcVcb
     networks:
       - mediaservernet
       - default
