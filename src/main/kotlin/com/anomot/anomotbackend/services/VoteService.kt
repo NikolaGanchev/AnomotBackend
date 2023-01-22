@@ -24,7 +24,7 @@ import javax.crypto.SecretKey
 
 @Service
 class VoteService @Autowired constructor(
-        @Value("\${vote.jwt.private-key}") private val secretKeyString: String,
+        @Value("\${jwt.private-key}") private val secretKeyString: String,
         private val voteRepository: VoteRepository,
         private val userDetailsServiceImpl: UserDetailsServiceImpl,
         private val battleRepository: BattleRepository

@@ -3,6 +3,7 @@ package com.anomot.anomotbackend.services
 import com.anomot.anomotbackend.dto.AdminReportDto
 import com.anomot.anomotbackend.entities.ReportDecision
 import com.anomot.anomotbackend.entities.User
+import com.anomot.anomotbackend.repositories.MediaRepository
 import com.anomot.anomotbackend.repositories.ReportDecisionRepository
 import com.anomot.anomotbackend.repositories.ReportRepository
 import org.springframework.beans.factory.annotation.Autowired
@@ -16,7 +17,9 @@ import javax.transaction.Transactional
 @Service
 class AdminService @Autowired constructor(
         private val reportRepository: ReportRepository,
-        private val reportDecisionRepository: ReportDecisionRepository
+        private val reportDecisionRepository: ReportDecisionRepository,
+        private val mediaService: MediaService,
+        private val mediaRepository: MediaRepository
 ) {
     @Secured("ROLE_ADMIN")
     fun getReports(page: Int): List<AdminReportDto> {
@@ -47,5 +50,12 @@ class AdminService @Autowired constructor(
         reportRepository.setDecisionById(UUID.fromString(reportId), savedDecision)
 
         return true
+    }
+
+    @Secured("ROLE_ADMIN")
+    @Transactional
+    fun deleteMedia(mediaId: String): Boolean {
+        val media = mediaRepository.getByName(UUID.fromString(mediaId)) ?: return false
+        return mediaService.deleteMedia(media)
     }
 }

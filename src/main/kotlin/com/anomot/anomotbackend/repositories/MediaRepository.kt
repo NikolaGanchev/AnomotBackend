@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
+import java.util.UUID
 
 @Repository
 interface MediaRepository: JpaRepository<Media, Long> {
@@ -15,4 +16,6 @@ interface MediaRepository: JpaRepository<Media, Long> {
     @Modifying
     @Query("delete from Media m where m.publisher = ?1")
     fun deleteByUser(user: User)
+
+    fun getByName(uuid: UUID): Media?
 }
