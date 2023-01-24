@@ -50,7 +50,7 @@ interface BattleRepository: JpaRepository<Battle, Long> {
     @Query("from Battle b where b.id = ?1 and b.finished = false")
     fun getByIdAndFinishedFalse(id: Long): Battle?
 
-    @Query("select p from Post p, Battle b, BattleQueuePost bp where (b.redPost = p or b.goldPost = p or bp.post = p) " +
+    @Query("select distinct p from Post p, Battle b, BattleQueuePost bp where (b.redPost = p or b.goldPost = p or bp.post = p) " +
             "and p.poster = :user and " +
             // check for same media type
             "p.media.mediaType = :#{#media.mediaType} and " +

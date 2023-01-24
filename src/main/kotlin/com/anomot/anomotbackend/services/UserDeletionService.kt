@@ -1,5 +1,6 @@
 package com.anomot.anomotbackend.services
 
+import com.anomot.anomotbackend.entities.User
 import com.anomot.anomotbackend.repositories.*
 import com.anomot.anomotbackend.security.CustomUserDetails
 import org.springframework.beans.factory.annotation.Autowired
@@ -46,6 +47,10 @@ class UserDeletionService @Autowired constructor(
 
         val user = userRepository.getReferenceById((userDetails.principal as CustomUserDetails).id!!)
 
+        deleteUser(user)
+    }
+
+    fun deleteUser(user: User) {
         emailVerificationTokenRepository.deleteByUser(user)
         mfaTotpSecretRepository.deleteByUser(user)
         mfaRecoveryCodeRepository.deleteByUser(user)
@@ -69,6 +74,6 @@ class UserDeletionService @Autowired constructor(
         mediaService.deleteMediaByUserWithoutNsfwScans(user)
         mediaService.deleteFilesByUser(user)
 
-        userRepository.deleteById((userDetails.principal as CustomUserDetails).id!!)
+        userRepository.deleteById(user.id!!)
     }
 }

@@ -5,6 +5,7 @@ import com.anomot.anomotbackend.utils.AppealReason
 import java.util.*
 import javax.persistence.*
 
+
 @Entity
 class Appeal(
         @ManyToOne
@@ -15,11 +16,9 @@ class Appeal(
         val objective: AppealObjective,
         @ManyToOne
         val media: Media,
-        val decided: Boolean = false,
+        var decided: Boolean = false,
         @ManyToOne
-        val decidedBy: User? = null,
-        @Column(columnDefinition="TEXT")
-        val decision: String? = null,
+        var decision: AppealDecision? = null,
         var creationDate: Date? = Date(),
         @Id @GeneratedValue(strategy = GenerationType.AUTO) var id: Long? = null
 )

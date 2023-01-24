@@ -2,7 +2,6 @@ package com.anomot.anomotbackend.services
 
 import com.anomot.anomotbackend.dto.*
 import com.anomot.anomotbackend.entities.Appeal
-import com.anomot.anomotbackend.entities.Media
 import com.anomot.anomotbackend.entities.Report
 import com.anomot.anomotbackend.entities.User
 import com.anomot.anomotbackend.repositories.*
@@ -73,14 +72,14 @@ class UserModerationService @Autowired constructor(
     }
 
     fun getAppeals(user: User, page: Int): List<AppealDto> {
-        return appealRepository.getAllByAppealedBy(PageRequest.of(page, 10, Sort.by("creationDate").descending())).map {
+        return appealRepository.getAllByAppealedBy(user, PageRequest.of(page, 10, Sort.by("creationDate").descending())).map {
             AppealDto(it.reason, it.objective, it.media.name.toString())
         }
     }
 
-    fun generateAppealJwt(user: User, media: Media, reason: AppealReason, objective: AppealObjective): String? {
+    fun generateAppealJwt(user: User, mediaId: String, reason: AppealReason, objective: AppealObjective): String {
         return Jwts.builder()
-                .setSubject(media.name.toString())
+                .setSubject(mediaId)
                 .setAudience(user.id.toString())
                 .setExpiration(Date.from(Instant.now().plusSeconds(Constants.APPEAL_PERIOD)))
                 .claim("action", "appeal")

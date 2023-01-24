@@ -6,6 +6,8 @@ import com.anomot.anomotbackend.entities.Post
 import com.anomot.anomotbackend.security.CustomUserDetails
 import com.anomot.anomotbackend.security.EmailVerified
 import com.anomot.anomotbackend.services.*
+import com.anomot.anomotbackend.utils.AppealObjective
+import com.anomot.anomotbackend.utils.AppealReason
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -19,7 +21,8 @@ import javax.validation.Valid
 class BattleController @Autowired constructor(
         private val postService: PostService,
         private val userDetailsServiceImpl: UserDetailsServiceImpl,
-        private val battleService: BattleService
+        private val battleService: BattleService,
+        private val userModerationService: UserModerationService
 ) {
 
     private fun getSelfPost(post: Post, battle: Battle): Post? {
@@ -46,8 +49,8 @@ class BattleController @Autowired constructor(
                         it.text,
                         null,
                         userDetailsServiceImpl.getAsDto(it.poster),
-                        0,
-                        false,
+                        null,
+                        null,
                         it.creationDate,
                         it.id.toString())
             }, HttpStatus.CONFLICT)
@@ -96,16 +99,29 @@ class BattleController @Autowired constructor(
         val response = postService.createMediaPost(file, user, true)
 
         if (response == PostCreateStatus.MEDIA_UNSUPPORTED) return ResponseEntity(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
-        else if (response == PostCreateStatus.NSFW_FOUND) return ResponseEntity(response.media, HttpStatus.NOT_ACCEPTABLE)
+        else if (response == PostCreateStatus.NSFW_FOUND) return ResponseEntity(
+                NsfwFoundDto(
+                        userModerationService.generateAppealJwt(user,
+                                response.media!!.media!!.name.toString(),
+                                AppealReason.NSFW_FOUND,
+                                AppealObjective.BATTLE),
+                        MediaDto(response.media!!.media!!.mediaType,
+                                response.media!!.media!!.name.toString())),
+                HttpStatus.NOT_ACCEPTABLE)
         else if (response == PostCreateStatus.SIMILAR_FOUND) return ResponseEntity(
-                SimilarMediaFoundDto(MediaDto(response.media!!.media!!.mediaType, response.media!!.media!!.name.toString()),
+                SimilarMediaFoundDto(
+                        userModerationService.generateAppealJwt(user,
+                            response.media!!.media!!.name.toString(),
+                            AppealReason.SIMILAR_FOUND,
+                            AppealObjective.BATTLE),
+                        MediaDto(response.media!!.media!!.mediaType, response.media!!.media!!.name.toString()),
                         response.similar?.map {
                             return@map PostDto(it.type,
                                     null,
                                     MediaDto(it.media!!.mediaType, it.media!!.name.toString()),
                                     userDetailsServiceImpl.getAsDto(it.poster),
-                                    0,
-                                    false,
+                                    null,
+                                    null,
                                     it.creationDate,
                                     it.id.toString())
         }), HttpStatus.CONFLICT)

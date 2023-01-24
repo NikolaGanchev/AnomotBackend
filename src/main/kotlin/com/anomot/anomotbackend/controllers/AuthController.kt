@@ -6,6 +6,8 @@ import com.anomot.anomotbackend.security.CustomUserDetails
 import com.anomot.anomotbackend.security.EmailVerified
 import com.anomot.anomotbackend.security.MfaMethodValue
 import com.anomot.anomotbackend.services.*
+import com.anomot.anomotbackend.utils.AppealObjective
+import com.anomot.anomotbackend.utils.AppealReason
 import com.anomot.anomotbackend.utils.Constants
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
@@ -34,7 +36,8 @@ class AuthController(private val userDetailsService: UserDetailsServiceImpl,
                     private val mfaRecoveryService: MfaRecoveryService,
                     private val passwordResetService: PasswordResetService,
                     private val loginInfoExtractorService: LoginInfoExtractorService,
-                    private val userDeletionService: UserDeletionService) {
+                    private val userDeletionService: UserDeletionService,
+                    private val userModerationService: UserModerationService) {
 
     @PostMapping("/new")
     fun registerUser(@RequestBody @Valid userRegisterDTO: UserRegisterDto): ResponseEntity<SelfUserDto> {
@@ -229,15 +232,20 @@ class AuthController(private val userDetailsService: UserDetailsServiceImpl,
                              @RequestParam("left") left: Int,
                              @RequestParam("top") top: Int,
                              @RequestParam("cropSize") cropSize: Int,
-                             authentication: Authentication): ResponseEntity<AvatarResult> {
+                             authentication: Authentication): ResponseEntity<AvatarResultDto> {
+        val user = userDetailsService.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
         val result = userDetailsService.changeAvatar(file, left, top, cropSize)
 
         return if (result == null) {
             ResponseEntity(HttpStatus.BAD_REQUEST)
         } else if (result.hasNsfw) {
-            ResponseEntity(result, HttpStatus.NOT_ACCEPTABLE)
+            ResponseEntity(AvatarResultDto(
+                    result.avatarId,
+                    result.hasNsfw,
+                    userModerationService.generateAppealJwt(user, result.avatarId, AppealReason.NSFW_FOUND, AppealObjective.AVATAR)
+            ), HttpStatus.NOT_ACCEPTABLE)
         } else {
-            ResponseEntity(result, HttpStatus.OK)
+            ResponseEntity(AvatarResultDto(result.avatarId, result.hasNsfw, null), HttpStatus.OK)
         }
     }
 }

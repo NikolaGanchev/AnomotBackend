@@ -3,10 +3,9 @@ package com.anomot.anomotbackend.controllers
 import com.anomot.anomotbackend.dto.*
 import com.anomot.anomotbackend.security.CustomUserDetails
 import com.anomot.anomotbackend.security.EmailVerified
-import com.anomot.anomotbackend.services.FollowService
-import com.anomot.anomotbackend.services.PostCreateStatus
-import com.anomot.anomotbackend.services.PostService
-import com.anomot.anomotbackend.services.UserDetailsServiceImpl
+import com.anomot.anomotbackend.services.*
+import com.anomot.anomotbackend.utils.AppealObjective
+import com.anomot.anomotbackend.utils.AppealReason
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -20,7 +19,8 @@ import javax.validation.Valid
 class PostController @Autowired constructor(
         private val postService: PostService,
         private val userDetailsServiceImpl: UserDetailsServiceImpl,
-        private val followService: FollowService
+        private val followService: FollowService,
+        private val userModerationService: UserModerationService
 ) {
     @PostMapping("/account/post/text")
     @EmailVerified
@@ -32,13 +32,22 @@ class PostController @Autowired constructor(
 
     @PostMapping("/account/post/media")
     @EmailVerified
-    fun uploadMediaPost(@RequestParam("file") file: MultipartFile, authentication: Authentication): ResponseEntity<MediaDto> {
+    fun uploadMediaPost(@RequestParam("file") file: MultipartFile, authentication: Authentication): ResponseEntity<NsfwFoundDto> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
 
         return when (val result = postService.createMediaPost(file, user, false)) {
             PostCreateStatus.OK -> ResponseEntity(HttpStatus.CREATED)
             PostCreateStatus.MEDIA_UNSUPPORTED -> ResponseEntity(HttpStatus.UNSUPPORTED_MEDIA_TYPE)
-            PostCreateStatus.NSFW_FOUND -> ResponseEntity(MediaDto(result.media!!.media!!.mediaType, result.media!!.media!!.name.toString()), HttpStatus.NOT_ACCEPTABLE)
+            PostCreateStatus.NSFW_FOUND -> {
+                ResponseEntity(
+                        NsfwFoundDto(
+                                userModerationService.generateAppealJwt(user,
+                                        result.media!!.media!!.toString(),
+                                        AppealReason.NSFW_FOUND,
+                                        AppealObjective.POST),
+                                MediaDto(result.media!!.media!!.mediaType,
+                                        result.media!!.media!!.name.toString())),
+                        HttpStatus.NOT_ACCEPTABLE) }
             PostCreateStatus.SIMILAR_FOUND -> ResponseEntity(HttpStatus.BAD_REQUEST)
         }
     }
