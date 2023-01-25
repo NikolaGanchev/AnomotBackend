@@ -84,4 +84,10 @@ interface BattleRepository: JpaRepository<Battle, Long> {
             "b.redPost = case when(b.redPost.id in (select p.id from Post p where p.poster = ?1)) then NULL else b.redPost end " +
             "where b.redPost.id in (select p.id from Post p where p.poster = ?1) or b.goldPost.id in (select p.id from Post p where p.poster = ?1)")
     fun setPostsByUserToNull(user: User)
+
+    @Query("select b.id from Battle b where b.goldPost is null and b.redPost is null")
+    fun getDangling(): List<Long>
+
+    @Query("from Battle b where b.redPost = ?1 or b.goldPost = ?1")
+    fun getByRedPostOrGoldPost(post: Post): Battle?
 }

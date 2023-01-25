@@ -19,4 +19,5 @@ interface EmailVerificationTokenRepository: JpaRepository<EmailVerificationToken
     @Modifying
     @Query("delete from EmailVerificationToken token where token.user = ?1")
     fun deleteByUser(user: User)
+    fun getByUser(user: User): EmailVerificationToken?
 }

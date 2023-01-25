@@ -1,12 +1,7 @@
 package com.anomot.anomotbackend.services
 
-import com.anomot.anomotbackend.dto.AdminAppealDto
-import com.anomot.anomotbackend.dto.AdminReportDto
-import com.anomot.anomotbackend.dto.MediaDto
-import com.anomot.anomotbackend.dto.PostDto
-import com.anomot.anomotbackend.entities.AppealDecision
-import com.anomot.anomotbackend.entities.ReportDecision
-import com.anomot.anomotbackend.entities.User
+import com.anomot.anomotbackend.dto.*
+import com.anomot.anomotbackend.entities.*
 import com.anomot.anomotbackend.repositories.*
 import com.anomot.anomotbackend.utils.AppealAction
 import com.anomot.anomotbackend.utils.AppealReason
@@ -22,6 +17,7 @@ import javax.transaction.Transactional
 @Service
 class AdminService @Autowired constructor(
         private val reportRepository: ReportRepository,
+        private val reportTicketRepository: ReportTicketRepository,
         private val reportDecisionRepository: ReportDecisionRepository,
         private val mediaService: MediaService,
         private val mediaRepository: MediaRepository,
@@ -32,34 +28,98 @@ class AdminService @Autowired constructor(
         private val battleRepository: BattleRepository
 ) {
     @Secured("ROLE_ADMIN")
-    fun getReports(page: Int): List<AdminReportDto> {
-        return reportRepository.getAll(PageRequest.of(page, 10, Sort.by("creationDate").descending())).map {i->
-            AdminReportDto(reportRepository.getReasonsByReportId(i.reportId).toTypedArray(),
-                    i.type, i.reporter.id.toString(), i.post?.id.toString(), i.battle?.id.toString(), i.comment?.id.toString(),
-                    i.user?.id.toString(), i.decided, i.decision?.decision, i.decision?.decidedBy?.id.toString(), i.decision?.creationDate,
-                    i.creationDate, i.reportId.toString())
+    fun getReports(page: Int): List<ReportTicketDto> {
+        return reportTicketRepository.getAll(PageRequest.of(page, 10, Sort.by("creationDate").descending())).map {
+            getAsReportTicketDto(it)
         }
     }
 
+    private fun getAsReportTicketDto(it: ReportTicketIntermediary): ReportTicketDto {
+        return ReportTicketDto(it.reportType,
+                if (it.post != null) asPostDto(it.post, it.postLikes.toLong()) else null,
+                if (it.battle != null) AdminBattleDto(
+                        if (it.battle.goldPost != null) asPostDto(it.battle.goldPost!!, null) else null,
+                        if (it.battle.redPost != null) asPostDto(it.battle.redPost!!, null) else null,
+                        it.goldVotes,
+                        it.redVotes,
+                        it.battle.finished,
+                        it.battle.finishDate!!
+                ) else null,
+                if (it.comment != null) getAsCommentDto(it.comment, it.commentLikes.toLong(), it.commentResponseCount.toInt()) else null,
+                if (it.user != null) userDetailsServiceImpl.getAsDto(it.user) else null,
+                it.isDecided,
+                it.decisions.toInt(),
+                it.creationDate,
+                it.id.toString())
+    }
+
+    private fun getAsCommentDto(comment: Comment, commentLikes: Long, responseCount: Int): CommentDto {
+        return CommentDto(
+                comment.text,
+                if (comment.commenter != null) userDetailsServiceImpl.getAsDto(comment.commenter!!) else null,
+                comment.isEdited,
+                responseCount,
+                commentLikes,
+                null,
+                comment.creationDate,
+                comment.id.toString()
+        )
+    }
+
+    private fun asPostDto(post: Post, likes: Long?): PostDto {
+        return PostDto(post.type,
+                    post.text,
+                    if (post.media != null) MediaDto(post.media!!.mediaType, post.media!!.name.toString()) else null,
+                    userDetailsServiceImpl.getAsDto(post.poster),
+                    likes,
+                    hasUserLiked = null,
+                    post.creationDate,
+                    post.id.toString())
+    }
+
     @Secured("ROLE_ADMIN")
-    fun getUndecidedReports(page: Int): List<AdminReportDto> {
-        return reportRepository.getAllByDecidedIsFalse(PageRequest.of(page, 10, Sort.by("creationDate").ascending())).map {i ->
-            AdminReportDto(reportRepository.getReasonsByReportId(i.reportId).toTypedArray(),
-                    i.type, i.reporter.id.toString(), i.post?.id.toString(), i.battle?.id.toString(), i.comment?.id.toString(),
-                    i.user?.id.toString(), i.decided, i.decision?.decision, i.decision?.decidedBy?.id.toString(), i.decision?.creationDate,
-                    i.creationDate, i.reportId.toString())
+    fun getUndecidedReports(page: Int): List<ReportTicketDto> {
+        return reportTicketRepository.getAllByDecidedIsFalse(PageRequest.of(page, 10, Sort.by("creationDate").ascending())).map {
+            getAsReportTicketDto(it)
         }
     }
 
     @Secured("ROLE_ADMIN")
     @Transactional
-    fun decideReport(user: User, reportId: String, decision: String): Boolean {
+    fun decideReport(user: User, reportTicketId: String, decision: String): Boolean {
+        val report = getReportTicketReferenceByIdUnsafe(reportTicketId) ?: return false
 
-        val savedDecision = reportDecisionRepository.save(ReportDecision(decision, user))
-        reportDecisionRepository.flush()
-        reportRepository.setDecisionById(UUID.fromString(reportId), savedDecision)
-
+        reportDecisionRepository.save(ReportDecision(report, decision, user))
         return true
+    }
+
+    private fun getReportTicketReferenceByIdUnsafe(reportTicketId: String): ReportTicket? {
+        val ticketId = reportTicketId.toLongOrNull() ?: return null
+        if (!reportTicketRepository.existsById(ticketId)) return null
+
+        return reportTicketRepository.getReferenceById(ticketId)
+    }
+
+    @Secured("ROLE_ADMIN")
+    fun getDecisions(reportTicketId: String, page: Int): List<TicketDecisionDto>? {
+        val report = getReportTicketReferenceByIdUnsafe(reportTicketId) ?: return null
+
+        return reportDecisionRepository.getAllByReportTicket(report, PageRequest.of(page, 10, Sort.by("creationDate").descending())).map {
+            TicketDecisionDto(
+                    it.decision,
+                    userDetailsServiceImpl.getAsDto(it.decidedBy),
+                    it.creationDate
+            )
+        }
+    }
+
+    @Secured("ROLE_ADMIN")
+    fun getReports(reportTicketId: String, page: Int): List<AdminReportDto>? {
+        val report = getReportTicketReferenceByIdUnsafe(reportTicketId) ?: return null
+
+        return reportRepository.getAllByReportTicket(report,  PageRequest.of(page, 10, Sort.by("creationDate").descending())).map {
+            AdminReportDto(it.reportReason, it.other, if (it.reporter != null) userDetailsServiceImpl.getAsDto(it.reporter!!) else null)
+        }
     }
 
     @Secured("ROLE_ADMIN")

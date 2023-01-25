@@ -1,9 +1,7 @@
 package com.anomot.anomotbackend.services
 
 import com.anomot.anomotbackend.dto.*
-import com.anomot.anomotbackend.entities.Appeal
-import com.anomot.anomotbackend.entities.Report
-import com.anomot.anomotbackend.entities.User
+import com.anomot.anomotbackend.entities.*
 import com.anomot.anomotbackend.repositories.*
 import com.anomot.anomotbackend.utils.*
 import io.jsonwebtoken.InvalidClaimException
@@ -20,6 +18,7 @@ import java.lang.IllegalArgumentException
 import java.time.Instant
 import java.util.*
 import javax.crypto.SecretKey
+import javax.transaction.Transactional
 
 @Service
 class UserModerationService @Autowired constructor(
@@ -27,8 +26,10 @@ class UserModerationService @Autowired constructor(
         private val followRepository: FollowRepository,
         private val userDetailsServiceImpl: UserDetailsServiceImpl,
         private val reportRepository: ReportRepository,
+        private val reportTicketRepository: ReportTicketRepository,
         private val mediaRepository: MediaRepository,
-        private val appealRepository: AppealRepository
+        private val appealRepository: AppealRepository,
+        private val reportDecisionRepository: ReportDecisionRepository
 ) {
 
     private val secretKey: SecretKey = Keys.hmacShaKeyFor(Decoders.BASE64.decode(secretKeyString))
@@ -38,22 +39,51 @@ class UserModerationService @Autowired constructor(
 
         if (!(followRepository.canSeeAccount(user, otherUser) or followRepository.existsFollowByFollowerAndFollowed(user, otherUser))) return false
 
-        if (reportRepository.existByReporterAndUserAndReason(user, otherUser, ReportReason.from(userReportDto.reason))) return false
+        val reportReason = ReportReason.from(userReportDto.reason)
 
-        val reportId = reportRepository.getIdByReporterAndUser(user, otherUser) ?: UUID.randomUUID()
+        return report(reportReason,
+                ReportType.USER,
+                userReportDto.other,
+                user, null, null, null,
+                otherUser,
+                Constants.USER_REPORT_COOLDOWN)
+    }
+
+    @Transactional
+    fun report(reason: ReportReason,
+               type: ReportType,
+               other: String?,
+               reporter: User,
+               post: Post?,
+               battle: Battle?,
+               comment: Comment?,
+               user: User?,
+                decisionCooldown: Long): Boolean {
+        var reportTicket = reportTicketRepository.getByPostOrBattleOrCommentOrUser(post, battle, comment, user)
+
+        if (reportTicket == null) {
+            reportTicket = reportTicketRepository.save(ReportTicket(type, post, battle, comment, user,
+                    false))
+            reportTicketRepository.flush()
+        } else {
+            if (reportRepository.existsByReportTicketAndReporterAndReportReason(reportTicket, reporter, reason)) {
+                return false
+            }
+
+            val latestDecision = reportDecisionRepository.getLatest(reportTicket.id!!)
+            if (latestDecision != null) {
+                if ((Instant.now().epochSecond -
+                                latestDecision.creationDate.toInstant().epochSecond) > decisionCooldown) {
+                    reportTicket.decided = false
+                }
+            }
+        }
 
         reportRepository.save(Report(
-                user,
-                ReportType.USER,
-                null,
-                null,
-                null,
-                otherUser,
-                ReportReason.from(userReportDto.reason),
-                userReportDto.other,
-                reportId,
-                false,
-                null
+                reporter,
+                reportTicket,
+                reason,
+                other
         ))
 
         return true
@@ -62,7 +92,7 @@ class UserModerationService @Autowired constructor(
     fun getReport(user: User, userId: String): ReportDto? {
         val otherUser = userDetailsServiceImpl.getUserReferenceFromIdUnsafe(userId) ?: return null
 
-        val reports = reportRepository.getByReporterAndUser(user, otherUser)
+        val reports = reportRepository.getAllByReporterAndReportTicketUser(user, otherUser)
 
         val singleReportedDtos = reports.map {
             SingleReportDto(it.reportReason, it.other)

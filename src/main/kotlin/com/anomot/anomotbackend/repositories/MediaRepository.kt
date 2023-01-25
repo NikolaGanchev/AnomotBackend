@@ -17,5 +17,19 @@ interface MediaRepository: JpaRepository<Media, Long> {
     @Query("delete from Media m where m.publisher = ?1")
     fun deleteByUser(user: User)
 
+    @Query("select m.id from media m where extract(epoch from(now() - m.creation_date)) > ?1" +
+            " and not exists(select 1 from post p where p.media_id = m.id)" +
+            " and not exists(select 1 from appeal a where a.media_id = m.id)" +
+            " and not exists(select 1 from users u where u.avatar_id = m.id)", nativeQuery = true)
+    @Modifying
+    fun getUnreferencedMediaAfterSeconds(seconds: Int): List<Long>
+
+    @Query("delete from Media m where m.id in (:media)")
+    @Modifying
+    fun deleteByIds(media: List<Long>)
+
+    @Query("select m.name from Media m where m.id in (:media)")
+    fun getNamesByIds(media: List<Long>): List<UUID>
+
     fun getByName(uuid: UUID): Media?
 }

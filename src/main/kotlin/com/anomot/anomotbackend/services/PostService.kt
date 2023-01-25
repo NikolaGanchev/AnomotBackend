@@ -10,7 +10,6 @@ import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 import java.lang.NumberFormatException
-import java.util.*
 import javax.transaction.Transactional
 
 enum class PostCreateStatus {
@@ -34,7 +33,10 @@ class PostService @Autowired constructor(
         private val likeRepository: LikeRepository,
         private val userDetailsServiceImpl: UserDetailsServiceImpl,
         private val voteRepository: VoteRepository,
-        private val reportRepository: ReportRepository
+        private val reportRepository: ReportRepository,
+        private val notificationRepository: NotificationRepository,
+        private val userModerationService: UserModerationService,
+        private val reportTicketRepository: ReportTicketRepository
 ) {
     private fun addTextPost(text: String, user: User): Post {
         return postRepository.save(Post(user, null, text, PostType.TEXT))
@@ -134,19 +136,34 @@ class PostService @Autowired constructor(
         battleQueueRepository.deletePostByIdAndUser(postId, user.id!!)
         likeRepository.deleteByPostAndPostPoster(post, user)
         voteRepository.setPostToNull(post)
-        val existsBattle = battleRepository.existsByRedPostOrGoldPost(post)
-        if (existsBattle) {
+        val battle = battleRepository.getByRedPostOrGoldPost(post)
+        if (battle != null) {
             battleRepository.setPostToNull(post)
             user.elo -= 30
+            battleRepository.flush()
+            if (battle.goldPost?.id == post.id && battle.redPost == null ||
+                    battle.redPost?.id == post.id && battle.goldPost == null ||
+                    battle.goldPost == null && battle.redPost == null) {
+                clearBattle(battle)
+            }
         }
 
         if (post.media != null) {
             mediaService.deleteMedia(post.media!!)
         }
 
+        reportTicketRepository.setPostToNull(post)
+
         val num = postRepository.deleteByIdAndPoster(postId, user)
 
         return num != (0).toLong()
+    }
+
+    fun clearBattle(battle: Battle) {
+        voteRepository.deleteByBattle(battle)
+        notificationRepository.deleteByBattleBegin(battle)
+        notificationRepository.deleteByBattleEnd(battle)
+        battleRepository.delete(battle)
     }
 
     fun getFeed(user: User, page: Int): List<PostWithLikes> {
@@ -233,31 +250,19 @@ class PostService @Autowired constructor(
 
         if (!canSeeUserAndPost(user, post)) return false
 
-        if (reportRepository.existByReporterAndPostAndReason(user, post, ReportReason.from(postReportDto.reason))) return false
+        val reportReason = ReportReason.from(postReportDto.reason)
 
-        val reportId = reportRepository.getIdByReporterAndPost(user, post) ?: UUID.randomUUID()
-
-        reportRepository.save(Report(
-                user,
+        return userModerationService.report(reportReason,
                 ReportType.POST,
-                post,
-                null,
-                null,
-                null,
-                ReportReason.from(postReportDto.reason),
                 postReportDto.other,
-                reportId,
-                false,
-                null
-        ))
-
-        return true
+                user, post, null, null, null,
+                Constants.POST_REPORT_COOLDOWN)
     }
 
     fun getReport(user: User, postId: String): ReportDto? {
         val post = getPostReferenceFromIdUnsafe(postId) ?: return null
 
-        val reports = reportRepository.getByReporterAndPost(user, post)
+        val reports = reportRepository.getAllByReporterAndReportTicketPostAndReportTicketBattle(user, post, null)
 
         val singleReportedDtos = reports.map {
             SingleReportDto(it.reportReason, it.other)

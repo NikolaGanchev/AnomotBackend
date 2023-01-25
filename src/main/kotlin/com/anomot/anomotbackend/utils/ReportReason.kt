@@ -68,5 +68,6 @@ enum class CommentReportReason {
     HARASSMENT,
     HATE_SPEECH,
     TERRORISM,
-    SPAM;
+    SPAM,
+    IDENTITY_REVEAL;
 }

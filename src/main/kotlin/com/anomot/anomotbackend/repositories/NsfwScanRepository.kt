@@ -20,6 +20,10 @@ interface NsfwScanRepository: JpaRepository<NsfwScan, Long> {
     fun getMaxAndAverageByMediaName(name: UUID): NsfwScans
     fun deleteByMedia(media: Media): Long
 
+    @Query("delete from NsfwScan n where n.media.id in (:media)")
+    @Modifying
+    fun deleteByMedia(media: List<Long>)
+
     @Modifying
     @Query("delete from NsfwScan n where n.media.id in (select m.id from Media m where m.publisher = ?1)")
     fun deleteByUser(user: User)

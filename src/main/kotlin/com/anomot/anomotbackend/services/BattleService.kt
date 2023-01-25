@@ -24,7 +24,8 @@ class BattleService @Autowired constructor(
         private val voteService: VoteService,
         private val notificationService: NotificationService,
         private val postService: PostService,
-        private val reportRepository: ReportRepository
+        private val reportRepository: ReportRepository,
+        private val userModerationService: UserModerationService
 ) {
 
     @Transactional
@@ -219,32 +220,20 @@ class BattleService @Autowired constructor(
 
         if (!battleRepository.canSeeBattle(user, battle)) return false
 
-        if (reportRepository.existByReporterAndPostAndBattleAndReason(user, post, battle, ReportReason.from(battleReportDto.reason))) return false
+        val reportReason = ReportReason.from(battleReportDto.reason)
 
-        val reportId = reportRepository.getIdByReporterAndPostAndBattle(user, post, battle) ?: UUID.randomUUID()
-
-        reportRepository.save(Report(
-                user,
+        return userModerationService.report(reportReason,
                 ReportType.BATTLE,
-                post,
-                battle,
-                null,
-                null,
-                ReportReason.from(battleReportDto.reason),
                 battleReportDto.other,
-                reportId,
-                false,
-                null
-        ))
-
-        return true
+                user, post, battle, null, null,
+                Constants.BATTLE_COOLDOWN)
     }
 
     fun getReport(user: User, postId: String, battleId: String): ReportDto? {
         val battle = getBattleReferenceFromIdUnsafe(battleId) ?: return null
         val post = postService.getPostReferenceFromIdUnsafe(postId) ?: return null
 
-        val reports = reportRepository.getByReporterAndPostAndBattle(user, post, battle)
+        val reports = reportRepository.getAllByReporterAndReportTicketPostAndReportTicketBattle(user, post, battle)
 
         val singleReportedDtos = reports.map {
             SingleReportDto(it.reportReason, it.other)

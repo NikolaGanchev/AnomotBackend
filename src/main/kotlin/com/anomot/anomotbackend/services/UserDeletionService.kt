@@ -33,7 +33,12 @@ class UserDeletionService @Autowired constructor(
         private val battleQueueRepository: BattleQueueRepository,
         private val postRepository: PostRepository,
         private val nsfwScanRepository: NsfwScanRepository,
-        private val mediaService: MediaService
+        private val mediaService: MediaService,
+        private val appealRepository: AppealRepository,
+        private val reportRepository: ReportRepository,
+        private val reportTicketRepository: ReportTicketRepository,
+        private val reportDecisionRepository: ReportDecisionRepository,
+        private val appealDecisionRepository: AppealDecisionRepository
 ) {
 
     @Transactional
@@ -59,6 +64,11 @@ class UserDeletionService @Autowired constructor(
         notificationRepository.deleteByUser(user)
         successfulLoginRepository.deleteByUser(user)
         urlRepository.deleteByPublisher(user)
+        reportRepository.setNullByUser(user)
+        reportRepository.deleteByUser(user)
+        reportDecisionRepository.deleteByUser(user)
+        reportDecisionRepository.setNullByDecidedBy(user)
+        reportTicketRepository.deleteByUser(user)
         voteRepository.deleteByUser(user)
         followCodeRepository.deleteByUser(user)
         followRepository.deleteByUser(user)
@@ -71,6 +81,9 @@ class UserDeletionService @Autowired constructor(
         battleQueueRepository.deleteByUser(user)
         postRepository.deleteByUser(user)
         nsfwScanRepository.deleteByUser(user)
+        appealDecisionRepository.setNullByUser(user)
+        appealDecisionRepository.deleteByUser(user)
+        appealRepository.deleteByUser(user)
         mediaService.deleteMediaByUserWithoutNsfwScans(user)
         mediaService.deleteFilesByUser(user)
 

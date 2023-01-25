@@ -24,7 +24,8 @@ class CommentService @Autowired constructor(
         private val battleService: BattleService,
         private val commentLikeRepository: CommentLikeRepository,
         private val battleRepository: BattleRepository,
-        private val reportRepository: ReportRepository
+        private val reportRepository: ReportRepository,
+        private val userModerationService: UserModerationService
 ) {
     @Transactional
     fun addCommentToPost(text: String, user: User, postId: String): CommentDto? {
@@ -246,31 +247,19 @@ class CommentService @Autowired constructor(
 
         if (!canSeeComment(user, comment)) return false
 
-        if (reportRepository.existByReporterAndCommentAndReason(user, comment, ReportReason.from(commentReportDto.reason))) return false
+        val reportReason = ReportReason.from(commentReportDto.reason)
 
-        val reportId = reportRepository.getIdByReporterAndComment(user, comment) ?: UUID.randomUUID()
-
-        reportRepository.save(Report(
-                user,
-                ReportType.COMMENT,
-                null,
-                null,
-                comment,
-                null,
-                ReportReason.from(commentReportDto.reason),
+        return userModerationService.report(reportReason,
+                ReportType.POST,
                 commentReportDto.other,
-                reportId,
-                false,
-                null
-        ))
-
-        return true
+                user, null, null, comment, null,
+                Constants.COMMENT_COOLDOWN)
     }
 
     fun getReport(user: User, commentId: String): ReportDto? {
         val comment = getCommentReferenceFromIdUnsafe(commentId) ?: return null
 
-        val reports = reportRepository.getByReporterAndComment(user, comment)
+        val reports = reportRepository.getAllByReporterAndReportTicketComment(user, comment)
 
         val singleReportedDtos = reports.map {
             SingleReportDto(it.reportReason, it.other)

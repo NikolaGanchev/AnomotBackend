@@ -1,9 +1,6 @@
 package com.anomot.anomotbackend.controllers
 
-import com.anomot.anomotbackend.dto.AdminAppealDto
-import com.anomot.anomotbackend.dto.AdminReportDto
-import com.anomot.anomotbackend.dto.AppealDecisionDto
-import com.anomot.anomotbackend.dto.DecisionDto
+import com.anomot.anomotbackend.dto.*
 import com.anomot.anomotbackend.security.CustomUserDetails
 import com.anomot.anomotbackend.services.AdminService
 import com.anomot.anomotbackend.services.UserDetailsServiceImpl
@@ -22,23 +19,39 @@ class AdminController(
         private val userDetailsServiceImpl: UserDetailsServiceImpl
 ) {
     @Secured("ROLE_ADMIN")
-    @GetMapping("/admin/reports")
-    fun getReports(@RequestParam("page") page: Int): ResponseEntity<List<AdminReportDto>> {
+    @GetMapping("/admin/tickets")
+    fun getReports(@RequestParam("page") page: Int): ResponseEntity<List<ReportTicketDto>> {
         return ResponseEntity(adminService.getReports(page), HttpStatus.OK)
     }
 
     @Secured("ROLE_ADMIN")
-    @GetMapping("/admin/reports/undecided")
-    fun getUndecidedReports(@RequestParam("page") page: Int): ResponseEntity<List<AdminReportDto>> {
+    @GetMapping("/admin/ticket/undecided")
+    fun getUndecidedReports(@RequestParam("page") page: Int): ResponseEntity<List<ReportTicketDto>> {
         return ResponseEntity(adminService.getUndecidedReports(page), HttpStatus.OK)
     }
 
     @Secured("ROLE_ADMIN")
-    @PostMapping("/admin/report/decide")
+    @PostMapping("/admin/ticket/decide")
     fun decideReport(@RequestBody @Valid decisionDto: DecisionDto, authentication: Authentication): ResponseEntity<String> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
-        val result = adminService.decideReport(user, decisionDto.reportId, decisionDto.decision)
+        val result = adminService.decideReport(user, decisionDto.reportTicketId, decisionDto.decision)
         return ResponseEntity(if (result) HttpStatus.OK else HttpStatus.BAD_REQUEST)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @GetMapping("/admin/ticket/decisions")
+    fun getDecisions(@RequestParam("id") id: String, @RequestParam("page") page: Int): ResponseEntity<List<TicketDecisionDto>> {
+        val result = adminService.getDecisions(id, page) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+
+        return ResponseEntity(result, HttpStatus.OK)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @GetMapping("/admin/ticket/reports")
+    fun getReports(@RequestParam("id") id: String, @RequestParam("page") page: Int): ResponseEntity<List<AdminReportDto>> {
+        val result = adminService.getReports(id, page) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+
+        return ResponseEntity(result, HttpStatus.OK)
     }
 
     @Secured("ROLE_ADMIN")
@@ -68,4 +81,5 @@ class AdminController(
         val result = adminService.deleteMedia(id)
         return ResponseEntity(if (result) HttpStatus.OK else HttpStatus.BAD_REQUEST)
     }
+
 }

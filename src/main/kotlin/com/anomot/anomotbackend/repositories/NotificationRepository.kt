@@ -1,5 +1,6 @@
 package com.anomot.anomotbackend.repositories
 
+import com.anomot.anomotbackend.entities.Battle
 import com.anomot.anomotbackend.entities.Notification
 import com.anomot.anomotbackend.entities.User
 import org.springframework.data.domain.Pageable
@@ -23,4 +24,12 @@ interface NotificationRepository: JpaRepository<Notification, Long> {
     @Modifying
     @Query("delete from Notification n where n.user = ?1")
     fun deleteByUser(user: User)
+
+    @Modifying
+    @Query("delete from BattleBeginNotification n where n.battle = ?1")
+    fun deleteByBattleBegin(battle: Battle)
+
+    @Modifying
+    @Query("delete from BattleEndNotification n where n.battle = ?1")
+    fun deleteByBattleEnd(battle: Battle)
 }

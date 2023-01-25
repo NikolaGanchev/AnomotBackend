@@ -2,10 +2,7 @@ package com.anomot.anomotbackend.services
 
 import com.anomot.anomotbackend.dto.*
 import com.anomot.anomotbackend.entities.*
-import com.anomot.anomotbackend.repositories.FileRepository
-import com.anomot.anomotbackend.repositories.MediaRepository
-import com.anomot.anomotbackend.repositories.NsfwScanRepository
-import com.anomot.anomotbackend.repositories.UrlRepository
+import com.anomot.anomotbackend.repositories.*
 import com.anomot.anomotbackend.utils.Constants
 import com.anomot.anomotbackend.utils.MediaType
 import com.anomot.anomotbackend.utils.NsfwScanType
@@ -36,6 +33,7 @@ class MediaService @Autowired constructor(
         private val nsfwScanRepository: NsfwScanRepository,
         private val fileRepository: FileRepository,
         private val urlRepository: UrlRepository,
+        private val appealRepository: AppealRepository,
         @Value("\${environment.media_server_url}")
         private val mediaServerUrl: String
 ) {
@@ -313,6 +311,7 @@ class MediaService @Autowired constructor(
 
     @Transactional
     fun deleteMedia(media: Media): Boolean {
+        appealRepository.deleteByMedia(media)
         nsfwScanRepository.deleteByMedia(media)
         mediaRepository.delete(media)
 
@@ -322,9 +321,9 @@ class MediaService @Autowired constructor(
     fun deleteMediaByUserWithoutNsfwScans(user: User) {
         var page = 0
         do {
-            val result = getFilesByUser(user, page, 20)
+            val result = getMediaByUser(user, page, 20)
             result.parallelStream().forEach {
-                deleteFileFromServer(it.name.toString())
+                deleteMediaFromServer(it.name.toString())
             }
             page++
         } while (result.isNotEmpty())

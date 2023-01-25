@@ -74,6 +74,18 @@ class FollowController(
         return ResponseEntity(CountDto(result), HttpStatus.OK)
     }
 
+    @GetMapping("/account/follows")
+    fun follows(@RequestParam("id") userId: String, authentication: Authentication): ResponseEntity<Boolean> {
+        val user = userDetailsService.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
+        val otherUser = userDetailsService.getUserReferenceFromIdUnsafe(userId) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+
+        if (!followService.canSeeOtherUser(user, otherUser)) return ResponseEntity(HttpStatus.BAD_REQUEST)
+
+        val result = followService.follows(user, otherUser)
+
+        return ResponseEntity(result, HttpStatus.OK)
+    }
+
     @GetMapping("/followers/count")
     fun getFollowerCount(@RequestParam("id") userId: String, authentication: Authentication): ResponseEntity<CountDto> {
         val user = userDetailsService.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
@@ -97,6 +109,8 @@ class FollowController(
 
         return ResponseEntity(CountDto(result), HttpStatus.OK)
     }
+
+
 
     @GetMapping("/follow/code")
     fun getFollowCode(authentication: Authentication): ResponseEntity<FollowCodeDto> {
