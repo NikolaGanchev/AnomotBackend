@@ -8,6 +8,8 @@ import com.anomot.anomotbackend.repositories.UserRepository
 import com.anomot.anomotbackend.security.Authorities
 import com.anomot.anomotbackend.services.LoginInfoExtractorService
 import com.anomot.anomotbackend.services.PasswordResetService
+import com.anomot.anomotbackend.services.UserModerationService
+import com.anomot.anomotbackend.services.VoteService
 import com.anomot.anomotbackend.utils.TimeUtils
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
@@ -32,6 +34,10 @@ class PasswordResetTests @Autowired constructor(
     private lateinit var userRepository: UserRepository
     @MockkBean
     private lateinit var passwordEncoder: Argon2PasswordEncoder
+    @MockkBean
+    private lateinit var userModerationService: UserModerationService
+    @MockkBean
+    private lateinit var voteService: VoteService
     @MockkBean
     private lateinit var loginInfoExtractorService: LoginInfoExtractorService
 

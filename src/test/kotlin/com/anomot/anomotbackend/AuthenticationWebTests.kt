@@ -74,6 +74,9 @@ class AuthenticationWebTests @Autowired constructor(
     private lateinit var loginInfoExtractorService: LoginInfoExtractorService
 
     @MockkBean
+    private lateinit var userModerationService: UserModerationService
+
+    @MockkBean
     private lateinit var userDeletionService: UserDeletionService
 
     val mfaMethodEmail = MfaMethod(MfaMethodValue.EMAIL.method)
@@ -804,7 +807,7 @@ class AuthenticationWebTests @Autowired constructor(
     fun `When delete account and successful then return 200`() {
         val accountDeleteDto = AccountDeleteDto("password1$")
 
-        every { userDeletionService.deleteUser(any()) } returns Unit
+        every { userDeletionService.deleteUser(any<String>()) } returns Unit
 
         mockMvc.perform(delete("/account")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -817,7 +820,7 @@ class AuthenticationWebTests @Autowired constructor(
     fun `When delete account and access denied then return 401`() {
         val accountDeleteDto = AccountDeleteDto("password1$")
 
-        every { userDeletionService.deleteUser(any()) } throws AccessDeniedException("No authentication present")
+        every { userDeletionService.deleteUser(any<String>()) } throws AccessDeniedException("No authentication present")
 
         mockMvc.perform(delete("/account/")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -831,7 +834,7 @@ class AuthenticationWebTests @Autowired constructor(
     fun `When delete account and incorrect old password then return 401`() {
         val accountDeleteDto = AccountDeleteDto("password1$")
 
-        every { userDeletionService.deleteUser(any()) } throws BadCredentialsException("Bad credentials")
+        every { userDeletionService.deleteUser(any<String>()) } throws BadCredentialsException("Bad credentials")
 
         mockMvc.perform(delete("/account/")
                 .contentType(MediaType.APPLICATION_JSON)

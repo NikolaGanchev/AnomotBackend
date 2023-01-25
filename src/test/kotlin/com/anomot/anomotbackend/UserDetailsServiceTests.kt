@@ -54,6 +54,10 @@ class UserDetailsServiceTests {
     private lateinit var mediaRepository: MediaRepository
     @MockkBean
     private lateinit var nsfwScanRepository: NsfwScanRepository
+    @MockkBean
+    private lateinit var userModerationService: UserModerationService
+    @MockkBean
+    private lateinit var voteService: VoteService
     @Autowired
     @InjectMockKs
     private lateinit var userDetailsService: UserDetailsServiceImpl

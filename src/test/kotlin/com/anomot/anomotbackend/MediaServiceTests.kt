@@ -6,6 +6,8 @@ import com.anomot.anomotbackend.repositories.FileRepository
 import com.anomot.anomotbackend.repositories.MediaRepository
 import com.anomot.anomotbackend.repositories.NsfwScanRepository
 import com.anomot.anomotbackend.services.MediaService
+import com.anomot.anomotbackend.services.UserModerationService
+import com.anomot.anomotbackend.services.VoteService
 import com.anomot.anomotbackend.utils.MediaType
 import com.anomot.anomotbackend.utils.NsfwScanType
 import com.ninjasquad.springmockk.MockkBean
@@ -38,6 +40,10 @@ class MediaServiceTests @Autowired constructor(
     private lateinit var nsfwScanRepository: NsfwScanRepository
     @MockkBean
     private lateinit var fileRepository: FileRepository
+    @MockkBean
+    private lateinit var userModerationService: UserModerationService
+    @MockkBean
+    private lateinit var voteService: VoteService
     private lateinit var mockWebServer: MockWebServer
 
     private final val mockMediaResponseFull = object {

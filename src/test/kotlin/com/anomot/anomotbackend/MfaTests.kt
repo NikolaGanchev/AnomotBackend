@@ -7,10 +7,7 @@ import com.anomot.anomotbackend.repositories.MfaTotpSecretRepository
 import com.anomot.anomotbackend.repositories.UserRepository
 import com.anomot.anomotbackend.security.Authorities
 import com.anomot.anomotbackend.security.CustomUserDetails
-import com.anomot.anomotbackend.services.LoginInfoExtractorService
-import com.anomot.anomotbackend.services.MfaEmailTokenService
-import com.anomot.anomotbackend.services.MfaRecoveryService
-import com.anomot.anomotbackend.services.MfaTotpService
+import com.anomot.anomotbackend.services.*
 import com.bastiaanjansen.otp.TOTP
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
@@ -23,7 +20,7 @@ import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder
 import java.util.*
 
-@SpringBootTest(properties = ["vote.jwt.private-key=1edbc7fb7bae1628f085f6db259b7de40b887157aea732c7c31f18403a562338"])
+@SpringBootTest(properties = ["jwt.private-key=1edbc7fb7bae1628f085f6db259b7de40b887157aea732c7c31f18403a562338"])
 class MfaTests @Autowired constructor(
         @InjectMockKs
         val mfaEmailTokenService: MfaEmailTokenService,
@@ -31,6 +28,7 @@ class MfaTests @Autowired constructor(
         val mfaTotpService: MfaTotpService,
         @InjectMockKs
         val mfaRecoveryService: MfaRecoveryService,
+
         val passwordEncoder: Argon2PasswordEncoder
 ){
     @MockkBean
