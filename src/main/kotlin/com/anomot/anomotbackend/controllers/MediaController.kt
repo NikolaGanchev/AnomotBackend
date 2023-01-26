@@ -43,8 +43,7 @@ class MediaController(
     }
 
     @GetMapping("/media/{id}")
-    fun getMedia(@PathVariable(value="id") @Min(36) @Max(36) id: String,
-                 authentication: Authentication): ResponseEntity<ByteArray> {
+    fun getMedia(@PathVariable(value="id") @Min(36) @Max(36) id: String): ResponseEntity<ByteArray> {
         val media = mediaService.getMediaFromServer(id) ?: return ResponseEntity(HttpStatus.NOT_FOUND)
 
         return ResponseEntity.ok()
