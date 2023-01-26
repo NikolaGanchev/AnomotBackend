@@ -4,6 +4,7 @@ import com.anomot.anomotbackend.dto.*
 import com.anomot.anomotbackend.entities.*
 import com.anomot.anomotbackend.exceptions.UserAlreadyExistsException
 import com.anomot.anomotbackend.repositories.AuthorityRepository
+import com.anomot.anomotbackend.repositories.BanRepository
 import com.anomot.anomotbackend.repositories.MfaMethodRepository
 import com.anomot.anomotbackend.repositories.UserRepository
 import com.anomot.anomotbackend.security.Authorities
@@ -14,6 +15,8 @@ import com.bastiaanjansen.otp.TOTP
 import org.hibernate.Hibernate
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Lazy
+import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Sort
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.core.context.SecurityContextHolder
@@ -21,12 +24,14 @@ import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder
+import org.springframework.session.data.redis.RedisIndexedSessionRepository
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
 import java.nio.charset.StandardCharsets
 import java.time.Duration
 import java.time.Instant
 import javax.transaction.Transactional
+
 
 data class AvatarResult(
         val avatarId: String,
@@ -52,6 +57,11 @@ class UserDetailsServiceImpl: UserDetailsService {
     private lateinit var mfaRecoveryService: MfaRecoveryService
     @Autowired
     private lateinit var mediaService: MediaService
+    @Suppress("SpringJavaInjectionPointsAutowiringInspection")
+    @Autowired
+    private lateinit var redisSessionRepository: RedisIndexedSessionRepository
+    @Autowired
+    private lateinit var banRepository: BanRepository
     @Autowired
     @Lazy
     private lateinit var authenticationService: AuthenticationService
@@ -64,9 +74,14 @@ class UserDetailsServiceImpl: UserDetailsService {
             throw NullPointerException("Email cannot be null")
         }
         val user = userRepository.findByEmail(email) ?: throw UsernameNotFoundException("Email not found")
+        val bans = banRepository.getActive(user, PageRequest.of(0, 1, Sort.by("until").descending()))
+        val ban: Ban? = if (bans.isNotEmpty()) {
+            bans[0]
+        } else null
+
         Hibernate.initialize(user.authorities)
         Hibernate.initialize(user.mfaMethods)
-        return CustomUserDetails(user)
+        return CustomUserDetails(user, ban)
     }
 
     fun createUser(userRegisterDto: UserRegisterDto): SelfUserDto {
@@ -353,6 +368,9 @@ class UserDetailsServiceImpl: UserDetailsService {
     private fun userExists(userRegisterDto: UserRegisterDto): Boolean {
         return userRepository.findByEmail(userRegisterDto.email) != null
     }
+
+    // TODO add expire sessions path
+    fun expireUserSessions(user: User) {
+        redisSessionRepository.findByPrincipalName(user.email).keys.forEach(redisSessionRepository::deleteById)
+    }
 }
-
-

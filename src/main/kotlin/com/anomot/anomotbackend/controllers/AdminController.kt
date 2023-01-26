@@ -82,4 +82,27 @@ class AdminController(
         return ResponseEntity(if (result) HttpStatus.OK else HttpStatus.BAD_REQUEST)
     }
 
+    @Secured("ROLE_ADMIN")
+    @PostMapping("/admin/user/ban")
+    fun banUser(@RequestBody @Valid userBanDto: UserBanDto, authentication: Authentication): ResponseEntity<String> {
+        val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
+        val otherUser = userDetailsServiceImpl.getUserReferenceFromIdUnsafe(userBanDto.userId) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+        val result = adminService.banUser(user, otherUser, userBanDto.reason, userBanDto.until)
+        return ResponseEntity(if (result) HttpStatus.OK else HttpStatus.BAD_REQUEST)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @GetMapping("/admin/user/bans")
+    fun getBans(@RequestParam("id") id: String, @RequestParam("page") page: Int): ResponseEntity<List<BanDto>> {
+        val user = userDetailsServiceImpl.getUserReferenceFromIdUnsafe(id) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+        return ResponseEntity(adminService.getBans(user, page), HttpStatus.OK)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @DeleteMapping("/admin/user")
+    fun deleteUser(@RequestParam("id") id: String): ResponseEntity<String> {
+        val user = userDetailsServiceImpl.getUserReferenceFromIdUnsafe(id) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+        adminService.deleteUser(user)
+        return ResponseEntity(HttpStatus.OK)
+    }
 }

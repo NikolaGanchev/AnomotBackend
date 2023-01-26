@@ -1,13 +1,15 @@
 package com.anomot.anomotbackend.security
 
 import com.anomot.anomotbackend.dto.SelfUserDto
+import com.anomot.anomotbackend.entities.Ban
 import com.anomot.anomotbackend.entities.Media
 import com.anomot.anomotbackend.entities.User
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.userdetails.UserDetails
+import java.util.*
 
-open class CustomUserDetails(user: User): UserDetails {
+open class CustomUserDetails(user: User, ban: Ban? = null): UserDetails {
     // The naming of the variables needs to not conflict with the abstract methods
     val id: Long? = user.id
     private val _authorities: MutableCollection<out GrantedAuthority> = user.authorities.map { SimpleGrantedAuthority(it.authority) }.toCollection(mutableListOf())
@@ -18,6 +20,8 @@ open class CustomUserDetails(user: User): UserDetails {
     private val avatar: Media?  = user.avatar
     val isEmailVerified = user.isEmailVerified
     private val isMfaActive = user.isMfaActive
+    val isBanned = ban != null
+    val bannedUntil: Date? = ban?.until
 
     override fun getAuthorities(): MutableCollection<out GrantedAuthority> {
         return _authorities
@@ -36,7 +40,7 @@ open class CustomUserDetails(user: User): UserDetails {
     }
 
     override fun isAccountNonLocked(): Boolean {
-        return true
+        return !isBanned
     }
 
     override fun isCredentialsNonExpired(): Boolean {

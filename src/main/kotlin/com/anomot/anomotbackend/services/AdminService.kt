@@ -29,7 +29,8 @@ class AdminService @Autowired constructor(
         private val battleRepository: BattleRepository,
         private val postRepository: PostRepository,
         private val commentRepository: CommentRepository,
-        private val userRepository: UserRepository
+        private val userRepository: UserRepository,
+        private val banRepository: BanRepository
 ) {
     @Secured("ROLE_ADMIN")
     fun getReports(page: Int): List<ReportTicketDto> {
@@ -220,8 +221,22 @@ class AdminService @Autowired constructor(
 
     @Secured("ROLE_ADMIN")
     @Transactional
-    fun banUser(userToBan: User): Boolean {
+    fun banUser(user: User, userToBan: User, reason: String, until: Date): Boolean {
+        if (user.id == userToBan.id) return false
+        banRepository.save(Ban(userToBan, until, user, reason))
+        userDetailsServiceImpl.expireUserSessions(userToBan)
         return true
+    }
+
+    @Secured("ROLE_ADMIN")
+    @Transactional
+    fun getBans(user: User, page: Int): List<BanDto> {
+        return banRepository.getAllByUser(user, PageRequest.of(page, 12, Sort.by("creationDate").descending())).map {
+            BanDto(it.creationDate,
+                    it.until,
+                    if (it.bannedBy != null) userDetailsServiceImpl.getAsDto(it.bannedBy!!) else null,
+                    it.reason)
+        }
     }
 
     @Secured("ROLE_ADMIN")

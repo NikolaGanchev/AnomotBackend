@@ -17,6 +17,7 @@ import org.springframework.context.annotation.Scope
 import org.springframework.http.HttpMethod
 import org.springframework.http.client.reactive.ReactorClientHttpConnector
 import org.springframework.http.codec.ClientCodecConfigurer
+import org.springframework.security.authentication.LockedException
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.builders.WebSecurity
@@ -140,10 +141,23 @@ class WebSecurityConfig {
 
     private val loginFailureHandler = AuthenticationFailureHandler {
         request, response, authentication ->
-        response.status = SC_UNAUTHORIZED
-        response.contentType = "text/plain"
 
-        response.writer.write(authentication.message ?: "Login error")
+        if (authentication is LockedException) {
+            val mapper = ObjectMapper()
+            mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL)
+            response.status = SC_FORBIDDEN
+            response.contentType = "application/json"
+            val dto = object {
+                val isBanned = true
+                // TODO Add banned until
+            }
+            response.writer.write(mapper.writeValueAsString(dto))
+        } else {
+            response.status = SC_UNAUTHORIZED
+            response.contentType = "text/plain"
+
+            response.writer.write(authentication.message ?: "Login error")
+        }
     }
 
     @Bean

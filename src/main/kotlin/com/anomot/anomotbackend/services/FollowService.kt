@@ -9,6 +9,7 @@ import com.anomot.anomotbackend.repositories.FollowCodeRepository
 import com.anomot.anomotbackend.repositories.FollowRepository
 import com.anomot.anomotbackend.utils.Constants
 import com.anomot.anomotbackend.utils.SecureRandomStringGenerator
+import org.hibernate.exception.ConstraintViolationException
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
@@ -33,7 +34,12 @@ class FollowService @Autowired constructor(
         if (follows(user, userToFollow)) return false
 
         val follow = Follow(userToFollow, user)
-        followRepository.save(follow)
+        try {
+            followRepository.save(follow)
+        }
+        catch (e: ConstraintViolationException) {
+            return false
+        }
         return true
     }
 
@@ -103,7 +109,12 @@ class FollowService @Autowired constructor(
         val follow = Follow(userToFollow, user)
         followCode.code = codeGenerator.generate(Constants.FOLLOW_CODE_LENGTH)
         followCode.creationDate = Date()
-        followRepository.save(follow)
+        try {
+            followRepository.save(follow)
+        }
+        catch (e: ConstraintViolationException) {
+            return null
+        }
 
         return userDetailsServiceImpl.getAsDto(userToFollow)
     }
