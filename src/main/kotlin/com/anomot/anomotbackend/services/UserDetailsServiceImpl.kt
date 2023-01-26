@@ -299,7 +299,8 @@ class UserDetailsServiceImpl: UserDetailsService {
         //TODO("implement when other systems are done")
     }
 
-    fun sendVerificationEmail(user: User) {
+    fun sendVerificationEmail(user: User): Boolean {
+        if (user.isEmailVerified) return false
         val code = emailVerificationService.generateVerificationCode()
         val expiryDate = emailVerificationService.generateExpiryDate(
                 Constants.EMAIL_VERIFICATION_TOKEN_LIFETIME,
@@ -307,6 +308,8 @@ class UserDetailsServiceImpl: UserDetailsService {
         val token = emailVerificationService.createEmailVerificationToken(code, user, expiryDate)
         val savedToken = emailVerificationService.saveEmailVerificationToken(token)
         emailVerificationService.sendVerificationEmail(user, savedToken)
+
+        return true
     }
 
     fun getUserReferenceFromDetails(details: CustomUserDetails): User {

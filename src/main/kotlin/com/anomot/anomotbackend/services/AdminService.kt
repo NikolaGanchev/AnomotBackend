@@ -6,6 +6,7 @@ import com.anomot.anomotbackend.repositories.*
 import com.anomot.anomotbackend.utils.AppealAction
 import com.anomot.anomotbackend.utils.AppealReason
 import com.anomot.anomotbackend.utils.MediaType
+import com.anomot.anomotbackend.utils.ReportType
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
@@ -25,28 +26,36 @@ class AdminService @Autowired constructor(
         private val userDetailsServiceImpl: UserDetailsServiceImpl,
         private val appealDecisionRepository: AppealDecisionRepository,
         private val userDeletionService: UserDeletionService,
-        private val battleRepository: BattleRepository
+        private val battleRepository: BattleRepository,
+        private val postRepository: PostRepository,
+        private val commentRepository: CommentRepository,
+        private val userRepository: UserRepository
 ) {
     @Secured("ROLE_ADMIN")
     fun getReports(page: Int): List<ReportTicketDto> {
-        return reportTicketRepository.getAll(PageRequest.of(page, 10, Sort.by("creationDate").descending())).map {
+        return reportTicketRepository.getAll(PageRequest.of(page, 10, Sort.by("creation_date").descending())).map {
             getAsReportTicketDto(it)
         }
     }
 
     private fun getAsReportTicketDto(it: ReportTicketIntermediary): ReportTicketDto {
-        return ReportTicketDto(it.reportType,
-                if (it.post != null) asPostDto(it.post, it.postLikes.toLong()) else null,
-                if (it.battle != null) AdminBattleDto(
-                        if (it.battle.goldPost != null) asPostDto(it.battle.goldPost!!, null) else null,
-                        if (it.battle.redPost != null) asPostDto(it.battle.redPost!!, null) else null,
+        val post = if (it.post != null) postRepository.getReferenceById(it.post!!) else null
+        val battle = if (it.battle != null) battleRepository.getReferenceById(it.battle!!) else null
+        val comment = if (it.comment != null) commentRepository.getReferenceById(it.comment!!) else null
+        val user = if (it.user != null) userRepository.getReferenceById(it.user!!) else null
+
+        return ReportTicketDto(ReportType.values().first {i -> i.ordinal == it.reportType},
+                if (post != null) asPostDto(post, it.postLikes) else null,
+                if (battle != null) AdminBattleDto(
+                        if (battle.goldPost != null) asPostDto(battle.goldPost!!, null) else null,
+                        if (battle.redPost != null) asPostDto(battle.redPost!!, null) else null,
                         it.goldVotes,
                         it.redVotes,
-                        it.battle.finished,
-                        it.battle.finishDate!!
+                        battle.finished,
+                        battle.finishDate!!
                 ) else null,
-                if (it.comment != null) getAsCommentDto(it.comment, it.commentLikes.toLong(), it.commentResponseCount.toInt()) else null,
-                if (it.user != null) userDetailsServiceImpl.getAsDto(it.user) else null,
+                if (comment != null) getAsCommentDto(comment, it.commentLikes, it.commentResponseCount.toInt()) else null,
+                if (user != null) userDetailsServiceImpl.getAsDto(user) else null,
                 it.isDecided,
                 it.decisions.toInt(),
                 it.creationDate,

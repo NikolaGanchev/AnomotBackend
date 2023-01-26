@@ -87,7 +87,7 @@ class BattleController @Autowired constructor(
                 0,
                 0,
                 false,
-                battle.finishDate!!), HttpStatus.CREATED)
+                battle.finishDate!!, battle.id.toString()), HttpStatus.CREATED)
     }
 
     // returns either a battle dto if battle is successfully found, list of posts too similar if available or null
@@ -160,7 +160,7 @@ class BattleController @Autowired constructor(
                 0,
                 0,
                 false,
-                battle.finishDate!!), HttpStatus.CREATED)
+                battle.finishDate!!, battle.id.toString()), HttpStatus.CREATED)
     }
 
     @GetMapping("/battle")
@@ -197,7 +197,7 @@ class BattleController @Autowired constructor(
 
         val result = battleService.report(battleReportDto, user)
 
-        return ResponseEntity(if (result) HttpStatus.OK else HttpStatus.NOT_FOUND)
+        return ResponseEntity(if (result) HttpStatus.OK else HttpStatus.BAD_REQUEST)
     }
 
     @GetMapping("/battle/report")

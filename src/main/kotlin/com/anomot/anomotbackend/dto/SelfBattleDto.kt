@@ -8,5 +8,6 @@ data class SelfBattleDto(
         val selfVotes: Long,
         val otherVotes: Long,
         val isFinished: Boolean = false,
-        val until: Date
+        val until: Date,
+        val id: String
 )

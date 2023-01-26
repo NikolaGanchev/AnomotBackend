@@ -81,9 +81,8 @@ class UserDeletionService @Autowired constructor(
         battleQueueRepository.deleteByUser(user)
         postRepository.deleteByUser(user)
         nsfwScanRepository.deleteByUser(user)
-        appealDecisionRepository.setNullByUser(user)
-        appealDecisionRepository.deleteByUser(user)
         appealRepository.deleteByUser(user)
+        appealDecisionRepository.setNullByUser(user)
         mediaService.deleteMediaByUserWithoutNsfwScans(user)
         mediaService.deleteFilesByUser(user)
 

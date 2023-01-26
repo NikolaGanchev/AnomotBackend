@@ -123,7 +123,8 @@ class BattleService @Autowired constructor(
                      battle.redPost!!.text,
                      if (battle.redPost!!.media != null) MediaDto(battle.redPost!!.media!!.mediaType, battle.redPost!!.media!!.name.toString()) else null,
                     battle.redPost!!.id.toString(), null),
-                    voteService.genVoteJwt(user, battle)
+                    voteService.genVoteJwt(user, battle),
+                battle.id.toString()
         )
     }
 
@@ -175,7 +176,8 @@ class BattleService @Autowired constructor(
                 battleIntermediate.votesForSelf,
                 battleIntermediate.votesForOther,
                 battle.finished,
-                battle.finishDate!!)
+                battle.finishDate!!,
+                battle.id.toString())
     }
 
 

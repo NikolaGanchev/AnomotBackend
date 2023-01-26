@@ -8,7 +8,6 @@ import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 
 interface ReportRepository: JpaRepository<Report, Long> {
-    fun getByReporterAndReportTicketAndReportReason(reporter: User, reportTicket: ReportTicket, reason: ReportReason): Report?
 
     fun getAllByReportTicket(reportTicket: ReportTicket, pageable: Pageable): List<Report>
 

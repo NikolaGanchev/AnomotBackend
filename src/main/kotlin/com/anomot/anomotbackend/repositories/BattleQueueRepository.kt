@@ -28,7 +28,7 @@ interface BattleQueueRepository: JpaRepository<BattleQueuePost, Long> {
     fun findSimilarByElo(@Param("post") post: BattleQueuePost, pageable: Pageable =
         PageRequest.of(0, 1)): List<BattleQueuePost>
 
-    @Query("delete from BattleQueuePost p where p.post.id = ?1 and p.post.poster.id = ?2")
+    @Query("delete from BattleQueuePost p where p.post.id = ?1 and p.post.id in (select p1.id from Post p1 where p1.poster.id = ?2)")
     @Modifying
     fun deletePostByIdAndUser(postId: Long, userId: Long): Int
 

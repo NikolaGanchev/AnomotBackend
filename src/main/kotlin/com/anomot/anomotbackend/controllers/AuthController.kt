@@ -57,9 +57,9 @@ class AuthController(private val userDetailsService: UserDetailsServiceImpl,
 
     @PostMapping("/email/verification/new")
     fun requestEmailVerification(authentication: Authentication): ResponseEntity<String> {
-        userDetailsService.sendVerificationEmail(
+        val result = userDetailsService.sendVerificationEmail(
                 userDetailsService.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails))
-        return ResponseEntity(HttpStatus.CREATED)
+        return ResponseEntity(if (result) HttpStatus.CREATED else HttpStatus.BAD_REQUEST)
     }
 
     @PutMapping("/password")

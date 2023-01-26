@@ -10,7 +10,7 @@ import org.springframework.data.jpa.repository.Query
 
 interface ReportDecisionRepository: JpaRepository<ReportDecision, Long> {
 
-    @Query("select r from report_decision r where r.report_ticket_id = ?1 order by r.creation_date desc limit 1", nativeQuery = true)
+    @Query("select * from report_decision r where r.report_ticket_id = ?1 order by r.creation_date desc limit 1", nativeQuery = true)
     fun getLatest(reportTicketId: Long): ReportDecision?
 
     fun getAllByReportTicket(reportTicket: ReportTicket, pageable: Pageable): List<ReportDecision>

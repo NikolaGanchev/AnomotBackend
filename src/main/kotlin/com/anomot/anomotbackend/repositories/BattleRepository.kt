@@ -50,7 +50,10 @@ interface BattleRepository: JpaRepository<Battle, Long> {
     @Query("from Battle b where b.id = ?1 and b.finished = false")
     fun getByIdAndFinishedFalse(id: Long): Battle?
 
-    @Query("select distinct p from Post p, Battle b, BattleQueuePost bp where (b.redPost = p or b.goldPost = p or bp.post = p) " +
+    @Query("select distinct p from Post p where " +
+            "(p.id in (select b.goldPost.id from Battle b where b.goldPost = p) or " +
+            "p.id in (select b.redPost.id from Battle b where b.redPost = p) or " +
+            "p.id in (select bp.post.id from BattleQueuePost bp where bp.post = p)) " +
             "and p.poster = :user and " +
             // check for same media type
             "p.media.mediaType = :#{#media.mediaType} and " +
@@ -65,8 +68,8 @@ interface BattleRepository: JpaRepository<Battle, Long> {
             "p.id in (select bp.post.id from BattleQueuePost bp where bp.post.poster = ?1 and bp.post.text = ?2)")
     fun getWithSameText(user: User, text: String): List<Post>
 
-    @Query("select case when (count(b) > 0 or count(v) > 0) then true else false end " +
-            "from Battle b, Vote v where (v.battle = ?2 and v.voter = ?1) or (b = ?2 and (b.goldPost.poster = ?1 or b.redPost.poster = ?1))")
+    @Query("select count(b.id) > 0 " +
+            "from Battle b where b = ?2 and ((b.goldPost.poster = ?1 or b.redPost.poster = ?1) or b.id in (select v.battle.id from Vote v where v.battle = ?2 and v.voter = ?1))")
     fun canSeeBattle(user: User, battle: Battle): Boolean
 
     @Query("update Battle b set " +
