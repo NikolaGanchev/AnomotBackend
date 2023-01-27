@@ -11,6 +11,8 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.security.access.annotation.Secured
+import org.springframework.security.authentication.BadCredentialsException
+import org.springframework.security.core.Authentication
 import org.springframework.stereotype.Service
 import java.util.*
 import javax.transaction.Transactional
@@ -30,7 +32,8 @@ class AdminService @Autowired constructor(
         private val postRepository: PostRepository,
         private val commentRepository: CommentRepository,
         private val userRepository: UserRepository,
-        private val banRepository: BanRepository
+        private val banRepository: BanRepository,
+        private val authenticationService: AuthenticationService
 ) {
     @Secured("ROLE_ADMIN")
     fun getReports(page: Int): List<ReportTicketDto> {
@@ -241,7 +244,12 @@ class AdminService @Autowired constructor(
 
     @Secured("ROLE_ADMIN")
     @Transactional
-    fun deleteUser(userToDelete: User) {
+    fun deleteUser(userToDelete: User, admin: Authentication, adminPassword: String) {
+        if (authenticationService.verifyAuthenticationWithoutMfa(admin, adminPassword) == null) {
+            throw BadCredentialsException("Bad credentials")
+        }
+
+        userDetailsServiceImpl.expireUserSessions(userToDelete)
         userDeletionService.deleteUser(userToDelete)
     }
 }

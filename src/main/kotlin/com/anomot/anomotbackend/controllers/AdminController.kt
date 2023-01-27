@@ -7,6 +7,7 @@ import com.anomot.anomotbackend.services.UserDetailsServiceImpl
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.annotation.Secured
+import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
 import javax.validation.Valid
@@ -100,9 +101,13 @@ class AdminController(
 
     @Secured("ROLE_ADMIN")
     @DeleteMapping("/admin/user")
-    fun deleteUser(@RequestParam("id") id: String): ResponseEntity<String> {
+    fun deleteUser(@RequestParam("id") id: String, @RequestBody @Valid deleteDto: AccountDeleteDto, authentication: Authentication): ResponseEntity<String> {
         val user = userDetailsServiceImpl.getUserReferenceFromIdUnsafe(id) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
-        adminService.deleteUser(user)
+        try {
+            adminService.deleteUser(user, authentication, deleteDto.password)
+        } catch (e: BadCredentialsException) {
+            return ResponseEntity(HttpStatus.UNAUTHORIZED)
+        }
         return ResponseEntity(HttpStatus.OK)
     }
 }

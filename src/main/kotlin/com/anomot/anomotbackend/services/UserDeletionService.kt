@@ -39,7 +39,8 @@ class UserDeletionService @Autowired constructor(
         private val reportTicketRepository: ReportTicketRepository,
         private val reportDecisionRepository: ReportDecisionRepository,
         private val appealDecisionRepository: AppealDecisionRepository,
-        private val banRepository: BanRepository
+        private val banRepository: BanRepository,
+        private val userDetailsServiceImpl: UserDetailsServiceImpl
 ) {
 
     @Transactional
@@ -52,6 +53,8 @@ class UserDeletionService @Autowired constructor(
         }
 
         val user = userRepository.getReferenceById((userDetails.principal as CustomUserDetails).id!!)
+
+        userDetailsServiceImpl.expireUserSessions(user)
 
         deleteUser(user)
     }
