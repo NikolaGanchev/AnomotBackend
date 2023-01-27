@@ -3,10 +3,7 @@ package com.anomot.anomotbackend.services
 import com.anomot.anomotbackend.dto.*
 import com.anomot.anomotbackend.entities.*
 import com.anomot.anomotbackend.repositories.*
-import com.anomot.anomotbackend.utils.AppealAction
-import com.anomot.anomotbackend.utils.AppealReason
-import com.anomot.anomotbackend.utils.MediaType
-import com.anomot.anomotbackend.utils.ReportType
+import com.anomot.anomotbackend.utils.*
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
@@ -33,7 +30,9 @@ class AdminService @Autowired constructor(
         private val commentRepository: CommentRepository,
         private val userRepository: UserRepository,
         private val banRepository: BanRepository,
-        private val authenticationService: AuthenticationService
+        private val authenticationService: AuthenticationService,
+        private val battleService: BattleService,
+        private val notificationService: NotificationService
 ) {
     @Secured("ROLE_ADMIN")
     fun getReports(page: Int): List<ReportTicketDto> {
@@ -251,5 +250,47 @@ class AdminService @Autowired constructor(
 
         userDetailsServiceImpl.expireUserSessions(userToDelete)
         userDeletionService.deleteUser(userToDelete)
+    }
+
+    @Secured("ROLE_ADMIN")
+    fun promote(appealId: String): Boolean {
+        val appeal = getAppealReferenceByIdStringUnsafe(appealId) ?: return false
+
+        when(appeal.objective) {
+            AppealObjective.POST -> promoteToPost(appeal)
+            AppealObjective.BATTLE -> promoteToBattle(appeal)
+            AppealObjective.AVATAR -> promoteToAvatar(appeal)
+        }
+
+        notificationService.sendPromotionNotification(appeal.appealedBy, appeal)
+
+        return true
+    }
+
+    @Secured("ROLE_ADMIN")
+    fun promoteToPost(appeal: Appeal): Post {
+        return postRepository.save(Post(appeal.appealedBy, appeal.media, null, PostType.MEDIA))
+    }
+
+    @Secured("ROLE_ADMIN")
+    fun promoteToBattle(appeal: Appeal): Boolean {
+        val result = battleService.queuePostForBattle(promoteToPost(appeal))
+        if (result != null) {
+            notificationService.sendBattleBeginNotification(appeal.appealedBy, result)
+        }
+
+        return true
+    }
+
+    @Secured("ROLE_ADMIN")
+    fun promoteToAvatar(appeal: Appeal): Boolean {
+        userDetailsServiceImpl.changeAvatar(appeal.media)
+        return true
+    }
+
+    private fun getAppealReferenceByIdStringUnsafe(id: String): Appeal? {
+        val idLong = id.toLongOrNull() ?: return null
+        if (!appealRepository.existsById(idLong)) return null
+        return appealRepository.getReferenceById(idLong)
     }
 }

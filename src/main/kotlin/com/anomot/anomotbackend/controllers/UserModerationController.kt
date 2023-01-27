@@ -44,6 +44,18 @@ class UserModerationController(
         return ResponseEntity(userModerationService.getAppeals(user, page), HttpStatus.OK)
     }
 
+    @GetMapping("/appeals")
+    fun getAppeal(@RequestParam("id") id: String, authentication: Authentication): ResponseEntity<AppealDto> {
+        val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
+        val result = userModerationService.getAppeal(user, id)
+
+        return if (result != null) {
+            ResponseEntity(result, HttpStatus.OK)
+        } else {
+            ResponseEntity(HttpStatus.BAD_REQUEST)
+        }
+    }
+
     @GetMapping("/user/report")
     fun getUserReport(@RequestParam("id") userId: String, authentication: Authentication): ResponseEntity<ReportDto> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)

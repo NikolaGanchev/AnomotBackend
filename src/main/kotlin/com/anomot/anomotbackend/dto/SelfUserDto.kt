@@ -6,4 +6,4 @@ data class SelfUserDto(val email: String,
                        val roles: List<String>,
                        val isMfaActive: Boolean,
                        val mfaMethods: List<String>? = null,
-                       val avatarId: String? = null)
+                       var avatarId: String? = null)

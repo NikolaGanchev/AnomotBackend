@@ -149,4 +149,18 @@ class UserModerationService @Autowired constructor(
 
         return true
     }
+
+    fun getAppeal(user: User, id: String): AppealDto? {
+        val appeal = getAppealReferenceByIdStringUnsafe(id) ?: return null
+
+        if (appeal.appealedBy.id != user.id) return null
+
+        return AppealDto(appeal.reason, appeal.objective, appeal.media.name.toString())
+    }
+
+    private fun getAppealReferenceByIdStringUnsafe(id: String): Appeal? {
+        val idLong = id.toLongOrNull() ?: return null
+        if (!appealRepository.existsById(idLong)) return null
+        return appealRepository.getReferenceById(idLong)
+    }
 }

@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.multipart.MultipartFile
 import java.time.Instant
 import javax.validation.Valid
+import javax.validation.constraints.Min
 
 @RestController
 @RequestMapping("/account")
@@ -182,7 +183,10 @@ class AuthController(private val userDetailsService: UserDetailsServiceImpl,
 
     @GetMapping("/user")
     fun getUser(authentication: Authentication): ResponseEntity<SelfUserDto> {
-        val userDto = ((authentication.principal) as CustomUserDetails).getAsSelfDto()
+        val user = ((authentication.principal) as CustomUserDetails)
+        val userDto = user.getAsSelfDto().also {
+            it.avatarId = userDetailsService.getAvatar(user.id!!)?.name.toString()
+        }
 
         return ResponseEntity(userDto, HttpStatus.OK)
     }
@@ -231,7 +235,7 @@ class AuthController(private val userDetailsService: UserDetailsServiceImpl,
     fun uploadProfilePicture(@RequestParam("file") file: MultipartFile,
                              @RequestParam("left") left: Int,
                              @RequestParam("top") top: Int,
-                             @RequestParam("cropSize") cropSize: Int,
+                             @RequestParam("cropSize") @Min(225) cropSize: Int,
                              authentication: Authentication): ResponseEntity<AvatarResultDto> {
         val user = userDetailsService.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
         val result = userDetailsService.changeAvatar(file, left, top, cropSize)

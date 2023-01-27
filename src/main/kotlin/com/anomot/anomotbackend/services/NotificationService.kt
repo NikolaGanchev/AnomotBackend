@@ -42,11 +42,18 @@ class NotificationService @Autowired constructor(
         notificationRepository.save(BattleBeginNotification(user, battle))
     }
 
+    fun sendPromotionNotification(user: User, appeal: Appeal) {
+        // TODO push notifications
+        notificationRepository.save(PromotionNotification(user, appeal))
+    }
+
     fun getNotifications(user: User, page: Int): List<NotificationDto> {
         return notificationRepository.findAllByUser(user, PageRequest.of(page, Constants.NOTIFICATION_PAGE, Sort.by("creationDate").descending())).map {
             val payload: Any = when(it) {
                 is BattleEndNotification -> it.battle.id.toString()
                 is NewLoginNotification -> it.successfulLogin.id.toString()
+                is BattleBeginNotification -> it.battle.id.toString()
+                is PromotionNotification -> it.appeal.id.toString()
                 else -> {}
             }
             NotificationDto(it.type, it.isRead, payload, it.id.toString())

@@ -310,6 +310,18 @@ class UserDetailsServiceImpl: UserDetailsService {
         return AvatarResult(saveResult.media.name.toString(), false)
     }
 
+    @Transactional
+    fun changeAvatar(media: Media): Boolean {
+        val changedRows = userRepository.setAvatar(media, media.publisher.id!!)
+
+        if (changedRows != 1) return false
+
+        //TODO
+        //redisSessionRepository.findByPrincipalName(media.publisher.email).keys.forEach(redisSessionRepository::deleteById)
+
+        return true
+    }
+
     fun requestData(password: String) {
         //TODO("implement when other systems are done")
     }
@@ -363,6 +375,10 @@ class UserDetailsServiceImpl: UserDetailsService {
                 avatarId = user.avatar?.name?.toString(),
                 id = (user.id ?: throw IllegalStateException("Id not available")).toString()
         )
+    }
+
+    fun getAvatar(id: Long): Media? {
+        return userRepository.getReferenceById(id).avatar
     }
 
     private fun userExists(userRegisterDto: UserRegisterDto): Boolean {

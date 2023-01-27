@@ -110,4 +110,12 @@ class AdminController(
         }
         return ResponseEntity(HttpStatus.OK)
     }
+
+    @Secured("ROLE_ADMIN")
+    @PostMapping("/admin/appeal/promote")
+    fun promote(@RequestParam("id") id: String, authentication: Authentication): ResponseEntity<String> {
+        val result = adminService.promote(id)
+
+        return ResponseEntity(if (result) HttpStatus.OK else HttpStatus.BAD_REQUEST)
+    }
 }
