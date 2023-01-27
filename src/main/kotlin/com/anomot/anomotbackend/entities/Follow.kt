@@ -4,7 +4,7 @@ import java.io.Serializable
 import javax.persistence.*
 
 @Table(
-        uniqueConstraints=[UniqueConstraint(columnNames=arrayOf("followed_id", "follower_id"))]
+        uniqueConstraints=[UniqueConstraint(columnNames=arrayOf("followedId", "followerId"))]
 )
 @Entity
 class Follow(

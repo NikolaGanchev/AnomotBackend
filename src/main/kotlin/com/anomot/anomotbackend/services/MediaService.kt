@@ -13,6 +13,7 @@ import org.springframework.core.io.ByteArrayResource
 import org.springframework.core.io.buffer.DataBuffer
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
+import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.http.client.MultipartBodyBuilder
@@ -188,6 +189,24 @@ class MediaService @Autowired constructor(
         return !content.isEmpty
     }
 
+    fun massDeleteMediaFromServer(names: List<String>): Boolean {
+        val content = webClient.method(HttpMethod.DELETE)
+                .uri("$mediaServerUrl/media/mass")
+                .bodyValue(object {
+                    val ids = names
+                })
+                .exchangeToMono {
+                    if (it.statusCode() == HttpStatus.OK) {
+                        return@exchangeToMono Mono.just(true)
+                    } else {
+                        return@exchangeToMono Mono.just(false)
+                    }
+                }
+                .blockOptional()
+
+        return !content.isEmpty
+    }
+
     fun uploadFileToServer(file: MultipartFile): FileUploadDto? {
         val builder = MultipartBodyBuilder()
 
@@ -231,6 +250,24 @@ class MediaService @Autowired constructor(
     fun deleteFileFromServer(name: String): Boolean {
         val content = webClient.delete()
                 .uri("$mediaServerUrl/file/$name")
+                .exchangeToMono {
+                    if (it.statusCode() == HttpStatus.OK) {
+                        return@exchangeToMono Mono.just(true)
+                    } else {
+                        return@exchangeToMono Mono.just(false)
+                    }
+                }
+                .blockOptional()
+
+        return !content.isEmpty
+    }
+
+    fun massDeleteFilesFromServer(names: List<String>): Boolean {
+        val content = webClient.method(HttpMethod.DELETE)
+                .uri("$mediaServerUrl/file/mass")
+                .bodyValue(object {
+                    val ids = names
+                })
                 .exchangeToMono {
                     if (it.statusCode() == HttpStatus.OK) {
                         return@exchangeToMono Mono.just(true)
@@ -322,9 +359,9 @@ class MediaService @Autowired constructor(
         var page = 0
         do {
             val result = getMediaByUser(user, page, 20)
-            result.parallelStream().forEach {
-                deleteMediaFromServer(it.name.toString())
-            }
+            massDeleteMediaFromServer(result.map {
+                it.name.toString()
+            })
             page++
         } while (result.isNotEmpty())
 
@@ -335,9 +372,9 @@ class MediaService @Autowired constructor(
         var page = 0
         do {
             val result = getFilesByUser(user, page, 20)
-            result.parallelStream().forEach {
-                deleteMediaFromServer(it.name.toString())
-            }
+            massDeleteFilesFromServer(result.map {
+                it.name.toString()
+            })
             page++
         } while (result.isNotEmpty())
 
