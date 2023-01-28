@@ -31,7 +31,7 @@ interface PostRepository: JpaRepository<Post, Long> {
      */
     @Query("select new com.anomot.anomotbackend.dto.PostWithLikes(p, " +
             "(select count(l) from Like l where l.post = p), " +
-            "(select count(l) > 0 from Like l where l.post = p and l.likedBy = ?1)) " +
+            "(select count(l) > 0 from Like l where l.post = p and l.likedBy = ?2)) " +
             "from Post p " +
             "where p.poster = ?1 and (p.poster = ?2 " +
             // Check if in battle queue
@@ -88,6 +88,6 @@ interface PostRepository: JpaRepository<Post, Long> {
             "from Post p where p.poster = ?1")
     fun getAllByPoster(user: User, page: Pageable): List<PostWithLikeNumber>
 
-    @Query("select count(l) from Like l join Post p where l.post = p and p.poster = ?1")
+    @Query("select count(l) from Like l join Post p where l.post = p")
     fun getLikesByPost(): Long
 }
