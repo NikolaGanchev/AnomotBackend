@@ -1,5 +1,6 @@
 package com.anomot.anomotbackend.repositories
 
+import com.anomot.anomotbackend.dto.AdminReportIntermediate
 import com.anomot.anomotbackend.entities.*
 import com.anomot.anomotbackend.utils.ReportReason
 import org.springframework.data.domain.Pageable
@@ -26,4 +27,9 @@ interface ReportRepository: JpaRepository<Report, Long> {
     @Modifying
     fun deleteByUser(user: User)
     fun getAllByReporterAndReportTicketComment(user: User, comment: Comment): List<Report>
+
+    @Query("select new com.anomot.anomotbackend.dto.AdminReportIntermediate(" +
+            "r.reportReason, r.other, r.reporter, r.reportTicket.id) " +
+            "from Report r where r.reporter = ?1")
+    fun getAllByReporter(user: User, pageable: Pageable): List<AdminReportIntermediate>
 }

@@ -11,6 +11,7 @@ import org.springframework.security.access.annotation.Secured
 import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.core.Authentication
 import org.springframework.stereotype.Service
+import org.springframework.web.bind.annotation.*
 import java.util.*
 import javax.transaction.Transactional
 
@@ -32,7 +33,13 @@ class AdminService @Autowired constructor(
         private val banRepository: BanRepository,
         private val authenticationService: AuthenticationService,
         private val battleService: BattleService,
-        private val notificationService: NotificationService
+        private val notificationService: NotificationService,
+        private val postService: PostService,
+        private val followRepository: FollowRepository,
+        private val voteService: VoteService,
+        private val loginInfoExtractorService: LoginInfoExtractorService,
+        private val commentLikeRepository: CommentLikeRepository,
+        private val likeRepository: LikeRepository
 ) {
     @Secured("ROLE_ADMIN")
     fun getReports(page: Int): List<ReportTicketDto> {
@@ -55,8 +62,8 @@ class AdminService @Autowired constructor(
                         it.goldVotes,
                         it.redVotes,
                         battle.finished,
-                        battle.finishDate!!
-                ) else null,
+                        battle.finishDate!!,
+                battle.id.toString()) else null,
                 if (comment != null) getAsCommentDto(comment, it.commentLikes, it.commentResponseCount.toInt()) else null,
                 if (user != null) userDetailsServiceImpl.getAsDto(user) else null,
                 it.isDecided,
@@ -130,71 +137,21 @@ class AdminService @Autowired constructor(
         val report = getReportTicketReferenceByIdUnsafe(reportTicketId) ?: return null
 
         return reportRepository.getAllByReportTicket(report,  PageRequest.of(page, 10, Sort.by("creationDate").descending())).map {
-            AdminReportDto(it.reportReason, it.other, if (it.reporter != null) userDetailsServiceImpl.getAsDto(it.reporter!!) else null)
+            AdminReportDto(it.reportReason, it.other, if (it.reporter != null) userDetailsServiceImpl.getAsDto(it.reporter!!) else null, it.reportTicket.id.toString())
         }
     }
 
     @Secured("ROLE_ADMIN")
     fun getAppeals(page: Int): List<AdminAppealDto> {
         return appealRepository.getAll(PageRequest.of(page, 10, Sort.by("creationDate").descending())).map {
-            AdminAppealDto(
-                    userDetailsServiceImpl.getAsDto(it.appealedBy),
-                    it.reason,
-                    it.objective,
-                    it.media.name.toString(),
-                    if (it.reason != AppealReason.SIMILAR_FOUND) null else {
-                        battleRepository.getSimilarMedia(it.appealedBy, it.media,
-                                if (it.media.mediaType == MediaType.VIDEO && it.media.duration != null) {
-                                    it.media.duration
-                                } else 0f).map {post ->
-                            PostDto(post.type,
-                                    null,
-                                    MediaDto(post.media!!.mediaType, post.media!!.name.toString()),
-                                    userDetailsServiceImpl.getAsDto(post.poster),
-                                    null,
-                                    null,
-                                    post.creationDate,
-                                    post.id.toString())
-                        }
-                    },
-                    it.decided,
-                    if (it.decision != null && it.decision?.decidedBy != null) userDetailsServiceImpl.getAsDto(it.decision!!.decidedBy!!) else null,
-                    if (it.decision != null) it.decision!!.decision else null,
-                    if (it.decision != null) it.decision!!.explanation else null,
-                    it.creationDate,
-                    it.id.toString())
+            appealToAdminAppealDto(it)
         }
     }
 
     @Secured("ROLE_ADMIN")
     fun getUndecidedAppeals(page: Int): List<AdminAppealDto> {
         return appealRepository.getAllByDecidedIsFalse(PageRequest.of(page, 10, Sort.by("creationDate").descending())).map {
-            AdminAppealDto(
-                    userDetailsServiceImpl.getAsDto(it.appealedBy),
-                    it.reason,
-                    it.objective,
-                    it.media.name.toString(),
-                    if (it.reason != AppealReason.SIMILAR_FOUND) null else {
-                        battleRepository.getSimilarMedia(it.appealedBy, it.media,
-                                if (it.media.mediaType == MediaType.VIDEO && it.media.duration != null) {
-                                    it.media.duration
-                                } else 0f).map {post ->
-                            PostDto(post.type,
-                                    null,
-                                    MediaDto(post.media!!.mediaType, post.media!!.name.toString()),
-                                    userDetailsServiceImpl.getAsDto(post.poster),
-                                    null,
-                                    null,
-                                    post.creationDate,
-                                    post.id.toString())
-                        }
-                    },
-                    it.decided,
-                    if (it.decision != null && it.decision?.decidedBy != null) userDetailsServiceImpl.getAsDto(it.decision!!.decidedBy!!) else null,
-                    if (it.decision != null) it.decision!!.decision else null,
-                    if (it.decision != null) it.decision!!.explanation else null,
-                    it.creationDate,
-                    it.id.toString())
+            appealToAdminAppealDto(it)
         }
     }
 
@@ -292,5 +249,240 @@ class AdminService @Autowired constructor(
         val idLong = id.toLongOrNull() ?: return null
         if (!appealRepository.existsById(idLong)) return null
         return appealRepository.getReferenceById(idLong)
+    }
+
+    fun getReportTicketReferenceByIdStringUnsafe(id: String): ReportTicket? {
+        val idLong = id.toLongOrNull() ?: return null
+        if (!reportTicketRepository.existsById(idLong)) return null
+        return reportTicketRepository.getReferenceById(idLong)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @Transactional
+    fun changeUsername(user: User, usernameChangeDto: UsernameChangeDto): Boolean {
+        userRepository.setUsername(usernameChangeDto.username, user.id!!)
+        userDetailsServiceImpl.expireUserSessions(user)
+        return true
+    }
+
+    @Secured("ROLE_ADMIN")
+    fun changePassword(user: User, passwordChangeDto: AdminPasswordChangeDto): Boolean {
+        userDetailsServiceImpl.changePasswordForce(user, passwordChangeDto.newPassword)
+        userDetailsServiceImpl.expireUserSessions(user)
+        return true
+    }
+
+    @Secured("ROLE_ADMIN")
+    fun deleteAvatar(user: User): Boolean {
+        userDetailsServiceImpl.deleteAvatar(user)
+        userDetailsServiceImpl.expireUserSessions(user)
+        return true
+    }
+
+    @Secured("ROLE_ADMIN")
+    fun deletePost(post: Post): Boolean {
+        return postService.deletePost(post.id!!, post.poster)
+    }
+
+    @Secured("ROLE_ADMIN")
+    fun getUserFollowerCount(user: User): CountDto {
+        return CountDto(followRepository.countFollowsByFollowed(user))
+    }
+
+    @Secured("ROLE_ADMIN")
+    fun getUserFollowedCount(user: User): CountDto {
+        return CountDto(followRepository.countFollowsByFollower(user))
+    }
+
+    @Secured("ROLE_ADMIN")
+    fun getUserFollowers(user: User, page: Int): List<UserDto> {
+        return followRepository.getFollowsByFollowed(user, PageRequest.of(page, Constants.FOLLOWS_PER_PAGE)).map {
+            return@map userDetailsServiceImpl.getAsDto(it.followed)
+        }
+    }
+
+    @Secured("ROLE_ADMIN")
+    fun getUserFollowed(user: User, page: Int): List<UserDto> {
+        return followRepository.getFollowsByFollower(user, PageRequest.of(page, Constants.FOLLOWS_PER_PAGE)).map {
+            return@map userDetailsServiceImpl.getAsDto(it.followed)
+        }
+    }
+
+    @Secured("ROLE_ADMIN")
+    fun getUserPosts(user: User, page: Int): List<PostDto> {
+        return postRepository.getAllByPoster(user, PageRequest.of(page, Constants.POST_PAGE)).map {
+            val post = it.post
+            PostDto(post.type,
+                    post.text,
+                    if (post.media != null) MediaDto(post.media!!.mediaType, post.media!!.name.toString()) else null,
+                    userDetailsServiceImpl.getAsDto(post.poster),
+                    it.likes,
+                    null,
+                    post.creationDate,
+                    post.id.toString())
+        }
+    }
+
+    @Secured("ROLE_ADMIN")
+    fun getPost(post: Post): PostDto {
+        return PostDto(post.type,
+                post.text,
+                if (post.media != null) MediaDto(post.media!!.mediaType, post.media!!.name.toString()) else null,
+                userDetailsServiceImpl.getAsDto(post.poster),
+                postRepository.getLikesByPost(),
+                null,
+                post.creationDate,
+                post.id.toString())
+    }
+
+    @Secured("ROLE_ADMIN")
+    fun getBattleQueue(user: User, page: Int): List<PostDto> {
+        return battleService.getPostsInQueue(user, page)
+    }
+
+    @Secured("ROLE_ADMIN")
+    fun getBattles(user: User, page: Int): List<SelfBattleDto> {
+        return battleService.getBattles(user, page)
+    }
+
+    @Secured("ROLE_ADMIN")
+    fun getBattle(battle: Battle): AdminBattleDto {
+        val intermediate = battleRepository.getBattleById(battle.id!!)
+
+        val goldPost = battle.goldPost
+        val redPost = battle.redPost
+
+        return AdminBattleDto(
+                if (goldPost == null) null else PostDto(goldPost.type,
+                        goldPost.text,
+                        if (goldPost.media != null) MediaDto(goldPost.media!!.mediaType, goldPost.media!!.name.toString()) else null,
+                        userDetailsServiceImpl.getAsDto(goldPost.poster),
+                        null,
+                        null,
+                        goldPost.creationDate,
+                        goldPost.id.toString()),
+                if (redPost == null) null else PostDto(redPost.type,
+                        redPost.text,
+                        if (redPost.media != null) MediaDto(redPost.media!!.mediaType, redPost.media!!.name.toString()) else null,
+                        userDetailsServiceImpl.getAsDto(redPost.poster),
+                        null,
+                        null,
+                        redPost.creationDate,
+                        redPost.id.toString()),
+                intermediate.votesForGold,
+                intermediate.votesForRed,
+                battle.finished,
+                battle.finishDate!!,
+                battle.id.toString())
+    }
+
+    @Secured("ROLE_ADMIN")
+    fun getUserBattle(user: User, battle: Battle): SelfBattleDto? {
+        return battleService.getSelfBattle(user, battle.id!!)
+    }
+
+    @Secured("ROLE_ADMIN")
+    fun getVotes(user: User, page: Int): List<VotedBattleDto> {
+        return voteService.getVoteHistory(user, page)
+    }
+
+    @Secured("ROLE_ADMIN")
+    fun getLogins(user: User, page: Int): List<LoginInfoDto> {
+        return loginInfoExtractorService.getByUser(user, PageRequest.of(page, Constants.LOGINS_PER_PAGE, Sort.by("date").descending()))
+    }
+
+    @Secured("ROLE_ADMIN")
+    fun getNotifications(user: User, page: Int): List<NotificationDto> {
+        return notificationService.getNotifications(user, page)
+    }
+
+    @Secured("ROLE_ADMIN")
+    fun getUserAppeals(user: User, page: Int): List<AdminAppealDto> {
+        return appealRepository.getAllByAppealedBy(user, PageRequest.of(page, 10, Sort.by("creationDate").descending())).map {
+            appealToAdminAppealDto(it)
+        }
+    }
+
+    @Secured("ROLE_ADMIN")
+    fun getUserComments(user: User, page: Int): List<CommentDto> {
+        return commentRepository.getAllByCommenter(user, PageRequest.of(page, Constants.COMMENTS_PAGE, Sort.by("creationDate").descending())).map {
+            getAsCommentDto(it.comment, it.likes, it.responseCount.toInt())
+        }
+    }
+
+    @Secured("ROLE_ADMIN")
+    fun getCommentPost(post: Post, page: Int): List<CommentDto> {
+        return commentRepository.getAllByParentPost(post, PageRequest.of(page, Constants.COMMENTS_PAGE)).map {
+            getAsCommentDto(it.comment, it.likes, it.responseCount.toInt())
+        }
+    }
+
+    @Secured("ROLE_ADMIN")
+    fun getCommentBattle(battle: Battle, page: Int): List<CommentDto> {
+        return commentRepository.getAllByParentBattle(battle, PageRequest.of(page, Constants.COMMENTS_PAGE)).map {
+            getAsCommentDto(it.comment, it.likes, it.responseCount.toInt())
+        }
+    }
+
+    @Secured("ROLE_ADMIN")
+    fun getCommentComment(comment: Comment, page: Int): List<CommentDto> {
+        return commentRepository.getAllByParentComment(comment, PageRequest.of(page, Constants.COMMENTS_PAGE)).map {
+            getAsCommentDto(it.comment, it.likes, it.responseCount.toInt())
+        }
+    }
+
+    @Secured("ROLE_ADMIN")
+    fun getUserReports(user: User, page: Int): List<AdminReportDto> {
+        return reportRepository.getAllByReporter(user, PageRequest.of(page, 10, Sort.by("creationDate").descending())).map {
+            AdminReportDto(it.reportReason, it.other, userDetailsServiceImpl.getAsDto(it.reporter!!), it.ticketId.toString())
+        }
+    }
+
+    @Secured("ROLE_ADMIN")
+    fun getTicketById(reportTicket: ReportTicket): ReportTicketDto {
+        return getAsReportTicketDto(reportTicketRepository.getIntermediaryById(reportTicket.id!!))
+    }
+
+    @Secured("ROLE_ADMIN")
+    fun getLikedByPost(post: Post, page: Int): List<UserDto> {
+        return likeRepository.getLikedByByPost(post, PageRequest.of(page, Constants.LIKED_BY_PAGE)).map {
+            userDetailsServiceImpl.getAsDto(it)
+        }
+    }
+
+    @Secured("ROLE_ADMIN")
+    fun getLikedByComment(comment: Comment, page: Int): List<UserDto> {
+        return commentLikeRepository.getLikedByByComment(comment, PageRequest.of(page, Constants.LIKED_BY_PAGE)).map {
+            userDetailsServiceImpl.getAsDto(it)
+        }
+    }
+
+    fun appealToAdminAppealDto(it: Appeal): AdminAppealDto {
+        return AdminAppealDto(
+                userDetailsServiceImpl.getAsDto(it.appealedBy),
+                it.reason,
+                it.objective,
+                it.media.name.toString(),
+                if (it.reason != AppealReason.SIMILAR_FOUND) null else {
+                    battleRepository.getSimilarMedia(it.appealedBy, it.media,
+                            if (it.media.mediaType == MediaType.VIDEO && it.media.duration != null) {
+                                it.media.duration
+                            } else 0f).map {post ->
+                        PostDto(post.type,
+                                null,
+                                MediaDto(post.media!!.mediaType, post.media!!.name.toString()),
+                                userDetailsServiceImpl.getAsDto(post.poster),
+                                null,
+                                null,
+                                post.creationDate,
+                                post.id.toString())
+                    }
+                },
+                it.decided,
+                if (it.decision != null && it.decision?.decidedBy != null) userDetailsServiceImpl.getAsDto(it.decision!!.decidedBy!!) else null,
+                if (it.decision != null) it.decision!!.decision else null,
+                if (it.decision != null) it.decision!!.explanation else null,
+                it.creationDate,
+                it.id.toString())
     }
 }

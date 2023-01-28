@@ -3,6 +3,7 @@ package com.anomot.anomotbackend.services
 import com.anomot.anomotbackend.AnomotBackendApplication
 import com.anomot.anomotbackend.dto.LoginInfoDto
 import com.anomot.anomotbackend.entities.SuccessfulLogin
+import com.anomot.anomotbackend.entities.User
 import com.anomot.anomotbackend.repositories.SuccessfulLoginRepository
 import com.anomot.anomotbackend.repositories.UserRepository
 import com.anomot.anomotbackend.security.CustomUserDetails
@@ -103,6 +104,10 @@ class LoginInfoExtractorService @Autowired constructor(
         return successfulLoginRepository.findAllByUser(user, pageRequest).map(LoginInfoDto.Companion::from)
     }
 
+    fun getByUser(user: User, pageRequest: PageRequest): List<LoginInfoDto> {
+        return successfulLoginRepository.findAllByUser(user, pageRequest).map(LoginInfoDto.Companion::from)
+    }
+
     fun getByUserAndId(userDetails: CustomUserDetails, id: String): LoginInfoDto? {
         val user = userRepository.getReferenceById(userDetails.id!!)
         val idLong = try {
@@ -114,5 +119,13 @@ class LoginInfoExtractorService @Autowired constructor(
         val result = successfulLoginRepository.findByUserAndId(user, idLong) ?: return null
 
         return LoginInfoDto.from(result)
+    }
+
+    fun getLoginReferenceFromIdUnsafe(id: String): SuccessfulLogin? {
+        val loginId = id.toLongOrNull() ?: return null
+
+        if (!successfulLoginRepository.existsById(loginId)) return null
+
+        return successfulLoginRepository.getReferenceById(loginId)
     }
 }

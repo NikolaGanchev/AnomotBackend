@@ -124,6 +124,13 @@ class UserDetailsServiceImpl: UserDetailsService {
     }
 
     @Transactional
+    fun changePasswordForce(user: User, newPassword: String) {
+        val hashedPassword = passwordEncoder.encode(newPassword)
+
+        userRepository.setPassword(hashedPassword, user.id!!)
+    }
+
+    @Transactional
     fun changeUsername(newUsername: String) {
         val user = SecurityContextHolder.getContext().authentication
                 ?: throw AccessDeniedException("No authentication present")
@@ -316,8 +323,16 @@ class UserDetailsServiceImpl: UserDetailsService {
 
         if (changedRows != 1) return false
 
-        //TODO
-        //redisSessionRepository.findByPrincipalName(media.publisher.email).keys.forEach(redisSessionRepository::deleteById)
+        return true
+    }
+
+    @Transactional
+    fun deleteAvatar(user: User): Boolean {
+        val avatar = user.avatar
+        val changedRows = userRepository.setAvatar(null, user.id!!)
+
+        if (changedRows != 1) return false
+        if (avatar != null) mediaService.deleteMedia(avatar)
 
         return true
     }

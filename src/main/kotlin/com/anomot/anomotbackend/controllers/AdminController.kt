@@ -2,8 +2,7 @@ package com.anomot.anomotbackend.controllers
 
 import com.anomot.anomotbackend.dto.*
 import com.anomot.anomotbackend.security.CustomUserDetails
-import com.anomot.anomotbackend.services.AdminService
-import com.anomot.anomotbackend.services.UserDetailsServiceImpl
+import com.anomot.anomotbackend.services.*
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.annotation.Secured
@@ -17,7 +16,11 @@ import javax.validation.constraints.Min
 @RestController
 class AdminController(
         private val adminService: AdminService,
-        private val userDetailsServiceImpl: UserDetailsServiceImpl
+        private val userDetailsServiceImpl: UserDetailsServiceImpl,
+        private val postService: PostService,
+        private val battleService: BattleService,
+        private val loginInfoExtractorService: LoginInfoExtractorService,
+        private val commentService: CommentService
 ) {
     @Secured("ROLE_ADMIN")
     @GetMapping("/admin/tickets")
@@ -75,7 +78,7 @@ class AdminController(
         return ResponseEntity(if (result) HttpStatus.OK else HttpStatus.BAD_REQUEST)
     }
 
-    // The media needs to not be inside a post or battle
+    // The media has to not be inside a post or battle
     @Secured("ROLE_ADMIN")
     @DeleteMapping("/admin/media/{id}")
     fun deleteMedia(@PathVariable(value="id") @Min(36) @Max(36) id: String, authentication: Authentication): ResponseEntity<String> {
@@ -117,5 +120,234 @@ class AdminController(
         val result = adminService.promote(id)
 
         return ResponseEntity(if (result) HttpStatus.OK else HttpStatus.BAD_REQUEST)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @PostMapping("/admin/user/username")
+    fun changeUsername(@RequestParam("id") id: String, @RequestBody @Valid usernameChangeDto: UsernameChangeDto, authentication: Authentication): ResponseEntity<String> {
+        val user = userDetailsServiceImpl.getUserReferenceFromIdUnsafe(id) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+        val result = adminService.changeUsername(user, usernameChangeDto)
+
+        return ResponseEntity(if (result) HttpStatus.OK else HttpStatus.BAD_REQUEST)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @PostMapping("/admin/user/password")
+    fun changePassword(@RequestParam("id") id: String, @RequestBody @Valid passwordChangeDto: AdminPasswordChangeDto, authentication: Authentication): ResponseEntity<String> {
+        val user = userDetailsServiceImpl.getUserReferenceFromIdUnsafe(id) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+        val result = adminService.changePassword(user, passwordChangeDto)
+
+        return ResponseEntity(if (result) HttpStatus.OK else HttpStatus.BAD_REQUEST)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @DeleteMapping("/admin/user/avatar")
+    fun deleteAvatar(@RequestParam("id") id: String, authentication: Authentication): ResponseEntity<String> {
+        val user = userDetailsServiceImpl.getUserReferenceFromIdUnsafe(id) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+        val result = adminService.deleteAvatar(user)
+
+        return ResponseEntity(if (result) HttpStatus.OK else HttpStatus.BAD_REQUEST)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @DeleteMapping("/admin/post")
+    fun deletePost(@RequestParam("id") id: String, authentication: Authentication): ResponseEntity<String> {
+        val post = postService.getPostReferenceFromIdUnsafe(id) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+        val result = adminService.deletePost(post)
+
+        return ResponseEntity(if (result) HttpStatus.OK else HttpStatus.BAD_REQUEST)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @GetMapping("/admin/user")
+    fun getUser(@RequestParam("id") id: String, authentication: Authentication): ResponseEntity<UserDto> {
+        val user = userDetailsServiceImpl.getUserReferenceFromIdUnsafe(id) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+
+        return ResponseEntity(userDetailsServiceImpl.getAsDto(user), HttpStatus.OK)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @GetMapping("/admin/user/followers/count")
+    fun getUserFollowerCount(@RequestParam("id") id: String, authentication: Authentication): ResponseEntity<CountDto> {
+        val user = userDetailsServiceImpl.getUserReferenceFromIdUnsafe(id) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+
+        return ResponseEntity(adminService.getUserFollowerCount(user), HttpStatus.OK)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @GetMapping("/admin/user/followed/count")
+    fun getUserFollowedCount(@RequestParam("id") id: String, authentication: Authentication): ResponseEntity<CountDto> {
+        val user = userDetailsServiceImpl.getUserReferenceFromIdUnsafe(id) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+
+        return ResponseEntity(adminService.getUserFollowedCount(user), HttpStatus.OK)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @GetMapping("/admin/user/followers")
+    fun getUserFollowers(@RequestParam("id") id: String, @RequestParam("page") page: Int, authentication: Authentication): ResponseEntity<List<UserDto>> {
+        val user = userDetailsServiceImpl.getUserReferenceFromIdUnsafe(id) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+
+        return ResponseEntity(adminService.getUserFollowers(user, page), HttpStatus.OK)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @GetMapping("/admin/user/followed")
+    fun getUserFollowed(@RequestParam("id") id: String, @RequestParam("page") page: Int, authentication: Authentication): ResponseEntity<List<UserDto>> {
+        val user = userDetailsServiceImpl.getUserReferenceFromIdUnsafe(id) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+
+        return ResponseEntity(adminService.getUserFollowed(user, page), HttpStatus.OK)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @GetMapping("/admin/posts")
+    fun getUserPosts(@RequestParam("id") id: String, @RequestParam("page") page: Int, authentication: Authentication): ResponseEntity<List<PostDto>> {
+        val user = userDetailsServiceImpl.getUserReferenceFromIdUnsafe(id) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+
+        return ResponseEntity(adminService.getUserPosts(user, page), HttpStatus.OK)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @GetMapping("/admin/post")
+    fun getPost(@RequestParam("id") id: String, authentication: Authentication): ResponseEntity<PostDto> {
+        val post = postService.getPostReferenceFromIdUnsafe(id) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+
+        return ResponseEntity(adminService.getPost(post), HttpStatus.OK)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @GetMapping("/admin/battle/queue")
+    fun getBattleQueue(@RequestParam("id") id: String, @RequestParam("page") page: Int, authentication: Authentication): ResponseEntity<List<PostDto>> {
+        val user = userDetailsServiceImpl.getUserReferenceFromIdUnsafe(id) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+
+        return ResponseEntity(adminService.getBattleQueue(user, page), HttpStatus.OK)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @GetMapping("/admin/battles")
+    fun getBattles(@RequestParam("id") id: String, @RequestParam("page") page: Int, authentication: Authentication): ResponseEntity<List<SelfBattleDto>> {
+        val user = userDetailsServiceImpl.getUserReferenceFromIdUnsafe(id) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+
+        return ResponseEntity(adminService.getBattles(user, page), HttpStatus.OK)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @GetMapping("/admin/battle")
+    fun getBattle(@RequestParam("id") id: String, authentication: Authentication): ResponseEntity<AdminBattleDto> {
+        val battle = battleService.getBattleReferenceFromIdUnsafe(id) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+
+        return ResponseEntity(adminService.getBattle(battle), HttpStatus.OK)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @GetMapping("/admin/user/battle")
+    fun getUserBattle(@RequestParam("userId") userId: String, @RequestParam("battleId") battleId: String, authentication: Authentication): ResponseEntity<SelfBattleDto> {
+        val user = userDetailsServiceImpl.getUserReferenceFromIdUnsafe(userId) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+        val battle = battleService.getBattleReferenceFromIdUnsafe(battleId) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+
+        return ResponseEntity(adminService.getUserBattle(user, battle), HttpStatus.OK)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @GetMapping("/admin/user/votes")
+    fun getVotes(@RequestParam("id") id: String, @RequestParam("page") page: Int, authentication: Authentication): ResponseEntity<List<VotedBattleDto>> {
+        val user = userDetailsServiceImpl.getUserReferenceFromIdUnsafe(id) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+
+        return ResponseEntity(adminService.getVotes(user, page), HttpStatus.OK)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @GetMapping("/admin/user/logins")
+    fun getLogins(@RequestParam("id") id: String, @RequestParam("page") page: Int, authentication: Authentication): ResponseEntity<List<LoginInfoDto>> {
+        val user = userDetailsServiceImpl.getUserReferenceFromIdUnsafe(id) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+
+        return ResponseEntity(adminService.getLogins(user, page), HttpStatus.OK)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @GetMapping("/admin/user/login")
+    fun getLogin(@RequestParam("id") id: String, authentication: Authentication): ResponseEntity<LoginInfoDto> {
+        val login = loginInfoExtractorService.getLoginReferenceFromIdUnsafe(id) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+
+        return ResponseEntity(LoginInfoDto.from(login), HttpStatus.OK)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @GetMapping("/admin/users/notifications")
+    fun getNotifications(@RequestParam("id") id: String, @RequestParam("page") page: Int, authentication: Authentication): ResponseEntity<List<NotificationDto>> {
+        val user = userDetailsServiceImpl.getUserReferenceFromIdUnsafe(id) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+
+        return ResponseEntity(adminService.getNotifications(user, page), HttpStatus.OK)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @GetMapping("/admin/users/appeals")
+    fun getUserAppeals(@RequestParam("id") id: String, @RequestParam("page") page: Int, authentication: Authentication): ResponseEntity<List<AdminAppealDto>> {
+        val user = userDetailsServiceImpl.getUserReferenceFromIdUnsafe(id) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+
+        return ResponseEntity(adminService.getUserAppeals(user, page), HttpStatus.OK)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @GetMapping("/admin/users/comments")
+    fun getUserComments(@RequestParam("id") id: String, @RequestParam("page") page: Int, authentication: Authentication): ResponseEntity<List<CommentDto>> {
+        val user = userDetailsServiceImpl.getUserReferenceFromIdUnsafe(id) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+
+        return ResponseEntity(adminService.getUserComments(user, page), HttpStatus.OK)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @GetMapping("admin/post/comment")
+    fun getCommentPost(@RequestParam("id") postId: String, @RequestParam("page") page: Int, authentication: Authentication): ResponseEntity<List<CommentDto>> {
+        val post = postService.getPostReferenceFromIdUnsafe(postId) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+
+        return ResponseEntity(adminService.getCommentPost(post, page), HttpStatus.OK)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @GetMapping("admin/battle/comment")
+    fun getCommentBattle(@RequestParam("id") battleId: String, @RequestParam("page") page: Int, authentication: Authentication): ResponseEntity<List<CommentDto>> {
+        val battle = battleService.getBattleReferenceFromIdUnsafe(battleId) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+
+        return ResponseEntity(adminService.getCommentBattle(battle, page), HttpStatus.OK)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @GetMapping("admin/comment/comment")
+    fun getCommentComment(@RequestParam("id") commentId: String, @RequestParam("page") page: Int, authentication: Authentication): ResponseEntity<List<CommentDto>> {
+        val comment = commentService.getCommentReferenceFromIdUnsafe(commentId) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+
+        return ResponseEntity(adminService.getCommentComment(comment, page), HttpStatus.OK)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @GetMapping("admin/user/reports")
+    fun getUserReports(@RequestParam("id") id: String, @RequestParam("page") page: Int, authentication: Authentication): ResponseEntity<List<AdminReportDto>> {
+        val user = userDetailsServiceImpl.getUserReferenceFromIdUnsafe(id) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+
+        return ResponseEntity(adminService.getUserReports(user, page), HttpStatus.OK)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @GetMapping("admin/report/ticket")
+    fun getTicketById(@RequestParam("id") id: String, authentication: Authentication): ResponseEntity<ReportTicketDto> {
+        val reportTicket = adminService.getReportTicketReferenceByIdStringUnsafe(id) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+
+        return ResponseEntity(adminService.getTicketById(reportTicket), HttpStatus.OK)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @GetMapping("/admin/post/likes")
+    fun getPostLikes(@RequestParam("page") page: Int, @RequestParam("id") postId: String, authentication: Authentication): ResponseEntity<List<UserDto>> {
+        val post = postService.getPostReferenceFromIdUnsafe(postId) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+
+        return ResponseEntity(adminService.getLikedByPost(post, page), HttpStatus.OK)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @GetMapping("/admin/comment/likes")
+    fun getCommentLikes(@RequestParam("page") page: Int, @RequestParam("id") commentId: String, authentication: Authentication): ResponseEntity<List<UserDto>> {
+        val comment = commentService.getCommentReferenceFromIdUnsafe(commentId) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+
+        return ResponseEntity(adminService.getLikedByComment(comment, page), HttpStatus.OK)
     }
 }

@@ -1,5 +1,7 @@
 package com.anomot.anomotbackend.repositories
 
+import com.anomot.anomotbackend.dto.AdminCommentIntermediate
+import com.anomot.anomotbackend.dto.CommentDto
 import com.anomot.anomotbackend.dto.CommentIntermediate
 import com.anomot.anomotbackend.entities.Battle
 import com.anomot.anomotbackend.entities.Comment
@@ -43,6 +45,30 @@ interface CommentRepository: JpaRepository<Comment, Long> {
             "order by count(cl) desc, c.creationDate desc")
     fun getAllByParentComment(comment: Comment, user: User, pageable: Pageable): List<CommentIntermediate>
 
+    @Query("select new com.anomot.anomotbackend.dto.AdminCommentIntermediate(c," +
+            "(select count(c1) from Comment c1 where c1.parentComment = c), " +
+            "(select count(l) from CommentLike l where l.comment = c)) " +
+            "from CommentLike cl right join cl.comment c where c.parentPost = ?1 " +
+            "group by c.id " +
+            "order by count(cl) desc, c.creationDate desc")
+    fun getAllByParentPost(post: Post, pageable: Pageable): List<AdminCommentIntermediate>
+
+    @Query("select new com.anomot.anomotbackend.dto.AdminCommentIntermediate(c," +
+            "(select count(c1) from Comment c1 where c1.parentComment = c), " +
+            "(select count(l) from CommentLike l where l.comment = c)) " +
+            "from CommentLike cl right join cl.comment c where c.parentBattle = ?1 " +
+            "group by c.id " +
+            "order by count(cl) desc, c.creationDate desc")
+    fun getAllByParentBattle(battle: Battle, pageable: Pageable): List<AdminCommentIntermediate>
+
+    @Query("select new com.anomot.anomotbackend.dto.AdminCommentIntermediate(c, " +
+            "cast (0 as long)," +
+            "(select count(l) from CommentLike l where l.comment = c)) " +
+            "from CommentLike cl right join cl.comment c where c.parentComment = ?1 " +
+            "group by c.id " +
+            "order by count(cl) desc, c.creationDate desc")
+    fun getAllByParentComment(comment: Comment, pageable: Pageable): List<AdminCommentIntermediate>
+
     fun existsByParentComment(comment: Comment): Boolean
 
     @Query("update Comment c set c.text = '', c.commenter = null, c.isDeleted = true, c.isEdited = false " +
@@ -61,4 +87,10 @@ interface CommentRepository: JpaRepository<Comment, Long> {
     @Query("delete from Comment c where c.commenter = ?1 " +
             "or c.parentPost.id in (select p.id from Post p where p.poster = ?1)")
     fun deleteByUser(user: User)
+
+    @Query("select new com.anomot.anomotbackend.dto.AdminCommentIntermediate(c, " +
+            "(select count(c1) from Comment c1 where c1.parentComment = c)," +
+            "(select count(l) from CommentLike l where l.comment = c)) " +
+            "from Comment c where c.commenter = ?1 ")
+    fun getAllByCommenter(user: User, pageable: Pageable): List<AdminCommentIntermediate>
 }

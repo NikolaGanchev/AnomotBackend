@@ -44,7 +44,7 @@ class UserModerationController(
         return ResponseEntity(userModerationService.getAppeals(user, page), HttpStatus.OK)
     }
 
-    @GetMapping("/appeals")
+    @GetMapping("/appeal")
     fun getAppeal(@RequestParam("id") id: String, authentication: Authentication): ResponseEntity<AppealDto> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
         val result = userModerationService.getAppeal(user, id)

@@ -1,5 +1,6 @@
 package com.anomot.anomotbackend.repositories
 
+import com.anomot.anomotbackend.dto.AdminBattleIntermediate
 import com.anomot.anomotbackend.dto.BattleIntermediate
 import com.anomot.anomotbackend.entities.Battle
 import com.anomot.anomotbackend.entities.Media
@@ -33,6 +34,12 @@ interface BattleRepository: JpaRepository<Battle, Long> {
             "(select count (v2) from Vote v2 where v2.battle = b and v2.post.poster <> ?1))" +
             "from Battle b where b.id = ?2 and (b.goldPost.poster = ?1 or b.redPost.poster = ?1)")
     fun getBattleByUser(user: User, id: Long): BattleIntermediate?
+
+    @Query("select new com.anomot.anomotbackend.dto.AdminBattleIntermediate(b, " +
+            "(select count (v1) from Vote v1 where v1.battle = b and v1.post = b.goldPost)," +
+            "(select count (v2) from Vote v2 where v2.battle = b and v2.post = b.redPost))" +
+            "from Battle b where b.id = ?1")
+    fun getBattleById(id: Long): AdminBattleIntermediate
 
     @Query("select * from battle where " +
             // Ignore if you are the poster

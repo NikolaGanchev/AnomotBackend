@@ -8,5 +8,6 @@ data class AdminBattleDto(
         val goldVotes: Long,
         val redVotes: Long,
         val isFinished: Boolean = false,
-        val until: Date
+        val until: Date,
+        val id: String
 )

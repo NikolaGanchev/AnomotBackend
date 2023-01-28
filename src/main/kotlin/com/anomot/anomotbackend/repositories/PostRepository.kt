@@ -1,5 +1,6 @@
 package com.anomot.anomotbackend.repositories
 
+import com.anomot.anomotbackend.dto.PostWithLikeNumber
 import com.anomot.anomotbackend.dto.PostWithLikes
 import com.anomot.anomotbackend.entities.Post
 import com.anomot.anomotbackend.entities.User
@@ -81,4 +82,12 @@ interface PostRepository: JpaRepository<Post, Long> {
     @Modifying
     @Query("delete from Post p where p.poster = ?1")
     fun deleteByUser(user: User)
+
+    @Query("select new com.anomot.anomotbackend.dto.PostWithLikeNumber(p, " +
+            "(select count(l) from Like l where l.post = p)) " +
+            "from Post p where p.poster = ?1")
+    fun getAllByPoster(user: User, page: Pageable): List<PostWithLikeNumber>
+
+    @Query("select count(l) from Like l join Post p where l.post = p and p.poster = ?1")
+    fun getLikesByPost(): Long
 }

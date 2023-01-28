@@ -16,6 +16,9 @@ interface CommentLikeRepository: JpaRepository<CommentLike, Long> {
     @Query("select distinct(l.likedBy) from CommentLike l, Follow f where l.comment = ?2 and (l.likedBy = ?1 or (f.followed = l.likedBy and f.follower = ?1))")
     fun getLikedByByUserAndComment(user: User, comment: Comment, pageable: Pageable): List<User>
 
+    @Query("select distinct(l.likedBy) from CommentLike l where l.comment = ?1")
+    fun getLikedByByComment(comment: Comment, pageable: Pageable): List<User>
+
     @Modifying
     @Query("delete from CommentLike l where l.likedBy = ?1")
     fun deleteByUser(user: User)

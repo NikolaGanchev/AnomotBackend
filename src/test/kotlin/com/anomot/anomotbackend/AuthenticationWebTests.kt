@@ -102,7 +102,7 @@ class AuthenticationWebTests @Autowired constructor(
                 "")
 
         every { loginInfoExtractorService.saveLoginAndSendNotification(any(), any()) } returns Unit
-        every { loginInfoExtractorService.getByUser(any(), any()) } returns listOf()
+        every { loginInfoExtractorService.getByUser(any<CustomUserDetails>(), any()) } returns listOf()
     }
 
     @Test
@@ -893,6 +893,8 @@ class AuthenticationWebTests @Autowired constructor(
     @Test
     @WithMockCustomUser
     fun `When get user and authenticated then return 200 and user`() {
+        every { userDetailsServiceImpl.getAvatar(any()) } returns null
+
         mockMvc.perform(get("/account/user")
                 .with(csrf()))
                 .andExpect(status().isOk)
