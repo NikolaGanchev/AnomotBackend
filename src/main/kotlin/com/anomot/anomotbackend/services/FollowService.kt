@@ -45,7 +45,7 @@ class FollowService @Autowired constructor(
 
     fun canSeeOtherUser(user: User, userToSee: User): Boolean {
         if (user.id == userToSee.id) return true
-        return followRepository.canSeeAccount(user, userToSee) or followRepository.existsFollowByFollowerAndFollowed(user, userToSee)
+        return followRepository.canSeeAccount(user, userToSee) || followRepository.existsFollowByFollowerAndFollowed(user, userToSee)
     }
 
     @Transactional

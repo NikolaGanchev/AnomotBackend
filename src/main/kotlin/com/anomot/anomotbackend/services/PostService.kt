@@ -117,7 +117,8 @@ class PostService @Autowired constructor(
     }
 
     fun canSeeUserAndPost(user: User, post: Post): Boolean {
-        return followService.canSeeOtherUser(user, post.poster) && postRepository.canSeePost(user, post.poster)
+        if (user.id == post.poster.id) return true
+        return followService.canSeeOtherUser(user, post.poster) && postRepository.canSeePost(post, post.poster)
     }
 
     // Comes with a 30 elo subtraction if the post was in a battle

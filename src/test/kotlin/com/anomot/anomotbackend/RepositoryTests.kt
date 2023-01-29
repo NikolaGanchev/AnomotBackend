@@ -496,4 +496,217 @@ class RepositoryTests @Autowired constructor(
         assertThat(candidates.size).isEqualTo(1)
         assertThat(candidates[0].post).isEqualTo(post)
     }
+
+    @Test
+    fun `When canSeePost and poster is viewer then return true`() {
+        val authority = Authority(Authorities.USER.roleName)
+        var user = User("example@example.com", "password", "Georgi", mutableListOf(authority))
+
+        user = entityManager.persist(user)
+
+        val post = entityManager.persist(Post(user, null, null, PostType.TEXT))
+
+        assertThat(postRepository.canSeePost(post, user)).isTrue
+    }
+
+    @Test
+    fun `When canSeePost and poster is viewer and post is in queue then return true`() {
+        val authority = Authority(Authorities.USER.roleName)
+        var user = User("example@example.com", "password", "Georgi", mutableListOf(authority))
+
+        user = entityManager.persist(user)
+
+        val post = entityManager.persist(Post(user, null, null, PostType.TEXT))
+        entityManager.persist(BattleQueuePost(post))
+
+        assertThat(postRepository.canSeePost(post, user)).isTrue
+    }
+
+    @Test
+    fun `When canSeePost and poster is viewer and post is in battle then return true`() {
+        val authority = Authority(Authorities.USER.roleName)
+        var user = User("example@example.com", "password", "Georgi", mutableListOf(authority))
+
+        user = entityManager.persist(user)
+
+        val post = entityManager.persist(Post(user, null, null, PostType.TEXT))
+        entityManager.persist(Battle(post, null, PostType.TEXT, 0))
+
+        assertThat(postRepository.canSeePost(post, user)).isTrue
+    }
+
+    @Test
+    fun `When canSeePost and poster is viewer and post is in battle finished then return true`() {
+        val authority = Authority(Authorities.USER.roleName)
+        var user = User("example@example.com", "password", "Georgi", mutableListOf(authority))
+
+        user = entityManager.persist(user)
+
+        val post = entityManager.persist(Post(user, null, null, PostType.TEXT))
+        entityManager.persist(Battle(post, null, PostType.TEXT, 0, finished = true))
+
+        assertThat(postRepository.canSeePost(post, user)).isTrue
+    }
+
+    @Test
+    fun `When canSeePost and post is in battle queue then return false`() {
+        val authority = Authority(Authorities.USER.roleName)
+        var user = User("example@example.com", "password", "Georgi", mutableListOf(authority))
+        var user1 = User("example1@example.com", "password", "Georgi", mutableListOf(authority))
+
+        user = entityManager.persist(user)
+        user1 = entityManager.persist(user1)
+
+        val post = entityManager.persist(Post(user, null, null, PostType.TEXT))
+        entityManager.persist(BattleQueuePost(post))
+
+        assertThat(postRepository.canSeePost(post, user1)).isFalse
+    }
+
+    @Test
+    fun `When canSeePost and post is in battle then return false`() {
+        val authority = Authority(Authorities.USER.roleName)
+        var user = User("example@example.com", "password", "Georgi", mutableListOf(authority))
+        var user1 = User("example1@example.com", "password", "Georgi", mutableListOf(authority))
+
+        user = entityManager.persist(user)
+        user1 = entityManager.persist(user1)
+
+        val post = entityManager.persist(Post(user, null, null, PostType.TEXT))
+        entityManager.persist(Battle(post, null, PostType.TEXT, 0))
+
+        assertThat(postRepository.canSeePost(post, user1)).isFalse
+    }
+
+    @Test
+    fun `When canSeePost and post is in battle finished then return true`() {
+        val authority = Authority(Authorities.USER.roleName)
+        var user = User("example@example.com", "password", "Georgi", mutableListOf(authority))
+        var user1 = User("example1@example.com", "password", "Georgi", mutableListOf(authority))
+
+        user = entityManager.persist(user)
+        user1 = entityManager.persist(user1)
+
+        val post = entityManager.persist(Post(user, null, null, PostType.TEXT))
+        entityManager.persist(Battle(post, null, PostType.TEXT, 0, finished = true))
+
+        assertThat(postRepository.canSeePost(post, user1)).isTrue
+    }
+
+
+    @Test
+    fun `When canSeePost and post is in battle with other then return true`() {
+        val authority = Authority(Authorities.USER.roleName)
+        var user = User("example@example.com", "password", "Georgi", mutableListOf(authority))
+        var user1 = User("example1@example.com", "password", "Georgi", mutableListOf(authority))
+
+        user = entityManager.persist(user)
+        user1 = entityManager.persist(user1)
+
+        val post = entityManager.persist(Post(user, null, null, PostType.TEXT))
+        val post1 = entityManager.persist(Post(user1, null, null, PostType.TEXT))
+        entityManager.persist(Battle(post, post1, PostType.TEXT, 0))
+
+        assertThat(postRepository.canSeePost(post, user1)).isTrue
+    }
+
+    @Test
+    fun `When canSeePost and post is in battle and other has voted for poster then return true`() {
+        val authority = Authority(Authorities.USER.roleName)
+        var user = User("example@example.com", "password", "Georgi", mutableListOf(authority))
+        var user1 = User("example1@example.com", "password", "Georgi", mutableListOf(authority))
+
+        user = entityManager.persist(user)
+        user1 = entityManager.persist(user1)
+
+        val post = entityManager.persist(Post(user, null, null, PostType.TEXT))
+        val battle = entityManager.persist(Battle(post, null, PostType.TEXT, 0))
+        val vote = entityManager.persist(Vote(battle, post, user1))
+
+        assertThat(postRepository.canSeePost(post, user1)).isTrue
+    }
+
+    @Test
+    fun `When canSeePost and post is in battle and other has voted for other then return false`() {
+        val authority = Authority(Authorities.USER.roleName)
+        var user = User("example@example.com", "password", "Georgi", mutableListOf(authority))
+        var user1 = User("example1@example.com", "password", "Georgi", mutableListOf(authority))
+        var user2 = User("example2@example.com", "password", "Georgi", mutableListOf(authority))
+
+        user = entityManager.persist(user)
+        user1 = entityManager.persist(user1)
+        user2 = entityManager.persist(user2)
+
+        val post = entityManager.persist(Post(user, null, null, PostType.TEXT))
+        val post1 = entityManager.persist(Post(user2, null, null, PostType.TEXT))
+        val battle = entityManager.persist(Battle(post, post, PostType.TEXT, 0))
+        val vote = entityManager.persist(Vote(battle, post1, user1))
+
+        assertThat(postRepository.canSeePost(post, user1)).isFalse
+    }
+
+    @Test
+    fun `When canSeeAccount and battle then return true`() {
+        val authority = Authority(Authorities.USER.roleName)
+        var user = User("example@example.com", "password", "Georgi", mutableListOf(authority))
+        var user1 = User("example1@example.com", "password", "Georgi", mutableListOf(authority))
+
+        user = entityManager.persist(user)
+        user1 = entityManager.persist(user1)
+
+        val post = entityManager.persist(Post(user, null, null, PostType.TEXT))
+        val post1 = entityManager.persist(Post(user1, null, null, PostType.TEXT))
+        entityManager.persist(Battle(post, post1, PostType.TEXT, 0))
+
+        assertThat(followRepository.canSeeAccount(user1, user)).isTrue
+    }
+
+    @Test
+    fun `When canSeeAccount and post is in battle and other has voted for poster then return true`() {
+        val authority = Authority(Authorities.USER.roleName)
+        var user = User("example@example.com", "password", "Georgi", mutableListOf(authority))
+        var user1 = User("example1@example.com", "password", "Georgi", mutableListOf(authority))
+
+        user = entityManager.persist(user)
+        user1 = entityManager.persist(user1)
+
+        val post = entityManager.persist(Post(user, null, null, PostType.TEXT))
+        val battle = entityManager.persist(Battle(post, null, PostType.TEXT, 0))
+        val vote = entityManager.persist(Vote(battle, post, user1))
+
+        assertThat(followRepository.canSeeAccount(user1, user)).isTrue
+    }
+
+    @Test
+    fun `When canSeeBattle and in battle then return true`() {
+        val authority = Authority(Authorities.USER.roleName)
+        var user = User("example@example.com", "password", "Georgi", mutableListOf(authority))
+        var user1 = User("example1@example.com", "password", "Georgi", mutableListOf(authority))
+
+        user = entityManager.persist(user)
+        user1 = entityManager.persist(user1)
+
+        val post = entityManager.persist(Post(user, null, null, PostType.TEXT))
+        val post1 = entityManager.persist(Post(user1, null, null, PostType.TEXT))
+        val battle = entityManager.persist(Battle(post, post1, PostType.TEXT, 0))
+
+        assertThat(battleRepository.canSeeBattle(user1, battle)).isTrue
+        assertThat(battleRepository.canSeeBattle(user, battle)).isTrue
+    }
+
+    @Test
+    fun `When canSeeBattle and post is in battle and other has voted for poster then return true`() {
+        val authority = Authority(Authorities.USER.roleName)
+        var user = User("example@example.com", "password", "Georgi", mutableListOf(authority))
+        var user1 = User("example1@example.com", "password", "Georgi", mutableListOf(authority))
+
+        user = entityManager.persist(user)
+        user1 = entityManager.persist(user1)
+
+        val post = entityManager.persist(Post(user, null, null, PostType.TEXT))
+        val battle = entityManager.persist(Battle(post, null, PostType.TEXT, 0))
+        val vote = entityManager.persist(Vote(battle, post, user1))
+
+        assertThat(battleRepository.canSeeBattle(user1, battle)).isTrue
+    }
 }

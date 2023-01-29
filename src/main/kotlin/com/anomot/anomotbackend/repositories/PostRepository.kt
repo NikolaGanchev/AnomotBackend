@@ -35,9 +35,9 @@ interface PostRepository: JpaRepository<Post, Long> {
             "from Post p " +
             "where p.poster = ?1 and (p.poster = ?2 " +
             // Check if in battle queue
-            "or (not exists(from BattleQueuePost bp where bp.post = p) " +
+            "or ((not exists(from BattleQueuePost bp where bp.post = p) " +
             // Check if battle exists
-            "and (not exists(from Battle b where b.goldPost = p or b.redPost = p) " +
+            "and (not exists(from Battle b where b.goldPost = p or b.redPost = p)) " +
             // Check if battle is finished
             "or exists(from Battle b where (b.goldPost = p or b.redPost = p) and b.finished = true)" +
             // Check if there is a vote from the user
@@ -48,18 +48,18 @@ interface PostRepository: JpaRepository<Post, Long> {
 
     @Query("select count(p) > 0 " +
             "from Post p " +
-            "where p.poster = ?1 and (p.poster = ?2 " +
+            "where p = ?1 and (p.poster = ?2 " +
             // Check if in battle queue
-            "or (not exists(from BattleQueuePost bp where bp.post = p) " +
+            "or ((not exists(from BattleQueuePost bp where bp.post = p) " +
             // Check if battle exists
-            "and (not exists(from Battle b where b.goldPost = p or b.redPost = p) " +
+            "and (not exists(from Battle b where b.goldPost = p or b.redPost = p)) " +
             // Check if battle is finished
             "or exists(from Battle b where (b.goldPost = p or b.redPost = p) and b.finished = true)" +
             // Check if there is a vote from the user
             "or exists(from Vote v, Battle b where v.battle = b and v.post = p and v.voter = ?2 and (b.goldPost = p or b.redPost = p))" +
             // Check if the user is in the battle
             "or exists(from Battle b where (b.goldPost = p or b.redPost = p) and (b.goldPost.poster = ?2 or b.redPost.poster = ?2))))) ")
-    fun canSeePost(poster: User, fromUser: User): Boolean
+    fun canSeePost(post: Post, fromUser: User): Boolean
 
     fun deleteByIdAndPoster(id: Long, poster: User): Long
 

@@ -75,8 +75,11 @@ interface BattleRepository: JpaRepository<Battle, Long> {
             "p.id in (select bp.post.id from BattleQueuePost bp where bp.post.poster = ?1 and bp.post.text = ?2)")
     fun getWithSameText(user: User, text: String): List<Post>
 
-    @Query("select count(b.id) > 0 " +
-            "from Battle b where b = ?2 and ((b.goldPost.poster = ?1 or b.redPost.poster = ?1) or b.id in (select v.battle.id from Vote v where v.battle = ?2 and v.voter = ?1))")
+    @Query("select count(b) > 0 " +
+            "from Battle b where b = ?2 and " +
+            "(b.id in (select b1.id from Battle b1 where b1.goldPost.poster = ?1) or " +
+            "b.id in (select b1.id from Battle b1 where b1.redPost.poster = ?1) or " +
+            "b.id in (select v.battle.id from Vote v where v.battle = ?2 and v.voter = ?1))")
     fun canSeeBattle(user: User, battle: Battle): Boolean
 
     @Query("update Battle b set " +
