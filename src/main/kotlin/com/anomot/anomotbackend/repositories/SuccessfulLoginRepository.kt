@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
+import java.util.*
 
 @Repository
 interface SuccessfulLoginRepository: JpaRepository<SuccessfulLogin, Long> {
@@ -17,4 +18,7 @@ interface SuccessfulLoginRepository: JpaRepository<SuccessfulLogin, Long> {
     @Modifying
     @Query("delete from SuccessfulLogin login where login.user = ?1")
     fun deleteByUser(user: User)
+
+    @Query("select count(l) from SuccessfulLogin l where l.date > ?1")
+    fun findByAfterDate(from: Date): Long
 }

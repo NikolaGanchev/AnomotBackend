@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
+import java.util.*
 
 @Repository
 interface BattleQueueRepository: JpaRepository<BattleQueuePost, Long> {
@@ -41,4 +42,7 @@ interface BattleQueueRepository: JpaRepository<BattleQueuePost, Long> {
     @Modifying
     @Query("delete from BattleQueuePost p where p.post.id in (select p.id from Post p where p.poster = ?1)")
     fun deleteByUser(user: User)
+
+    @Query("select count(b) from BattleQueuePost b where b.post.creationDate > ?1")
+    fun findByAfterDate(from: Date): Long
 }

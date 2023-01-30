@@ -11,6 +11,7 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
+import java.util.*
 
 @Repository
 interface BattleRepository: JpaRepository<Battle, Long> {
@@ -103,4 +104,7 @@ interface BattleRepository: JpaRepository<Battle, Long> {
 
     @Query("from Battle b where b.redPost = ?1 or b.goldPost = ?1")
     fun getByRedPostOrGoldPost(post: Post): Battle?
+
+    @Query("select count(b) from Battle b where b.creationDate > ?1")
+    fun findByAfterDate(from: Date): Long
 }

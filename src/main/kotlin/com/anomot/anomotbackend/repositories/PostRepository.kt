@@ -9,6 +9,7 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
+import java.util.*
 
 @Repository
 interface PostRepository: JpaRepository<Post, Long> {
@@ -90,4 +91,7 @@ interface PostRepository: JpaRepository<Post, Long> {
 
     @Query("select count(l) from Like l join Post p where l.post = p")
     fun getLikesByPost(): Long
+
+    @Query("select count(p) from Post p where p.creationDate > ?1")
+    fun findByAfterDate(from: Date): Long
 }

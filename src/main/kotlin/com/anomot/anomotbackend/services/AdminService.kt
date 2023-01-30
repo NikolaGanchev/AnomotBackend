@@ -12,6 +12,8 @@ import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.core.Authentication
 import org.springframework.stereotype.Service
 import org.springframework.web.bind.annotation.*
+import java.time.Instant
+import java.time.temporal.ChronoUnit
 import java.util.*
 import javax.transaction.Transactional
 
@@ -39,7 +41,10 @@ class AdminService @Autowired constructor(
         private val voteService: VoteService,
         private val loginInfoExtractorService: LoginInfoExtractorService,
         private val commentLikeRepository: CommentLikeRepository,
-        private val likeRepository: LikeRepository
+        private val likeRepository: LikeRepository,
+        private val successfulLoginRepository: SuccessfulLoginRepository,
+        private val voteRepository: VoteRepository,
+        private val battleQueueRepository: BattleQueueRepository
 ) {
     @Secured("ROLE_ADMIN")
     fun getReports(page: Int): List<ReportTicketDto> {
@@ -484,5 +489,31 @@ class AdminService @Autowired constructor(
                 if (it.decision != null) it.decision!!.explanation else null,
                 it.creationDate,
                 it.id.toString())
+    }
+
+    @Secured("ROLE_ADMIN")
+    fun getUserCount(): Long {
+        return userRepository.count()
+    }
+
+    @Secured("ROLE_ADMIN")
+    fun getLoginsWithin(days: Int): Long {
+        return successfulLoginRepository.findByAfterDate(Date.from(Instant.now().minus(days.toLong(), ChronoUnit.DAYS)))
+    }
+
+    fun getAverageVotePossibilitiesToActualVotes(days: Int): AverageVotePossibilitiesToActualVotesDto {
+        return voteRepository.getAverageVotePossibilitiesToActualVotes(Date.from(Instant.now().minus(days.toLong(), ChronoUnit.DAYS)))
+    }
+
+    fun getPostsCount(days: Int): Long {
+        return postRepository.findByAfterDate(Date.from(Instant.now().minus(days.toLong(), ChronoUnit.DAYS)))
+    }
+
+    fun getBattleCount(days: Int): Long {
+        return battleRepository.findByAfterDate(Date.from(Instant.now().minus(days.toLong(), ChronoUnit.DAYS)))
+    }
+
+    fun getQueueCount(days: Int): Long {
+        return battleQueueRepository.findByAfterDate(Date.from(Instant.now().minus(days.toLong(), ChronoUnit.DAYS)))
     }
 }

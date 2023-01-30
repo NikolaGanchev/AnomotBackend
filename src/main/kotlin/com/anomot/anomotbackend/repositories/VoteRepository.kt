@@ -1,5 +1,6 @@
 package com.anomot.anomotbackend.repositories
 
+import com.anomot.anomotbackend.dto.AverageVotePossibilitiesToActualVotesDto
 import com.anomot.anomotbackend.dto.VotedBattleIntermediate
 import com.anomot.anomotbackend.entities.Battle
 import com.anomot.anomotbackend.entities.Post
@@ -11,6 +12,7 @@ import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.data.repository.query.Param
 import org.springframework.stereotype.Repository
+import java.util.*
 
 @Repository
 interface VoteRepository: JpaRepository<Vote, Long> {
@@ -56,4 +58,9 @@ interface VoteRepository: JpaRepository<Vote, Long> {
     @Modifying
     @Query("delete from Vote v where v.battle = ?1")
     fun deleteByBattle(battles: Battle)
+
+    @Query("select (select avg(b.total_vote_possibilities) from Battle b where b.creation_date > ?1) as averageVotePossibilities, " +
+            "avg(last_count) as averageActualVotes from " +
+            "(select count(v.id) as last_count from Vote v where v.creation_date > ?1 group by v.battle_id) as vlc", nativeQuery = true)
+    fun getAverageVotePossibilitiesToActualVotes(from: Date): AverageVotePossibilitiesToActualVotesDto
 }

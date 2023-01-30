@@ -350,4 +350,39 @@ class AdminController(
 
         return ResponseEntity(adminService.getLikedByComment(comment, page), HttpStatus.OK)
     }
+
+    @Secured("ROLE_ADMIN")
+    @GetMapping("/admin/statistics/users/count")
+    fun getUserCount(): ResponseEntity<CountDto> {
+        return ResponseEntity(CountDto(adminService.getUserCount()), HttpStatus.OK)
+    }
+    @Secured("ROLE_ADMIN")
+    @GetMapping("/admin/statistics/logins/count")
+    fun getLoginsWithin(@RequestParam("days") days: Int): ResponseEntity<CountDto> {
+        return ResponseEntity(CountDto(adminService.getLoginsWithin(days)), HttpStatus.OK)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @GetMapping("/admin/statistics/vote/possibilities")
+    fun getAverageVotePossibilitiesToActualVotes(@RequestParam("days") days: Int): ResponseEntity<AverageVotePossibilitiesToActualVotesDto> {
+        return ResponseEntity(adminService.getAverageVotePossibilitiesToActualVotes(days), HttpStatus.OK)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @GetMapping("/admin/statistics/post/count")
+    fun getPostsCount(@RequestParam("days") days: Int): ResponseEntity<CountDto> {
+        return ResponseEntity(CountDto(adminService.getPostsCount(days)), HttpStatus.OK)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @GetMapping("/admin/statistics/battle/count")
+    fun getBattleCount(@RequestParam("days") days: Int): ResponseEntity<CountDto> {
+        return ResponseEntity(CountDto(adminService.getBattleCount(days)), HttpStatus.OK)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @GetMapping("/admin/statistics/queue/count")
+    fun getQueue(@RequestParam("days") days: Int): ResponseEntity<CountDto> {
+        return ResponseEntity(CountDto(adminService.getQueueCount(days)), HttpStatus.OK)
+    }
 }
