@@ -11,6 +11,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.context.i18n.LocaleContextHolder
 import org.springframework.scheduling.annotation.Async
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder
 import org.springframework.stereotype.Service
@@ -24,7 +25,10 @@ import java.util.concurrent.CompletableFuture
 class PasswordResetService @Autowired constructor(
         private val passwordEncoder: Argon2PasswordEncoder,
         private val userRepository: UserRepository,
-        private val passwordResetTokenRepository: PasswordResetTokenRepository
+        private val passwordResetTokenRepository: PasswordResetTokenRepository,
+        private val emailService: EmailService,
+        @Value("\${password.reset.url}")
+        private val passwordResetUrl: String
 ) {
 
     private val TIMING_ATTACK_MITIGATION_CODE = "a".repeat(Constants.PASSWORD_RESET_CODE_LENGTH)
@@ -54,14 +58,18 @@ class PasswordResetService @Autowired constructor(
                     "Code: $code \n" +
                     "Identifier: ${passwordResetToken.identifier} \n" +
                     "Expiry date: ${passwordResetToken.expiryDate} \n" +
-                    "Link: http://localhost:3000/bg/login/reset-password?code=$code&id=${passwordResetToken.identifier} \n" +
+                    "Link: ${passwordResetUrl.format(passwordResetToken.resetToken, passwordResetToken.identifier)} \n" +
                     "User email: ${passwordResetToken.user.email}")
         }
-        // TODO("implement when emails are available")
+
+        emailService.sendPasswordResetEmail(passwordResetToken.user.email,
+                passwordResetUrl.format(passwordResetToken.resetToken, passwordResetToken.identifier),
+                LocaleContextHolder.getLocale())
+
     }
 
     fun sendPasswordResetEmail(passwordResetToken: PasswordResetToken) {
-        // TODO("implement when emails are available")
+        emailService.sendPasswordChangeEmail(passwordResetToken.user.email, LocaleContextHolder.getLocale())
     }
 
     // Use async to prevent timing attacks

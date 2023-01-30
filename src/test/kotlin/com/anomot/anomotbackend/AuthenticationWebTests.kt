@@ -456,7 +456,7 @@ class AuthenticationWebTests @Autowired constructor(
                 "password", mutableListOf())
 
         every { authenticationService.verifyAuthenticationWithoutMfa(any<String>(), any()) } returns authentication
-        every { mfaEmailTokenService.generateAndSendMfaEmail(any()) } returns Unit
+        every { mfaEmailTokenService.generateAndSendMfaEmail(any(), any()) } returns Unit
 
 
         mockMvc.perform(post("/account/mfa/email/send")
@@ -492,7 +492,7 @@ class AuthenticationWebTests @Autowired constructor(
                 "password", mutableListOf())
 
         every { authenticationService.verifyAuthenticationWithoutMfa(any<String>(), any()) } returns authentication
-        every { mfaEmailTokenService.generateAndSendMfaEmail(any()) } returns Unit
+        every { mfaEmailTokenService.generateAndSendMfaEmail(any(), any()) } returns Unit
 
         mockMvc.perform(post("/account/mfa/email/send")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -505,7 +505,7 @@ class AuthenticationWebTests @Autowired constructor(
     fun `When request mfa email with incorrect credentials then return 401`() {
         val loginDto = LoginDto("example@example.com", "password12$", null)
 
-        every { mfaEmailTokenService.generateAndSendMfaEmail(any()) } returns Unit
+        every { mfaEmailTokenService.generateAndSendMfaEmail(any(), any()) } returns Unit
         every { authenticationService.verifyAuthenticationWithoutMfa(any<String>(), any()) } returns null
 
         mockMvc.perform(post("/account/mfa/email/send")

@@ -14,9 +14,13 @@ import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Primary
 import org.springframework.context.annotation.Scope
+import org.springframework.context.support.ResourceBundleMessageSource
+import org.springframework.core.io.Resource
 import org.springframework.http.HttpMethod
 import org.springframework.http.client.reactive.ReactorClientHttpConnector
 import org.springframework.http.codec.ClientCodecConfigurer
+import org.springframework.mail.javamail.JavaMailSender
+import org.springframework.mail.javamail.JavaMailSenderImpl
 import org.springframework.security.authentication.LockedException
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
@@ -35,7 +39,13 @@ import org.springframework.web.cors.CorsConfigurationSource
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 import org.springframework.web.reactive.function.client.ExchangeStrategies
 import org.springframework.web.reactive.function.client.WebClient
+import org.thymeleaf.TemplateEngine
+import org.thymeleaf.spring5.SpringTemplateEngine
+import org.thymeleaf.templatemode.TemplateMode
+import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver
+import org.thymeleaf.templateresolver.ITemplateResolver
 import reactor.netty.http.client.HttpClient
+import java.util.*
 import javax.servlet.http.HttpServletResponse.*
 
 
@@ -52,6 +62,18 @@ class WebSecurityConfig {
     private val clientDomain: String? = null
     @Value("\${environment.is-local}")
     private val isLocal: String? = null
+    @Value("\${mail.host}")
+    private val host: String? = null
+    @Value("\${mail.port}")
+    private val port: String? = null
+    @Value("\${mail.protocol}")
+    private val protocol: String? = null
+    @Value("\${mail.username}")
+    private val username: String? = null
+    @Value("\${mail.password}")
+    private val password: String? = null
+    @Value("classpath:mail/mail.properties")
+    private val resourceFile: Resource? = null
 
     @Autowired
     private lateinit var customRememberMeTokenRepository: CustomRememberMeTokenRepository
@@ -211,4 +233,50 @@ class WebSecurityConfig {
                 .clientConnector(ReactorClientHttpConnector(httpClient))
                 .build()
     }
+
+    @Bean
+    fun mailSender(): JavaMailSender {
+        val mailSender = JavaMailSenderImpl()
+
+        mailSender.host = host
+        mailSender.port = port?.toInt() ?: 25
+        mailSender.protocol = protocol
+        mailSender.username = username
+        mailSender.password = password
+
+        val javaMailProperties = Properties()
+        javaMailProperties.load(resourceFile?.inputStream)
+        mailSender.javaMailProperties = javaMailProperties
+        return mailSender
+    }
+
+    @Bean
+    fun emailMessageSource(): ResourceBundleMessageSource {
+        val messageSource = ResourceBundleMessageSource()
+        messageSource.setBasename("mail/messages/messages")
+        messageSource.setDefaultLocale(Locale.ENGLISH)
+        messageSource.setDefaultEncoding("UTF-8")
+        return messageSource
+    }
+
+    @Bean
+    fun emailTemplateEngine(): TemplateEngine {
+        val templateEngine = SpringTemplateEngine()
+        templateEngine.addTemplateResolver(htmlTemplateResolver())
+        templateEngine.setTemplateEngineMessageSource(emailMessageSource())
+        return templateEngine
+    }
+
+    private fun htmlTemplateResolver(): ITemplateResolver {
+        val templateResolver = ClassLoaderTemplateResolver()
+        templateResolver.order = Integer.valueOf(2)
+        templateResolver.resolvablePatterns = Collections.singleton("html/*")
+        templateResolver.prefix = "/mail/"
+        templateResolver.suffix = ".html"
+        templateResolver.templateMode = TemplateMode.HTML
+        templateResolver.characterEncoding = "UTF-8"
+        templateResolver.isCacheable = false
+        return templateResolver
+    }
+
 }

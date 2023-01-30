@@ -12,6 +12,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.context.i18n.LocaleContextHolder
 import org.springframework.stereotype.Service
 import java.lang.Exception
 import java.time.Instant
@@ -21,7 +22,10 @@ import javax.transaction.Transactional
 @Service
 class EmailVerificationService @Autowired constructor(
         private val emailVerificationTokenRepository: EmailVerificationTokenRepository,
-        private val userRepository: UserRepository
+        private val userRepository: UserRepository,
+        private val emailService: EmailService,
+        @Value("\${email.verification.url}")
+        private val emailVerificationUrl: String
 ) {
     private val logger: Logger = LoggerFactory.getLogger(AnomotBackendApplication::class.java)
     @Value("\${environment.is-local}")
@@ -53,10 +57,12 @@ class EmailVerificationService @Autowired constructor(
             logger.info("\nEmail verification token \n" +
                     "Code: ${token.verificationCode} \n" +
                     "Expiry date: ${token.expiryDate} \n" +
-                    "Link: http://localhost:3000/bg/create/verify?code=${token.verificationCode} \n" +
+                    "Link: ${emailVerificationUrl.format(token.verificationCode)} \n" +
                     "User email: ${user.email}")
         }
-        //TODO("implement when emails are available")
+        emailService.sendEmailVerificationEmail(user.email,
+                emailVerificationUrl.format(token.verificationCode),
+                LocaleContextHolder.getLocale())
     }
 
     @Transactional

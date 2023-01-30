@@ -10,11 +10,13 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
+import org.springframework.context.i18n.LocaleContextHolder
 import org.springframework.stereotype.Service
 
 @Service
 class MfaEmailTokenService @Autowired constructor(
-        val mfaEmailCodeRepository: MfaEmailCodeRepository
+        private val mfaEmailCodeRepository: MfaEmailCodeRepository,
+        private val emailService: EmailService
 ) {
 
     private val logger: Logger = LoggerFactory.getLogger(AnomotBackendApplication::class.java)
@@ -35,19 +37,20 @@ class MfaEmailTokenService @Autowired constructor(
         mfaEmailCodeRepository.save(mfaEmailToken)
     }
 
-    fun generateAndSendMfaEmail(userId: String) {
+    fun generateAndSendMfaEmail(userId: String, email: String) {
         val mfaEmailToken = createMfaEmailToken(userId)
         saveEmailToken(mfaEmailToken)
-        sendMfaEmail(mfaEmailToken)
+        sendMfaEmail(mfaEmailToken, email)
     }
 
-    fun sendMfaEmail(mfaEmailToken: MfaEmailToken) {
+    fun sendMfaEmail(mfaEmailToken: MfaEmailToken, email: String) {
         if (isLocal != null && isLocal.toBoolean()) {
         logger.info("\nMulti-factor authentication email token \n" +
                 "Code: ${mfaEmailToken.code} \n" +
                 "User id: ${mfaEmailToken.id}")
         }
-        //TODO("implement when emails are available")
+
+        emailService.sendMfaEmail(email, mfaEmailToken.code, LocaleContextHolder.getLocale())
     }
 
     fun verifyMfaCode(id: Long?, codeToVerify: String): Boolean {
