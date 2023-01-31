@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Modifying
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
+import java.util.*
 
 @Repository
 interface UserRepository: JpaRepository<User, Long> {
@@ -32,4 +33,7 @@ interface UserRepository: JpaRepository<User, Long> {
     fun setAvatar(newAvatar: Media?, id: Long): Int
 
     fun existsByEmail(email: String): Boolean
+
+    @Query("select count(u) from User u where u.creationDate > ?1")
+    fun findByAfterDate(from: Date): Long
 }

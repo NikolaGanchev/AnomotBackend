@@ -11,7 +11,7 @@ class ReportDecision(
         @Column(columnDefinition="TEXT")
         val decision: String,
         @ManyToOne
-        val decidedBy: User,
+        val decidedBy: User?,
         var creationDate: Date = Date(),
         @Id @GeneratedValue(strategy = GenerationType.AUTO) var id: Long? = null
 ): Serializable

@@ -3,6 +3,7 @@ package com.anomot.anomotbackend.controllers
 import com.anomot.anomotbackend.dto.*
 import com.anomot.anomotbackend.security.CustomUserDetails
 import com.anomot.anomotbackend.services.*
+import com.anomot.anomotbackend.utils.Constants
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.access.annotation.Secured
@@ -353,8 +354,8 @@ class AdminController(
 
     @Secured("ROLE_ADMIN")
     @GetMapping("/admin/statistics/users/count")
-    fun getUserCount(): ResponseEntity<CountDto> {
-        return ResponseEntity(CountDto(adminService.getUserCount()), HttpStatus.OK)
+    fun getUserCountWithin(@RequestParam("days") days: Int): ResponseEntity<CountDto> {
+        return ResponseEntity(CountDto(adminService.getUserCountWithin(days)), HttpStatus.OK)
     }
     @Secured("ROLE_ADMIN")
     @GetMapping("/admin/statistics/logins/count")
@@ -384,5 +385,24 @@ class AdminController(
     @GetMapping("/admin/statistics/queue/count")
     fun getQueue(@RequestParam("days") days: Int): ResponseEntity<CountDto> {
         return ResponseEntity(CountDto(adminService.getQueueCount(days)), HttpStatus.OK)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @GetMapping("/admin/url/{url}")
+    fun getUrl(@PathVariable(value="url") @Min(Constants.MIN_URL_LENGTH.toLong()) @Max(Constants.URL_LENGTH.toLong()) url: String): ResponseEntity<AdminUrlDto> {
+        val urlDto = adminService.getUrl(url)
+        return if (urlDto == null) {
+            ResponseEntity(HttpStatus.NOT_FOUND)
+        } else {
+            ResponseEntity(urlDto, HttpStatus.OK)
+        }
+    }
+
+    @Secured("ROLE_ADMIN")
+    @DeleteMapping("/admin/url/{url}")
+    fun deleteUrl(@PathVariable(value="url") @Min(Constants.MIN_URL_LENGTH.toLong()) @Max(Constants.URL_LENGTH.toLong()) url: String): ResponseEntity<AdminUrlDto> {
+        val result = adminService.deleteUrl(url)
+
+        return if (result) ResponseEntity(HttpStatus.OK) else ResponseEntity(HttpStatus.NOT_FOUND)
     }
 }

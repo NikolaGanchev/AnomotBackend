@@ -44,7 +44,8 @@ class AdminService @Autowired constructor(
         private val likeRepository: LikeRepository,
         private val successfulLoginRepository: SuccessfulLoginRepository,
         private val voteRepository: VoteRepository,
-        private val battleQueueRepository: BattleQueueRepository
+        private val battleQueueRepository: BattleQueueRepository,
+        private val urlRepository: UrlRepository
 ) {
     @Secured("ROLE_ADMIN")
     fun getReports(page: Int): List<ReportTicketDto> {
@@ -131,7 +132,7 @@ class AdminService @Autowired constructor(
         return reportDecisionRepository.getAllByReportTicket(report, PageRequest.of(page, 10, Sort.by("creationDate").descending())).map {
             TicketDecisionDto(
                     it.decision,
-                    userDetailsServiceImpl.getAsDto(it.decidedBy),
+                    if (it.decidedBy != null) userDetailsServiceImpl.getAsDto(it.decidedBy!!) else null,
                     it.creationDate
             )
         }
@@ -492,8 +493,8 @@ class AdminService @Autowired constructor(
     }
 
     @Secured("ROLE_ADMIN")
-    fun getUserCount(): Long {
-        return userRepository.count()
+    fun getUserCountWithin(days: Int): Long {
+        return userRepository.findByAfterDate(Date.from(Instant.now().minus(days.toLong(), ChronoUnit.DAYS)))
     }
 
     @Secured("ROLE_ADMIN")
@@ -501,19 +502,36 @@ class AdminService @Autowired constructor(
         return successfulLoginRepository.findByAfterDate(Date.from(Instant.now().minus(days.toLong(), ChronoUnit.DAYS)))
     }
 
+    @Secured("ROLE_ADMIN")
     fun getAverageVotePossibilitiesToActualVotes(days: Int): AverageVotePossibilitiesToActualVotesDto {
         return voteRepository.getAverageVotePossibilitiesToActualVotes(Date.from(Instant.now().minus(days.toLong(), ChronoUnit.DAYS)))
     }
 
+    @Secured("ROLE_ADMIN")
     fun getPostsCount(days: Int): Long {
         return postRepository.findByAfterDate(Date.from(Instant.now().minus(days.toLong(), ChronoUnit.DAYS)))
     }
 
+    @Secured("ROLE_ADMIN")
     fun getBattleCount(days: Int): Long {
         return battleRepository.findByAfterDate(Date.from(Instant.now().minus(days.toLong(), ChronoUnit.DAYS)))
     }
 
+    @Secured("ROLE_ADMIN")
     fun getQueueCount(days: Int): Long {
         return battleQueueRepository.findByAfterDate(Date.from(Instant.now().minus(days.toLong(), ChronoUnit.DAYS)))
+    }
+
+    @Secured("ROLE_ADMIN")
+    fun getUrl(url: String): AdminUrlDto? {
+        val newUrl = urlRepository.getByInAppUrl(url) ?: return null
+        return AdminUrlDto(userDetailsServiceImpl.getAsDto(newUrl.publisher), newUrl.inAppUrl, listOf())
+    }
+
+    @Secured("ROLE_ADMIN")
+    fun deleteUrl(url: String): Boolean {
+        val newUrl = urlRepository.getByInAppUrl(url) ?: return false
+        urlRepository.delete(newUrl)
+        return true
     }
 }
