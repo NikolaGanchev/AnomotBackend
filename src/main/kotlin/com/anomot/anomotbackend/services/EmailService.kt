@@ -1,5 +1,8 @@
 package com.anomot.anomotbackend.services
 
+import com.anomot.anomotbackend.AnomotBackendApplication
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.support.ResourceBundleMessageSource
@@ -19,8 +22,13 @@ class EmailService @Autowired constructor(
     private val logoUrl: String,
     @Value("\${contact.mail}")
     private val contactMail: String,
-    private val emailMessageSource: ResourceBundleMessageSource
+    private val emailMessageSource: ResourceBundleMessageSource,
+    @Value("\${environment.is-local}")
+    private val isLocal: String?
 ) {
+
+    private val logger: Logger = LoggerFactory.getLogger(AnomotBackendApplication::class.java)
+
     private fun processEmail(template: String, context: Context): String {
         return emailTemplateEngine.process(template, context)
     }
@@ -95,9 +103,13 @@ class EmailService @Autowired constructor(
         message.setText(text, true)
 
         try {
+            if (isLocal != null && isLocal.toBoolean()) {
+                logger.info("Email $text")
+                return
+            }
             mailSender.send(mimeMessage)
         } catch (e: Exception) {
-            print(e.message)
+            logger.debug(e.message)
         }
     }
 

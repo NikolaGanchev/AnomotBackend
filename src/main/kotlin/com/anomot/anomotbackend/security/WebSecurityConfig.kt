@@ -34,11 +34,10 @@ import org.springframework.security.web.authentication.AuthenticationSuccessHand
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 import org.springframework.security.web.authentication.rememberme.PersistentTokenBasedRememberMeServices
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository
-import org.springframework.web.cors.CorsConfiguration
-import org.springframework.web.cors.CorsConfigurationSource
-import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 import org.springframework.web.reactive.function.client.ExchangeStrategies
 import org.springframework.web.reactive.function.client.WebClient
+import org.springframework.web.servlet.config.annotation.CorsRegistry
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 import org.thymeleaf.TemplateEngine
 import org.thymeleaf.spring5.SpringTemplateEngine
 import org.thymeleaf.templatemode.TemplateMode
@@ -60,8 +59,6 @@ class WebSecurityConfig {
     private val rememberKey: String? = null
     @Value("\${client.domain}")
     private val clientDomain: String? = null
-    @Value("\${environment.is-local}")
-    private val isLocal: String? = null
     @Value("\${mail.host}")
     private val host: String? = null
     @Value("\${mail.port}")
@@ -130,10 +127,6 @@ class WebSecurityConfig {
                 .addFilterAfter(LoginArgumentValidationFilter(), CustomJsonReaderFilter::class.java)
                 .httpBasic()
 
-        if (isLocal != null && isLocal.toBoolean()) {
-            http.cors().disable()
-        }
-
         return http.build()
     }
 
@@ -183,23 +176,24 @@ class WebSecurityConfig {
     }
 
     @Bean
-    fun corsConfigurationSource(): CorsConfigurationSource {
-        val configuration = CorsConfiguration()
-        configuration.allowedOrigins = listOf(clientDomain)
-        configuration.allowedMethods = listOf("POST", "GET", "DELETE", "PUT", "OPTIONS")
-        configuration.allowedHeaders = listOf("DNT",
-                "User-Agent",
-                "X-Requested-With",
-                "If-Modified-Since",
-                "Cache-Control",
-                "Content-Type",
-                "Range",
-                "X-XSRF-TOKEN")
-        configuration.allowCredentials = true
-
-        val source = UrlBasedCorsConfigurationSource()
-        source.registerCorsConfiguration("/**", configuration)
-        return source
+    fun corsConfigurer(): WebMvcConfigurer {
+        return object : WebMvcConfigurer {
+            override fun addCorsMappings(registry: CorsRegistry) {
+                registry
+                        .addMapping("/**")
+                        .allowedOrigins(clientDomain)
+                        .allowedMethods("POST", "GET", "DELETE", "PUT", "OPTIONS")
+                        .allowedHeaders("DNT",
+                                "User-Agent",
+                                "X-Requested-With",
+                                "If-Modified-Since",
+                                "Cache-Control",
+                                "Content-Type",
+                                "Range",
+                                "X-XSRF-TOKEN")
+                        .allowCredentials(true)
+            }
+        }
     }
 
     @Bean
