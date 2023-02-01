@@ -4,6 +4,9 @@ import com.anomot.anomotbackend.utils.ReportReason
 import java.util.*
 import javax.persistence.*
 
+@Table(
+        uniqueConstraints=[UniqueConstraint(columnNames=arrayOf("report_ticket_id", "reportReason", "reporter_id"))]
+)
 @Entity
 class Report(
         @ManyToOne

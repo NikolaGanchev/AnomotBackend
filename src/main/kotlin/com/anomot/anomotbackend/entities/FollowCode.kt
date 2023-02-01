@@ -7,7 +7,8 @@ import javax.persistence.*
 
 @Entity
 class FollowCode(
-        @OneToOne
+        @ManyToOne
+        @JoinColumn(unique = true)
         val user: User,
         @Column(length = Constants.FOLLOW_CODE_LENGTH, unique = true)
         var code: String,

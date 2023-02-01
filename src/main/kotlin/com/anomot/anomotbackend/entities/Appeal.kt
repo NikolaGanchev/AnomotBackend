@@ -5,7 +5,9 @@ import com.anomot.anomotbackend.utils.AppealReason
 import java.util.*
 import javax.persistence.*
 
-
+@Table(
+        uniqueConstraints=[UniqueConstraint(columnNames=arrayOf("media_id", "appealed_by_id"))]
+)
 @Entity
 class Appeal(
         @ManyToOne

@@ -4,6 +4,7 @@ import com.anomot.anomotbackend.dto.*
 import com.anomot.anomotbackend.entities.*
 import com.anomot.anomotbackend.repositories.*
 import com.anomot.anomotbackend.utils.*
+import org.hibernate.exception.ConstraintViolationException
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
@@ -186,7 +187,12 @@ class PostService @Autowired constructor(
 
         if (likeRepository.existsByLikedByAndPost(user, post)) return false
 
-        likeRepository.save(Like(post, user))
+        try {
+            likeRepository.save(Like(post, user))
+        }
+        catch (e: ConstraintViolationException) {
+            return false
+        }
 
         return true
     }

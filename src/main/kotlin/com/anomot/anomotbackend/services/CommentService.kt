@@ -6,6 +6,7 @@ import com.anomot.anomotbackend.repositories.*
 import com.anomot.anomotbackend.utils.Constants
 import com.anomot.anomotbackend.utils.ReportReason
 import com.anomot.anomotbackend.utils.ReportType
+import org.hibernate.exception.ConstraintViolationException
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
@@ -171,9 +172,13 @@ class CommentService @Autowired constructor(
         if (!canSeeComment(user, comment)) return false
 
         if (commentLikeRepository.existsByLikedByAndComment(user, comment)) return false
-
-        commentLikeRepository.save(CommentLike(comment, user))
-
+        try {
+            commentLikeRepository.save(CommentLike(comment, user))
+        }
+        catch (e: ConstraintViolationException) {
+            return false
+        }
+        
         return true
     }
 

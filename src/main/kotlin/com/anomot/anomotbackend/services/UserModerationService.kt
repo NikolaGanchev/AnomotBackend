@@ -9,6 +9,7 @@ import io.jsonwebtoken.JwtException
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.io.Decoders
 import io.jsonwebtoken.security.Keys
+import org.hibernate.exception.ConstraintViolationException
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.data.domain.PageRequest
@@ -79,12 +80,16 @@ class UserModerationService @Autowired constructor(
             }
         }
 
-        reportRepository.save(Report(
-                reporter,
-                reportTicket,
-                reason,
-                other
-        ))
+        try {
+            reportRepository.save(Report(
+                    reporter,
+                    reportTicket,
+                    reason,
+                    other
+            ))
+        } catch (e: ConstraintViolationException) {
+            return false
+        }
 
         return true
     }
@@ -144,6 +149,9 @@ class UserModerationService @Autowired constructor(
             return false
         }
         catch (exception: IllegalArgumentException) {
+            return false
+        }
+        catch (e: ConstraintViolationException) {
             return false
         }
 

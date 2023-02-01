@@ -4,6 +4,9 @@ import java.io.Serializable
 import java.util.*
 import javax.persistence.*
 
+@Table(
+        uniqueConstraints=[UniqueConstraint(columnNames=arrayOf("post_id", "liked_by_id"))]
+)
 @Entity
 class Like(
         @ManyToOne

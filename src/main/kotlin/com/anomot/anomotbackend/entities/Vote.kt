@@ -4,6 +4,9 @@ import java.io.Serializable
 import java.util.*
 import javax.persistence.*
 
+@Table(
+        uniqueConstraints=[UniqueConstraint(columnNames=arrayOf("battle_id", "voter_id"))]
+)
 @Entity
 class Vote(
         @ManyToOne
