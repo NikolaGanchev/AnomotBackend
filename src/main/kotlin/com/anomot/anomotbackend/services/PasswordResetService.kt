@@ -58,12 +58,12 @@ class PasswordResetService @Autowired constructor(
                     "Code: $code \n" +
                     "Identifier: ${passwordResetToken.identifier} \n" +
                     "Expiry date: ${passwordResetToken.expiryDate} \n" +
-                    "Link: ${passwordResetUrl.format(passwordResetToken.resetToken, passwordResetToken.identifier)} \n" +
+                    "Link: ${passwordResetUrl.format(code, passwordResetToken.identifier)} \n" +
                     "User email: ${passwordResetToken.user.email}")
         }
 
         emailService.sendPasswordResetEmail(passwordResetToken.user.email,
-                passwordResetUrl.format(passwordResetToken.resetToken, passwordResetToken.identifier),
+                passwordResetUrl.format(code, passwordResetToken.identifier),
                 LocaleContextHolder.getLocale())
 
     }
