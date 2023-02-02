@@ -1,0 +1,113 @@
+events {}
+
+http {
+    limit_req_zone $binary_remote_addr zone=general:10m rate=20r/s;
+
+    limit_req_zone $binary_remote_addr zone=restricted:10m rate=2r/s;
+
+    limit_req_status 429;
+
+    log_format upstreamlog '[$time_local] $remote_addr - $remote_user - $server_name to: $upstream_addr: $request upstream_response_time $upstream_response_time msec $msec request_time $request_time';
+
+    access_log  /var/log/nginx/access.log upstreamlog;
+
+    server {
+        listen 80;
+        listen [::]:80;
+
+        proxy_request_buffering off;
+
+        error_page 429 @ratelimiterror;
+        error_page 413 @filetoobigerror;
+
+        location / {
+            limit_req zone=general burst=20 nodelay;
+
+            proxy_set_header X-Real-IP $remote_addr;
+            proxy_pass http://web:8080;
+        }
+
+        location /account/new {
+            limit_req zone=restricted;
+
+            proxy_pass http://web:8080;
+        }
+
+        location /account/login {
+            limit_req zone=restricted;
+
+            proxy_pass http://web:8080;
+        }
+
+        location /account/mfa/status {
+            limit_req zone=restricted;
+
+            proxy_pass http://web:8080;
+        }
+
+        location /account/avatar {
+            limit_req zone=general burst=20 nodelay;
+
+            client_max_body_size 10M;
+
+            proxy_pass http://web:8080;
+        }
+
+        location /account/battle/media {
+            limit_req zone=general burst=20 nodelay;
+
+            client_max_body_size 100M;
+
+            proxy_pass http://web:8080;
+        }
+
+        location /account/post/media {
+            limit_req zone=general burst=20 nodelay;
+
+            client_max_body_size 100M;
+
+            proxy_pass http://web:8080;
+        }
+
+        location @ratelimiterror {
+            if ($request_method = 'OPTIONS') {
+                add_header 'Access-Control-Allow-Origin' '${CLIENT_DOMAIN}';
+                add_header 'Access-Control-Allow-Methods' 'GET, POST, DELETE, PUT, OPTIONS';
+                add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,X-XSRF-TOKEN';
+                add_header 'Access-Control-Allow-Credentials' 'true';
+                add_header 'Access-Control-Max-Age' 1800;
+                add_header 'Content-Type' 'text/plain; charset=utf-8';
+                add_header 'Content-Length' 0;
+                return 204;
+            }
+            if ($request_method = 'POST') {
+                add_header 'Access-Control-Allow-Origin' '${CLIENT_DOMAIN}' always;
+                add_header 'Access-Control-Allow-Methods' 'GET, POST, DELETE, PUT, OPTIONS' always;
+                add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,X-XSRF-TOKEN' always;
+                add_header 'Access-Control-Expose-Headers' 'Content-Length,Content-Range' always;
+                add_header 'Access-Control-Allow-Credentials' 'true' always;
+
+                return 429;
+            }
+            if ($request_method = 'GET') {
+                add_header 'Access-Control-Allow-Origin' '${CLIENT_DOMAIN}' always;
+                add_header 'Access-Control-Allow-Methods' 'GET, POST, DELETE, PUT, OPTIONS' always;
+                add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,X-XSRF-TOKEN' always;
+                add_header 'Access-Control-Expose-Headers' 'Content-Length,Content-Range' always;
+                add_header 'Access-Control-Allow-Credentials' 'true' always;
+
+                return 429;
+            }
+        }
+
+        location @filetoobigerror {
+            add_header 'Access-Control-Allow-Origin' '${CLIENT_DOMAIN}' always;
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, DELETE, PUT, OPTIONS' always;
+            add_header 'Access-Control-Allow-Headers' 'DNT,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Range,X-XSRF-TOKEN' always;
+            add_header 'Access-Control-Expose-Headers' 'Content-Length,Content-Range' always;
+            add_header 'Access-Control-Allow-Credentials' 'true' always;
+
+            return 413;
+        }
+    }
+}

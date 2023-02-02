@@ -1,5 +1,17 @@
 services:
+  server:
+    build:
+      context: nginx/
+      dockerfile: Dockerfile
+    image: anomot/nginx
+    ports:
+      - "443:443"
+      - "80:80"
+    environment:
+      - CLIENT_DOMAIN=http://localhost:3000
+      - NGINX_ENVSUBST_OUTPUT_DIR=etc/nginx
   web:
+    hostname: web
     build:
       context: .
       dockerfile: Dockerfile
@@ -14,6 +26,16 @@ services:
       - SPRING_REDIS_URL=redis://redis-host:6379
       - SPRING_DATASOURCE_URL=jdbc:postgresql://db-host:5432/anomot
       - MEDIA_SERVER_URL=media:5000
+      - CLIENT_DOMAIN=
+      - CONTACT_EMAIL=
+      - CONTACT_MAIL=
+      - EMAIL_HOST=
+      - EMAIL_PASSWORD=
+      - EMAIL_PORT=587
+      - EMAIL_PROTOCOL=
+      - EMAIL_USERNAME=
+      - JWT_PRIVATE_KEY=
+      - LOGO_URL=
     networks:
       - mediaservernet
       - default
