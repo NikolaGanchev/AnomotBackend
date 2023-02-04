@@ -39,8 +39,8 @@ class PostService @Autowired constructor(
         private val userModerationService: UserModerationService,
         private val reportTicketRepository: ReportTicketRepository
 ) {
-    private fun addTextPost(text: String, user: User): Post {
-        return postRepository.save(Post(user, null, text, TextUtils.getTextFromHtml(text), PostType.TEXT))
+    private fun addTextPost(text: String, sanitized: String, user: User): Post {
+        return postRepository.save(Post(user, null, text, sanitized, PostType.TEXT))
     }
 
     private fun addMediaPost(media: Media, user: User): Post {
@@ -48,8 +48,9 @@ class PostService @Autowired constructor(
     }
 
     fun createTextPost(text: String, user: User, checkSimilar: Boolean): PostCreateStatus {
+        val sanitized = TextUtils.getTextFromHtml(text)
         if (checkSimilar) {
-            val same = battleRepository.getWithSimilarText(user, text)
+            val same = battleRepository.getWithSimilarText(user, sanitized)
             if (same.isNotEmpty()) {
                 return PostCreateStatus.SIMILAR_FOUND.also {
                     it.similar = same
@@ -58,7 +59,7 @@ class PostService @Autowired constructor(
         }
 
         return PostCreateStatus.OK.also {
-            it.post = addTextPost(text, user)
+            it.post = addTextPost(text, sanitized, user)
         }
     }
 
