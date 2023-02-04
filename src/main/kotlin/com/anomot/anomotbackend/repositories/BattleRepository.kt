@@ -71,10 +71,10 @@ interface BattleRepository: JpaRepository<Battle, Long> {
     fun getSimilarMedia(user: User, media: Media, duration: Float?): List<Post>
 
     @Query("select p from Post p where " +
-            "p.id in (select b.goldPost.id from Battle b where b.goldPost.poster = ?1 and b.goldPost.text = ?2) or " +
-            "p.id in (select b.redPost.id from Battle b where b.redPost.poster = ?1 and b.redPost.text = ?2) or " +
-            "p.id in (select bp.post.id from BattleQueuePost bp where bp.post.poster = ?1 and bp.post.text = ?2)")
-    fun getWithSameText(user: User, text: String): List<Post>
+            "p.id in (select b.goldPost.id from Battle b where b.goldPost.poster = ?1 and function('similarity', b.goldPost.text, ?2) > 0.99) or " +
+            "p.id in (select b.redPost.id from Battle b where b.redPost.poster = ?1 and function('similarity', b.redPost.text, ?2) > 0.99) or " +
+            "p.id in (select bp.post.id from BattleQueuePost bp where bp.post.poster = ?1 and function('similarity', bp.post.text, ?2) > 0.99)")
+    fun getWithSimilarText(user: User, text: String): List<Post>
 
     @Query("select count(b) > 0 " +
             "from Battle b where b = ?2 and " +

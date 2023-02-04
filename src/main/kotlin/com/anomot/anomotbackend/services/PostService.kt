@@ -40,16 +40,16 @@ class PostService @Autowired constructor(
         private val reportTicketRepository: ReportTicketRepository
 ) {
     private fun addTextPost(text: String, user: User): Post {
-        return postRepository.save(Post(user, null, text, PostType.TEXT))
+        return postRepository.save(Post(user, null, text, TextUtils.getTextFromHtml(text), PostType.TEXT))
     }
 
     private fun addMediaPost(media: Media, user: User): Post {
-        return postRepository.save(Post(user, media, null, PostType.MEDIA))
+        return postRepository.save(Post(user, media, null, null, PostType.MEDIA))
     }
 
     fun createTextPost(text: String, user: User, checkSimilar: Boolean): PostCreateStatus {
         if (checkSimilar) {
-            val same = battleRepository.getWithSameText(user, text)
+            val same = battleRepository.getWithSimilarText(user, text)
             if (same.isNotEmpty()) {
                 return PostCreateStatus.SIMILAR_FOUND.also {
                     it.similar = same

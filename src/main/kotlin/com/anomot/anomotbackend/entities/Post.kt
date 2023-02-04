@@ -13,6 +13,8 @@ class Post(
         val media: Media?,
         @Column(columnDefinition="TEXT")
         val text: String?,
+        @Column(columnDefinition="TEXT")
+        val sanitized: String?,
         @Enumerated(EnumType.ORDINAL)
         val type: PostType,
         var creationDate: Date = Date(),

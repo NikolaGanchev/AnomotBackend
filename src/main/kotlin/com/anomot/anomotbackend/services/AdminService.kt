@@ -232,7 +232,7 @@ class AdminService @Autowired constructor(
 
     @Secured("ROLE_ADMIN")
     fun promoteToPost(appeal: Appeal): Post {
-        return postRepository.save(Post(appeal.appealedBy, appeal.media, null, PostType.MEDIA))
+        return postRepository.save(Post(appeal.appealedBy, appeal.media, null, null, PostType.MEDIA))
     }
 
     @Secured("ROLE_ADMIN")

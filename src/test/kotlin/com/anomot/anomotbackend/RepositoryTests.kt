@@ -471,11 +471,11 @@ class RepositoryTests @Autowired constructor(
         user4 = entityManager.persist(user4)
         entityManager.flush()
 
-        val post = entityManager.persist(Post(user, null, null, PostType.MEDIA))
-        val post1 = entityManager.persist(Post(user1, null, null, PostType.MEDIA))
-        val post2 = entityManager.persist(Post(user2, null, null, PostType.MEDIA))
-        val post3 = entityManager.persist(Post(user3, null, null, PostType.TEXT))
-        val post4 = entityManager.persist(Post(user4, null, null, PostType.MEDIA))
+        val post = entityManager.persist(Post(user, null, null, null, PostType.MEDIA))
+        val post1 = entityManager.persist(Post(user1, null, null, null, PostType.MEDIA))
+        val post2 = entityManager.persist(Post(user2, null, null, null, PostType.MEDIA))
+        val post3 = entityManager.persist(Post(user3, null, null, null, PostType.TEXT))
+        val post4 = entityManager.persist(Post(user4, null, null, null, PostType.MEDIA))
         entityManager.flush()
 
         val battleQueuePost = BattleQueuePost(post)
@@ -504,7 +504,7 @@ class RepositoryTests @Autowired constructor(
 
         user = entityManager.persist(user)
 
-        val post = entityManager.persist(Post(user, null, null, PostType.TEXT))
+        val post = entityManager.persist(Post(user, null, null, null, PostType.TEXT))
 
         assertThat(postRepository.canSeePost(post, user)).isTrue
     }
@@ -516,7 +516,7 @@ class RepositoryTests @Autowired constructor(
 
         user = entityManager.persist(user)
 
-        val post = entityManager.persist(Post(user, null, null, PostType.TEXT))
+        val post = entityManager.persist(Post(user, null, null, null, PostType.TEXT))
         entityManager.persist(BattleQueuePost(post))
 
         assertThat(postRepository.canSeePost(post, user)).isTrue
@@ -529,7 +529,7 @@ class RepositoryTests @Autowired constructor(
 
         user = entityManager.persist(user)
 
-        val post = entityManager.persist(Post(user, null, null, PostType.TEXT))
+        val post = entityManager.persist(Post(user, null, null, null, PostType.TEXT))
         entityManager.persist(Battle(post, null, PostType.TEXT, 0))
 
         assertThat(postRepository.canSeePost(post, user)).isTrue
@@ -542,7 +542,7 @@ class RepositoryTests @Autowired constructor(
 
         user = entityManager.persist(user)
 
-        val post = entityManager.persist(Post(user, null, null, PostType.TEXT))
+        val post = entityManager.persist(Post(user, null, null, null, PostType.TEXT))
         entityManager.persist(Battle(post, null, PostType.TEXT, 0, finished = true))
 
         assertThat(postRepository.canSeePost(post, user)).isTrue
@@ -557,7 +557,7 @@ class RepositoryTests @Autowired constructor(
         user = entityManager.persist(user)
         user1 = entityManager.persist(user1)
 
-        val post = entityManager.persist(Post(user, null, null, PostType.TEXT))
+        val post = entityManager.persist(Post(user, null, null, null, PostType.TEXT))
         entityManager.persist(BattleQueuePost(post))
 
         assertThat(postRepository.canSeePost(post, user1)).isFalse
@@ -572,7 +572,7 @@ class RepositoryTests @Autowired constructor(
         user = entityManager.persist(user)
         user1 = entityManager.persist(user1)
 
-        val post = entityManager.persist(Post(user, null, null, PostType.TEXT))
+        val post = entityManager.persist(Post(user, null, null, null, PostType.TEXT))
         entityManager.persist(Battle(post, null, PostType.TEXT, 0))
 
         assertThat(postRepository.canSeePost(post, user1)).isFalse
@@ -587,7 +587,7 @@ class RepositoryTests @Autowired constructor(
         user = entityManager.persist(user)
         user1 = entityManager.persist(user1)
 
-        val post = entityManager.persist(Post(user, null, null, PostType.TEXT))
+        val post = entityManager.persist(Post(user, null, null, null, PostType.TEXT))
         entityManager.persist(Battle(post, null, PostType.TEXT, 0, finished = true))
 
         assertThat(postRepository.canSeePost(post, user1)).isTrue
@@ -603,8 +603,8 @@ class RepositoryTests @Autowired constructor(
         user = entityManager.persist(user)
         user1 = entityManager.persist(user1)
 
-        val post = entityManager.persist(Post(user, null, null, PostType.TEXT))
-        val post1 = entityManager.persist(Post(user1, null, null, PostType.TEXT))
+        val post = entityManager.persist(Post(user, null, null, null, PostType.TEXT))
+        val post1 = entityManager.persist(Post(user1, null, null, null, PostType.TEXT))
         entityManager.persist(Battle(post, post1, PostType.TEXT, 0))
 
         assertThat(postRepository.canSeePost(post, user1)).isTrue
@@ -619,7 +619,7 @@ class RepositoryTests @Autowired constructor(
         user = entityManager.persist(user)
         user1 = entityManager.persist(user1)
 
-        val post = entityManager.persist(Post(user, null, null, PostType.TEXT))
+        val post = entityManager.persist(Post(user, null, null, null, PostType.TEXT))
         val battle = entityManager.persist(Battle(post, null, PostType.TEXT, 0))
         val vote = entityManager.persist(Vote(battle, post, user1))
 
@@ -637,8 +637,8 @@ class RepositoryTests @Autowired constructor(
         user1 = entityManager.persist(user1)
         user2 = entityManager.persist(user2)
 
-        val post = entityManager.persist(Post(user, null, null, PostType.TEXT))
-        val post1 = entityManager.persist(Post(user2, null, null, PostType.TEXT))
+        val post = entityManager.persist(Post(user, null, null, null, PostType.TEXT))
+        val post1 = entityManager.persist(Post(user2, null, null, null, PostType.TEXT))
         val battle = entityManager.persist(Battle(post, post, PostType.TEXT, 0))
         val vote = entityManager.persist(Vote(battle, post1, user1))
 
@@ -654,8 +654,8 @@ class RepositoryTests @Autowired constructor(
         user = entityManager.persist(user)
         user1 = entityManager.persist(user1)
 
-        val post = entityManager.persist(Post(user, null, null, PostType.TEXT))
-        val post1 = entityManager.persist(Post(user1, null, null, PostType.TEXT))
+        val post = entityManager.persist(Post(user, null, null, null, PostType.TEXT))
+        val post1 = entityManager.persist(Post(user1, null, null, null, PostType.TEXT))
         entityManager.persist(Battle(post, post1, PostType.TEXT, 0))
 
         assertThat(followRepository.canSeeAccount(user1, user)).isTrue
@@ -670,7 +670,7 @@ class RepositoryTests @Autowired constructor(
         user = entityManager.persist(user)
         user1 = entityManager.persist(user1)
 
-        val post = entityManager.persist(Post(user, null, null, PostType.TEXT))
+        val post = entityManager.persist(Post(user, null, null, null, PostType.TEXT))
         val battle = entityManager.persist(Battle(post, null, PostType.TEXT, 0))
         val vote = entityManager.persist(Vote(battle, post, user1))
 
@@ -686,8 +686,8 @@ class RepositoryTests @Autowired constructor(
         user = entityManager.persist(user)
         user1 = entityManager.persist(user1)
 
-        val post = entityManager.persist(Post(user, null, null, PostType.TEXT))
-        val post1 = entityManager.persist(Post(user1, null, null, PostType.TEXT))
+        val post = entityManager.persist(Post(user, null, null, null, PostType.TEXT))
+        val post1 = entityManager.persist(Post(user1, null, null, null, PostType.TEXT))
         val battle = entityManager.persist(Battle(post, post1, PostType.TEXT, 0))
 
         assertThat(battleRepository.canSeeBattle(user1, battle)).isTrue
@@ -703,7 +703,7 @@ class RepositoryTests @Autowired constructor(
         user = entityManager.persist(user)
         user1 = entityManager.persist(user1)
 
-        val post = entityManager.persist(Post(user, null, null, PostType.TEXT))
+        val post = entityManager.persist(Post(user, null, null, null, PostType.TEXT))
         val battle = entityManager.persist(Battle(post, null, PostType.TEXT, 0))
         val vote = entityManager.persist(Vote(battle, post, user1))
 
