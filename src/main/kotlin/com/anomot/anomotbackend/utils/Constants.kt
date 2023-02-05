@@ -55,8 +55,8 @@ class Constants {
         const val MIN_COMMENT_SIZE = 1
         const val NOTIFICATION_PAGE = 20
         const val APPEAL_PERIOD: Long = 60 * 60 * 6
-        const val USER_REPORT_COOLDOWN: Long = 60 * 60 * 24 * 7 // 7 days cooldown after a ticket is resolved before a new one can be opened
-        const val COMMENT_COOLDOWN: Long = 60 * 60 * 24 * 3 // 3 days cooldown after a ticket is resolved before a new one can be opened
+        const val USER_REPORT_COOLDOWN: Long = 60 * 60 * 24 * 1 // 1 day cooldown after a ticket is resolved before a new one can be opened
+        const val COMMENT_COOLDOWN: Long = 60 * 60 * 24 * 1 // 1 days cooldown after a ticket is resolved before a new one can be opened
         const val BATTLE_COOLDOWN: Long = 60 * 60 * 24 * 3 // 3 days cooldown after a ticket is resolved before a new one can be opened
         const val POST_REPORT_COOLDOWN: Long = 60 * 60 * 24 * 30 // 30 days cooldown after a ticket is resolved before a new one can be opened
     }
