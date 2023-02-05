@@ -175,12 +175,13 @@ class PostController @Autowired constructor(
     }
 
     @PostMapping("/post/report")
+    @EmailVerified
     fun reportPost(@RequestBody @Valid postReportDto: PostReportDto, authentication: Authentication): ResponseEntity<String> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
 
         val result = postService.report(postReportDto, user)
 
-        return ResponseEntity(if (result) HttpStatus.OK else HttpStatus.NOT_FOUND)
+        return ResponseEntity(if (result) HttpStatus.CREATED else HttpStatus.BAD_REQUEST)
     }
 
     @GetMapping("/post/report")

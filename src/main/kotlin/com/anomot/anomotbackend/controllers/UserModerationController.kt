@@ -2,6 +2,7 @@ package com.anomot.anomotbackend.controllers
 
 import com.anomot.anomotbackend.dto.*
 import com.anomot.anomotbackend.security.CustomUserDetails
+import com.anomot.anomotbackend.security.EmailVerified
 import com.anomot.anomotbackend.services.UserDetailsServiceImpl
 import com.anomot.anomotbackend.services.UserModerationService
 import org.springframework.http.HttpStatus
@@ -21,15 +22,17 @@ class UserModerationController(
 ) {
 
     @PostMapping("/user/report")
+    @EmailVerified
     fun reportUser(@RequestBody @Valid userReportDto: UserReportDto, authentication: Authentication): ResponseEntity<String> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
 
         val result = userModerationService.report(userReportDto, user)
 
-        return ResponseEntity(if (result) HttpStatus.OK else HttpStatus.BAD_REQUEST)
+        return ResponseEntity(if (result) HttpStatus.CREATED else HttpStatus.BAD_REQUEST)
     }
 
     @PostMapping("/appeal")
+    @EmailVerified
     fun appeal(@RequestBody @Valid appealUploadDto: AppealUploadDto, authentication: Authentication): ResponseEntity<String> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
 

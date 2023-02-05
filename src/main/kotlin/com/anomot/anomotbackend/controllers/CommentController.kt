@@ -175,7 +175,7 @@ class CommentController @Autowired constructor(
 
         val result = commentService.report(commentReportDto, user)
 
-        return ResponseEntity(if (result) HttpStatus.OK else HttpStatus.NOT_FOUND)
+        return ResponseEntity(if (result) HttpStatus.CREATED else HttpStatus.BAD_REQUEST)
     }
 
     @GetMapping("/comment/report")

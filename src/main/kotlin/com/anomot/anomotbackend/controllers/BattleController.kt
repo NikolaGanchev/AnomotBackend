@@ -192,17 +192,18 @@ class BattleController @Autowired constructor(
     }
 
     @PostMapping("/battle/report")
+    @EmailVerified
     fun reportBattle(@RequestBody @Valid battleReportDto: BattleReportDto, authentication: Authentication): ResponseEntity<String> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
 
         val result = battleService.report(battleReportDto, user)
 
-        return ResponseEntity(if (result) HttpStatus.OK else HttpStatus.BAD_REQUEST)
+        return ResponseEntity(if (result) HttpStatus.CREATED else HttpStatus.BAD_REQUEST)
     }
 
     @GetMapping("/battle/report")
     fun getBattleReport(@RequestParam("postId") postId: String,
-                        @RequestParam("battletId") battleId: String,
+                        @RequestParam("battleId") battleId: String,
                         authentication: Authentication): ResponseEntity<ReportDto> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
 
