@@ -9,12 +9,12 @@ data class AdminAppealDto(
         val appealedBy: UserDto,
         val reason: AppealReason,
         val objective: AppealObjective,
-        val mediaId: String,
+        val media: MediaDto,
         val similarPosts: List<PostDto>?,
         val decided: Boolean,
         val decidedBy: UserDto?,
         val decision: AppealAction?,
         val explanation: String?,
-        var creationDate: Date?,
+        var creationDate: Date,
         val id: String
 )

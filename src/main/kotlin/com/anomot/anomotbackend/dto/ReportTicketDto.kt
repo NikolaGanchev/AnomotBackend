@@ -8,7 +8,7 @@ data class ReportTicketDto(
         val post: PostDto?,
         val battle: AdminBattleDto?,
         val commentId: CommentDto?,
-        val userId: UserDto?,
+        val user: UserDto?,
         val isDecided: Boolean,
         val decisions: Int,
         val creationDate: Date,

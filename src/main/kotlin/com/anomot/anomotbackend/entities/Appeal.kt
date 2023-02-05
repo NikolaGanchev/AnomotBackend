@@ -21,6 +21,6 @@ class Appeal(
         var decided: Boolean = false,
         @ManyToOne
         var decision: AppealDecision? = null,
-        var creationDate: Date? = Date(),
+        var creationDate: Date = Date(),
         @Id @GeneratedValue(strategy = GenerationType.AUTO) var id: Long? = null
 )

@@ -124,7 +124,7 @@ class AdminController(
     }
 
     @Secured("ROLE_ADMIN")
-    @PostMapping("/admin/user/username")
+    @PutMapping("/admin/user/username")
     fun changeUsername(@RequestParam("id") id: String, @RequestBody @Valid usernameChangeDto: UsernameChangeDto, authentication: Authentication): ResponseEntity<String> {
         val user = userDetailsServiceImpl.getUserReferenceFromIdUnsafe(id) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
         val result = adminService.changeUsername(user, usernameChangeDto)
@@ -133,7 +133,7 @@ class AdminController(
     }
 
     @Secured("ROLE_ADMIN")
-    @PostMapping("/admin/user/password")
+    @PutMapping("/admin/user/password")
     fun changePassword(@RequestParam("id") id: String, @RequestBody @Valid passwordChangeDto: AdminPasswordChangeDto, authentication: Authentication): ResponseEntity<String> {
         val user = userDetailsServiceImpl.getUserReferenceFromIdUnsafe(id) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
         val result = adminService.changePassword(user, passwordChangeDto)
@@ -297,7 +297,7 @@ class AdminController(
     }
 
     @Secured("ROLE_ADMIN")
-    @GetMapping("admin/post/comment")
+    @GetMapping("/admin/post/comment")
     fun getCommentPost(@RequestParam("id") postId: String, @RequestParam("page") page: Int, authentication: Authentication): ResponseEntity<List<CommentDto>> {
         val post = postService.getPostReferenceFromIdUnsafe(postId) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
 
@@ -305,7 +305,7 @@ class AdminController(
     }
 
     @Secured("ROLE_ADMIN")
-    @GetMapping("admin/battle/comment")
+    @GetMapping("/admin/battle/comment")
     fun getCommentBattle(@RequestParam("id") battleId: String, @RequestParam("page") page: Int, authentication: Authentication): ResponseEntity<List<CommentDto>> {
         val battle = battleService.getBattleReferenceFromIdUnsafe(battleId) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
 
@@ -313,7 +313,7 @@ class AdminController(
     }
 
     @Secured("ROLE_ADMIN")
-    @GetMapping("admin/comment/comment")
+    @GetMapping("/admin/comment/comment")
     fun getCommentComment(@RequestParam("id") commentId: String, @RequestParam("page") page: Int, authentication: Authentication): ResponseEntity<List<CommentDto>> {
         val comment = commentService.getCommentReferenceFromIdUnsafe(commentId) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
 
@@ -321,7 +321,7 @@ class AdminController(
     }
 
     @Secured("ROLE_ADMIN")
-    @GetMapping("admin/comment/history")
+    @GetMapping("/admin/comment/history")
     fun getCommentEdits(@RequestParam("id") commentId: String, @RequestParam("page") page: Int, authentication: Authentication): ResponseEntity<List<CommentEditDto>> {
         val comment = commentService.getCommentReferenceFromIdUnsafe(commentId) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
 
@@ -329,7 +329,7 @@ class AdminController(
     }
 
     @Secured("ROLE_ADMIN")
-    @GetMapping("admin/user/reports")
+    @GetMapping("/admin/user/reports")
     fun getUserReports(@RequestParam("id") id: String, @RequestParam("page") page: Int, authentication: Authentication): ResponseEntity<List<AdminReportDto>> {
         val user = userDetailsServiceImpl.getUserReferenceFromIdUnsafe(id) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
 
@@ -337,7 +337,7 @@ class AdminController(
     }
 
     @Secured("ROLE_ADMIN")
-    @GetMapping("admin/report/ticket")
+    @GetMapping("/admin/report/ticket")
     fun getTicketById(@RequestParam("id") id: String, authentication: Authentication): ResponseEntity<ReportTicketDto> {
         val reportTicket = adminService.getReportTicketReferenceByIdStringUnsafe(id) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
 
@@ -365,6 +365,7 @@ class AdminController(
     fun getUserCountWithin(@RequestParam("days") days: Int): ResponseEntity<CountDto> {
         return ResponseEntity(CountDto(adminService.getUserCountWithin(days)), HttpStatus.OK)
     }
+
     @Secured("ROLE_ADMIN")
     @GetMapping("/admin/statistics/logins/count")
     fun getLoginsWithin(@RequestParam("days") days: Int): ResponseEntity<CountDto> {
@@ -420,6 +421,6 @@ class AdminController(
         val comment = commentService.getCommentReferenceFromIdUnsafe(commentId) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
         val result = adminService.deleteComment(comment)
 
-        return if (result) ResponseEntity(HttpStatus.OK) else ResponseEntity(HttpStatus.NOT_FOUND)
+        return if (result) ResponseEntity(HttpStatus.OK) else ResponseEntity(HttpStatus.BAD_REQUEST)
     }
 }

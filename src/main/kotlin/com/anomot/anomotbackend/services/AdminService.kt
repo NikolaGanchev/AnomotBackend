@@ -469,7 +469,7 @@ class AdminService @Autowired constructor(
                 userDetailsServiceImpl.getAsDto(it.appealedBy),
                 it.reason,
                 it.objective,
-                it.media.name.toString(),
+                MediaDto(it.media.mediaType, it.media.name.toString()),
                 if (it.reason != AppealReason.SIMILAR_FOUND) null else {
                     battleRepository.getSimilarMedia(it.appealedBy, it.media,
                             if (it.media.mediaType == MediaType.VIDEO && it.media.duration != null) {
