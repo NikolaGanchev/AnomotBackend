@@ -45,7 +45,8 @@ class AdminService @Autowired constructor(
         private val successfulLoginRepository: SuccessfulLoginRepository,
         private val voteRepository: VoteRepository,
         private val battleQueueRepository: BattleQueueRepository,
-        private val urlRepository: UrlRepository
+        private val urlRepository: UrlRepository,
+        private val previousCommentVersionRepository: PreviousCommentVersionRepository
 ) {
     @Secured("ROLE_ADMIN")
     fun getReports(page: Int): List<ReportTicketDto> {
@@ -533,5 +534,27 @@ class AdminService @Autowired constructor(
         val newUrl = urlRepository.getByInAppUrl(url) ?: return false
         urlRepository.delete(newUrl)
         return true
+    }
+
+    @Secured("ROLE_ADMIN")
+    fun deleteComment(comment: Comment): Boolean {
+        if (commentRepository.existsByParentComment(comment)) {
+            previousCommentVersionRepository.deleteAllByComment(comment)
+            commentRepository.setDeleted(comment.commenter!!, comment.id!!)
+        } else {
+            previousCommentVersionRepository.deleteAllByComment(comment)
+            commentRepository.delete(comment)
+        }
+
+        return true
+    }
+
+    @Secured("ROLE_ADMIN")
+    fun getCommentEdits(comment: Comment, page: Int): List<CommentEditDto> {
+        return previousCommentVersionRepository.findByComment(comment,
+                PageRequest.of(page,
+                        Constants.COMMENTS_PAGE, Sort.by("creationDate").descending())).map {
+            return@map CommentEditDto(it.text, it.creationDate, it.comment.id.toString())
+        }
     }
 }

@@ -321,6 +321,14 @@ class AdminController(
     }
 
     @Secured("ROLE_ADMIN")
+    @GetMapping("admin/comment/history")
+    fun getCommentEdits(@RequestParam("id") commentId: String, @RequestParam("page") page: Int, authentication: Authentication): ResponseEntity<List<CommentEditDto>> {
+        val comment = commentService.getCommentReferenceFromIdUnsafe(commentId) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+
+        return ResponseEntity(adminService.getCommentEdits(comment, page), HttpStatus.OK)
+    }
+
+    @Secured("ROLE_ADMIN")
     @GetMapping("admin/user/reports")
     fun getUserReports(@RequestParam("id") id: String, @RequestParam("page") page: Int, authentication: Authentication): ResponseEntity<List<AdminReportDto>> {
         val user = userDetailsServiceImpl.getUserReferenceFromIdUnsafe(id) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
@@ -400,8 +408,17 @@ class AdminController(
 
     @Secured("ROLE_ADMIN")
     @DeleteMapping("/admin/url/{url}")
-    fun deleteUrl(@PathVariable(value="url") @Min(Constants.MIN_URL_LENGTH.toLong()) @Max(Constants.URL_LENGTH.toLong()) url: String): ResponseEntity<AdminUrlDto> {
+    fun deleteUrl(@PathVariable(value="url") @Min(Constants.MIN_URL_LENGTH.toLong()) @Max(Constants.URL_LENGTH.toLong()) url: String): ResponseEntity<String> {
         val result = adminService.deleteUrl(url)
+
+        return if (result) ResponseEntity(HttpStatus.OK) else ResponseEntity(HttpStatus.NOT_FOUND)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @DeleteMapping("/admin/comment")
+    fun deleteComment(@RequestParam("id") commentId: String): ResponseEntity<String> {
+        val comment = commentService.getCommentReferenceFromIdUnsafe(commentId) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+        val result = adminService.deleteComment(comment)
 
         return if (result) ResponseEntity(HttpStatus.OK) else ResponseEntity(HttpStatus.NOT_FOUND)
     }
