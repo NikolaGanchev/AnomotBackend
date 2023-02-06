@@ -3,10 +3,7 @@ package com.anomot.anomotbackend.services
 import com.anomot.anomotbackend.dto.*
 import com.anomot.anomotbackend.entities.*
 import com.anomot.anomotbackend.exceptions.UserAlreadyExistsException
-import com.anomot.anomotbackend.repositories.AuthorityRepository
-import com.anomot.anomotbackend.repositories.BanRepository
-import com.anomot.anomotbackend.repositories.MfaMethodRepository
-import com.anomot.anomotbackend.repositories.UserRepository
+import com.anomot.anomotbackend.repositories.*
 import com.anomot.anomotbackend.security.Authorities
 import com.anomot.anomotbackend.security.CustomUserDetails
 import com.anomot.anomotbackend.security.MfaMethodValue
@@ -62,6 +59,8 @@ class UserDetailsServiceImpl: UserDetailsService {
     private lateinit var redisSessionRepository: RedisIndexedSessionRepository
     @Autowired
     private lateinit var banRepository: BanRepository
+    @Autowired
+    private lateinit var rememberMeTokenRepository: RememberMeTokenRepository
     @Autowired
     @Lazy
     private lateinit var authenticationService: AuthenticationService
@@ -153,11 +152,15 @@ class UserDetailsServiceImpl: UserDetailsService {
             throw UserAlreadyExistsException("User already exists")
         }
 
+        rememberMeTokenRepository.deleteAllByEmail((user.principal as CustomUserDetails).username)
+
         userRepository.setEmail(newEmail, (user.principal as CustomUserDetails).id!!)
 
         userRepository.flush()
 
         userRepository.setIsEmailVerifiedByEmail(false, newEmail)
+
+        deactivateEmailMfa()
 
         authenticationService.reAuthenticate(user)
     }
@@ -265,7 +268,7 @@ class UserDetailsServiceImpl: UserDetailsService {
         user.mfaMethods!!.add(mfaMethod)
     }
 
-    private fun getMfaEntityReference(mfaMethodValue: MfaMethodValue): MfaMethod {
+    fun getMfaEntityReference(mfaMethodValue: MfaMethodValue): MfaMethod {
         if (!entityIdCache.contains(mfaMethodValue.method)) {
             var mfaMethod = mfaMethodRepository.findByMethod(mfaMethodValue.method)
 

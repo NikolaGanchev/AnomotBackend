@@ -149,6 +149,15 @@ class UserDetailsServiceTests {
         every { userRepository.existsByEmail(any()) } returns false
         every { userRepository.flush() } returns Unit
         every { userRepository.setIsEmailVerifiedByEmail(any(), any()) } returns 1
+        every { mfaMethodRepository.getReferenceById(any()) } returns MfaMethod(MfaMethodValue.TOTP.method)
+        val authority = Authority(Authorities.USER.roleName)
+        val user = User("example@example.com",
+                "password",
+                "Georgi",
+                mutableListOf(authority),
+                true, true,
+                mutableListOf(MfaMethod(MfaMethodValue.EMAIL.method), MfaMethod(MfaMethodValue.TOTP.method)))
+        every { userRepository.findByEmail(any()) } returns user
 
         val newEmail = "example@test.com"
 

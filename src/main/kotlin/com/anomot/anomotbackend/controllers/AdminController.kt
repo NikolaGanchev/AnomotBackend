@@ -142,6 +142,24 @@ class AdminController(
     }
 
     @Secured("ROLE_ADMIN")
+    @PutMapping("/admin/user/email")
+    fun changeEmail(@RequestParam("id") id: String, @RequestBody @Valid adminEmailChangeDto: AdminEmailChangeDto, authentication: Authentication): ResponseEntity<String> {
+        val user = userDetailsServiceImpl.getUserReferenceFromIdUnsafe(id) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+        val result = adminService.changeEmail(user, adminEmailChangeDto.newEmail)
+
+        return ResponseEntity(if (result) HttpStatus.OK else HttpStatus.BAD_REQUEST)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @PutMapping("/admin/user/mfa")
+    fun disableMfa(@RequestParam("id") id: String, authentication: Authentication): ResponseEntity<String> {
+        val user = userDetailsServiceImpl.getUserReferenceFromIdUnsafe(id) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+        val result = adminService.disableMfa(user)
+
+        return ResponseEntity(if (result) HttpStatus.OK else HttpStatus.BAD_REQUEST)
+    }
+
+    @Secured("ROLE_ADMIN")
     @DeleteMapping("/admin/user/avatar")
     fun deleteAvatar(@RequestParam("id") id: String, authentication: Authentication): ResponseEntity<String> {
         val user = userDetailsServiceImpl.getUserReferenceFromIdUnsafe(id) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)

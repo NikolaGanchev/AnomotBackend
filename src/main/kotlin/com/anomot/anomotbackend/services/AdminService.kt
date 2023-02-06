@@ -3,7 +3,10 @@ package com.anomot.anomotbackend.services
 import com.anomot.anomotbackend.dto.*
 import com.anomot.anomotbackend.entities.*
 import com.anomot.anomotbackend.repositories.*
+import com.anomot.anomotbackend.security.CustomUserDetails
+import com.anomot.anomotbackend.security.MfaMethodValue
 import com.anomot.anomotbackend.utils.*
+import org.hibernate.Hibernate
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
@@ -46,7 +49,8 @@ class AdminService @Autowired constructor(
         private val voteRepository: VoteRepository,
         private val battleQueueRepository: BattleQueueRepository,
         private val urlRepository: UrlRepository,
-        private val previousCommentVersionRepository: PreviousCommentVersionRepository
+        private val previousCommentVersionRepository: PreviousCommentVersionRepository,
+        private val rememberMeTokenRepository: RememberMeTokenRepository
 ) {
     @Secured("ROLE_ADMIN")
     fun getReports(page: Int): List<ReportTicketDto> {
@@ -556,5 +560,51 @@ class AdminService @Autowired constructor(
                         Constants.COMMENTS_PAGE, Sort.by("creationDate").descending())).map {
             return@map CommentEditDto(it.text, it.creationDate, it.comment.id.toString())
         }
+    }
+
+    @Secured("ROLE_ADMIN")
+    @Transactional
+    fun changeEmail(user: User, newEmail: String): Boolean {
+        rememberMeTokenRepository.deleteAllByEmail(user.email)
+
+        userDetailsServiceImpl.expireUserSessions(user)
+
+        userRepository.setEmail(newEmail, user.id!!)
+
+        userRepository.flush()
+
+        userRepository.setIsEmailVerifiedByEmail(false, newEmail)
+
+        Hibernate.initialize(user.mfaMethods)
+
+        if (CustomUserDetails(user).hasMfaMethod(MfaMethodValue.EMAIL)) {
+            val mfaMethod = userDetailsServiceImpl.getMfaEntityReference(MfaMethodValue.EMAIL)
+
+            userDetailsServiceImpl.deactivateMfa(user, mfaMethod)
+        }
+
+        return true
+    }
+
+    @Secured("ROLE_ADMIN")
+    @Transactional
+    fun disableMfa(user: User): Boolean {
+        userDetailsServiceImpl.expireUserSessions(user)
+
+        val details = CustomUserDetails(user)
+
+        if (details.hasMfaMethod(MfaMethodValue.EMAIL)) {
+            val mfaMethod = userDetailsServiceImpl.getMfaEntityReference(MfaMethodValue.EMAIL)
+
+            userDetailsServiceImpl.deactivateMfa(user, mfaMethod)
+        }
+
+        if (details.hasMfaMethod(MfaMethodValue.TOTP)) {
+            val mfaMethod = userDetailsServiceImpl.getMfaEntityReference(MfaMethodValue.TOTP)
+
+            userDetailsServiceImpl.deactivateMfa(user, mfaMethod)
+        }
+
+        return true
     }
 }
