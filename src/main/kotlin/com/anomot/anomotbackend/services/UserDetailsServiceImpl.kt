@@ -103,7 +103,7 @@ class UserDetailsServiceImpl: UserDetailsService {
 
         sendVerificationEmail(savedUser)
 
-        return SelfUserDto(email = savedUser.email, username = savedUser.username, false, listOf(Authorities.USER.roleName), false)
+        return SelfUserDto(email = savedUser.email, username = savedUser.username, false, listOf(Authorities.USER.roleName), false, null, null, savedUser.id.toString())
     }
 
     @Transactional
