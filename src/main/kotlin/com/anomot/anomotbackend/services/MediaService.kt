@@ -142,6 +142,7 @@ class MediaService @Autowired constructor(
                             .build()
                 }
                 .body(BodyInserters.fromMultipartData(builder.build()))
+                .accept(org.springframework.http.MediaType.APPLICATION_JSON, org.springframework.http.MediaType.TEXT_PLAIN)
                 .retrieve()
                 .onStatus(HttpStatus::is4xxClientError) {
                     return@onStatus Mono.empty()
@@ -216,6 +217,7 @@ class MediaService @Autowired constructor(
         val content = webClient.post()
                 .uri("$mediaServerUrl/file")
                 .body(BodyInserters.fromMultipartData(builder.build()))
+                .accept(org.springframework.http.MediaType.APPLICATION_JSON, org.springframework.http.MediaType.TEXT_PLAIN)
                 .retrieve()
                 .onStatus(HttpStatus::is4xxClientError) {
                     return@onStatus Mono.empty()

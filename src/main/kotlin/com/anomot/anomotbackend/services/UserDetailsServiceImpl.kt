@@ -16,11 +16,15 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.security.authentication.BadCredentialsException
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
+import org.springframework.security.core.context.SecurityContext
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.core.userdetails.UserDetailsService
 import org.springframework.security.core.userdetails.UsernameNotFoundException
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder
+import org.springframework.session.FindByIndexNameSessionRepository
+import org.springframework.session.Session
 import org.springframework.session.data.redis.RedisIndexedSessionRepository
 import org.springframework.stereotype.Service
 import org.springframework.web.multipart.MultipartFile
@@ -405,6 +409,26 @@ class UserDetailsServiceImpl: UserDetailsService {
 
     // TODO add expire sessions path
     fun expireUserSessions(user: User) {
-        redisSessionRepository.findByPrincipalName(user.email).keys.forEach(redisSessionRepository::deleteById)
+        val sessionRepository = redisSessionRepository as FindByIndexNameSessionRepository<Session>
+        sessionRepository.findByPrincipalName(user.email).keys.forEach(redisSessionRepository::deleteById)
+    }
+
+    fun resetAvatarSessionInfo(user: User) {
+        val sessionRepository = redisSessionRepository as FindByIndexNameSessionRepository<Session>
+        val sessions = sessionRepository.findByPrincipalName(user.email).values.filterIsInstance<Session>()
+        sessions.forEach {
+            val securityContext = it.getAttribute<SecurityContext>("SPRING_SECURITY_CONTEXT")
+            val customUserDetails = securityContext.authentication.principal as CustomUserDetails
+            customUserDetails.clearAvatar()
+            val newAuthentication = UsernamePasswordAuthenticationToken.authenticated(customUserDetails,
+                    customUserDetails.password, customUserDetails.authorities)
+            newAuthentication.details = customUserDetails
+
+            val context = SecurityContextHolder.createEmptyContext()
+            context.authentication = newAuthentication
+
+            it.setAttribute("SPRING_SECURITY_CONTEXT", context)
+            sessionRepository.save(it)
+        }
     }
 }

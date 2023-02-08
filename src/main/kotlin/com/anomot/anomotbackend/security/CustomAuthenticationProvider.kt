@@ -3,6 +3,7 @@ package com.anomot.anomotbackend.security
 import com.anomot.anomotbackend.exceptions.MfaRequiredException
 import com.anomot.anomotbackend.exceptions.BadMfaCodeException
 import com.anomot.anomotbackend.exceptions.BadRecoveryCodeException
+import com.anomot.anomotbackend.exceptions.UserBannedException
 import com.anomot.anomotbackend.services.MfaEmailTokenService
 import com.anomot.anomotbackend.services.MfaRecoveryService
 import com.anomot.anomotbackend.services.MfaTotpService
@@ -37,10 +38,16 @@ class CustomAuthenticationProvider(userDetailsService: UserDetailsServiceImpl): 
     override fun additionalAuthenticationChecks(userDetails: UserDetails, authentication: UsernamePasswordAuthenticationToken) {
         super.additionalAuthenticationChecks(userDetails, authentication)
 
-        if (!shouldUseMfa) return
-
         val authenticationDetails = authentication.details as CustomAuthenticationDetails
         val user: CustomUserDetails = userDetails as CustomUserDetails
+
+        if (!shouldUseMfa) {
+            if (user.isBanned) {
+                throw UserBannedException("User banned", user.bannedUntil!!)
+            }
+
+            return
+        }
 
         if (user.isMfaEnabled()) {
             if (!authenticationDetails.recoveryCode.isNullOrEmpty() && user.id != null) {
@@ -76,5 +83,8 @@ class CustomAuthenticationProvider(userDetailsService: UserDetailsServiceImpl): 
                 throw BadMfaCodeException("Bad Multi-factor authentication code")
             }
         }
-   }
+        if (user.isBanned) {
+            throw UserBannedException("User banned", user.bannedUntil!!)
+        }
+    }
 }

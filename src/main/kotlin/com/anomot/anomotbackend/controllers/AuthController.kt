@@ -184,9 +184,7 @@ class AuthController(private val userDetailsService: UserDetailsServiceImpl,
     @GetMapping("/user")
     fun getUser(authentication: Authentication): ResponseEntity<SelfUserDto> {
         val user = ((authentication.principal) as CustomUserDetails)
-        val userDto = user.getAsSelfDto().also {
-            it.avatarId = userDetailsService.getAvatar(user.id!!)?.name.toString()
-        }
+        val userDto = user.getAsSelfDto()
 
         return ResponseEntity(userDto, HttpStatus.OK)
     }

@@ -45,6 +45,7 @@ class BattleService @Autowired constructor(
                 finishDate = Date.from(Date().toInstant().plusSeconds(Constants.BATTLE_DURATION.toLong())))
 
         val savedBattle = battleRepository.save(battle)
+        notificationService.sendBattleBeginNotification(battleQueuePost.post.poster, savedBattle)
         notificationService.sendBattleBeginNotification(candidate.post.poster, savedBattle)
         battleQueueRepository.delete(battleQueuePost)
         battleQueueRepository.delete(candidate)
@@ -55,7 +56,7 @@ class BattleService @Autowired constructor(
     fun queuePostForBattle(post: Post): Battle? {
         val battleQueuePost = battleQueueRepository.save(BattleQueuePost(post))
 
-        return findBattle(battleQueuePost)
+        return null
     }
 
     // Automatically adjusts elos and closes the battle

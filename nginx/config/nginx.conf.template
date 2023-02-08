@@ -23,24 +23,25 @@ http {
         location / {
             limit_req zone=general burst=20 nodelay;
 
-            proxy_set_header X-Real-IP $remote_addr;
             proxy_pass http://web:8080;
         }
 
         location /account/new {
-            limit_req zone=restricted;
+            limit_req zone=restricted burst=10 nodelay;
 
             proxy_pass http://web:8080;
         }
 
         location /account/login {
-            limit_req zone=restricted;
+            limit_req zone=restricted burst=10 nodelay;
+
+            proxy_set_header X-Real-IP $remote_addr;
 
             proxy_pass http://web:8080;
         }
 
         location /account/mfa/status {
-            limit_req zone=restricted;
+            limit_req zone=restricted burst=10 nodelay;
 
             proxy_pass http://web:8080;
         }

@@ -36,6 +36,7 @@ services:
       - EMAIL_USERNAME=
       - JWT_PRIVATE_KEY=
       - LOGO_URL=
+      - IS_MAIN=true
     networks:
       - mediaservernet
       - default

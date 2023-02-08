@@ -93,7 +93,12 @@ class UserDetailsServiceTests {
 
         val result = userDetailsService.createUser(UserRegisterDto(user.email, user.password, user.username))
 
-        assertThat(result).isEqualTo(expectedResult)
+        assertThat(result.email).isEqualTo(expectedResult.email)
+        assertThat(result.avatarId).isEqualTo(expectedResult.avatarId)
+        assertThat(result.isMfaActive).isEqualTo(expectedResult.isMfaActive)
+        assertThat(result.isEmailVerified).isEqualTo(expectedResult.isEmailVerified)
+        assertThat(result.roles).isEqualTo(expectedResult.roles)
+        assertThat(result.username).isEqualTo(expectedResult.username)
     }
 
     @Test

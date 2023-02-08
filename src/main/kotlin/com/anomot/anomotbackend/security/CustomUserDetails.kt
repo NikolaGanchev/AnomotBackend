@@ -2,7 +2,6 @@ package com.anomot.anomotbackend.security
 
 import com.anomot.anomotbackend.dto.SelfUserDto
 import com.anomot.anomotbackend.entities.Ban
-import com.anomot.anomotbackend.entities.Media
 import com.anomot.anomotbackend.entities.User
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.authority.SimpleGrantedAuthority
@@ -17,7 +16,7 @@ open class CustomUserDetails(user: User, ban: Ban? = null): UserDetails {
     private val _username = user.username
     private val _email = user.email
     private val _mfaMethods: List<String>? = user.mfaMethods?.map { it.method }?.toCollection(mutableListOf())
-    private val avatar: Media?  = user.avatar
+    private var avatarId: String? = if (user.avatar == null) null else user.avatar!!.name.toString()
     val isEmailVerified = user.isEmailVerified
     private val isMfaActive = user.isMfaActive
     val isBanned = ban != null
@@ -40,7 +39,7 @@ open class CustomUserDetails(user: User, ban: Ban? = null): UserDetails {
     }
 
     override fun isAccountNonLocked(): Boolean {
-        return !isBanned
+        return true
     }
 
     override fun isCredentialsNonExpired(): Boolean {
@@ -56,10 +55,10 @@ open class CustomUserDetails(user: User, ban: Ban? = null): UserDetails {
                 username = _username,
                 isEmailVerified = isEmailVerified,
                 roles = getAuthoritiesAsList(),
+                id.toString(),
                 isMfaActive = isMfaActive,
                 if (isMfaActive) _mfaMethods else null,
-                null,
-                id.toString())
+                avatarId,)
     }
 
     private fun getAuthoritiesAsList(): List<String> {
@@ -76,5 +75,9 @@ open class CustomUserDetails(user: User, ban: Ban? = null): UserDetails {
 
     fun getMfaMethodsAsList(): List<String>? {
         return _mfaMethods
+    }
+
+    fun clearAvatar() {
+        avatarId = null
     }
 }

@@ -45,4 +45,7 @@ interface BattleQueueRepository: JpaRepository<BattleQueuePost, Long> {
 
     @Query("select count(b) from BattleQueuePost b where b.post.creationDate > ?1")
     fun findByAfterDate(from: Date): Long
+
+    @Query("from BattleQueuePost post")
+    fun getAll(): List<BattleQueuePost>
 }

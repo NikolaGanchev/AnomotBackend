@@ -1,5 +1,6 @@
 package com.anomot.anomotbackend.security
 
+import com.anomot.anomotbackend.exceptions.UserBannedException
 import com.anomot.anomotbackend.security.filters.CustomJsonReaderFilter
 import com.anomot.anomotbackend.security.filters.LoginArgumentValidationFilter
 import com.anomot.anomotbackend.services.LoginInfoExtractorService
@@ -21,7 +22,6 @@ import org.springframework.http.client.reactive.ReactorClientHttpConnector
 import org.springframework.http.codec.ClientCodecConfigurer
 import org.springframework.mail.javamail.JavaMailSender
 import org.springframework.mail.javamail.JavaMailSenderImpl
-import org.springframework.security.authentication.LockedException
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.builders.WebSecurity
@@ -141,7 +141,7 @@ class WebSecurityConfig {
         val userDto = (authentication.principal as CustomUserDetails).getAsSelfDto()
 
         // Store login info
-        val successfulLogin = loginInfoExtractorService.getInfo(request.remoteAddr, request.getHeader("User-Agent"))
+        val successfulLogin = loginInfoExtractorService.getInfo(request.getHeader("X-Real-IP"), request.getHeader("User-Agent"))
         loginInfoExtractorService.saveLoginAndSendNotification((authentication.principal as CustomUserDetails), successfulLogin)
 
         // Set up mapper
@@ -157,14 +157,14 @@ class WebSecurityConfig {
     private val loginFailureHandler = AuthenticationFailureHandler {
         request, response, authentication ->
 
-        if (authentication is LockedException) {
+        if (authentication is UserBannedException) {
             val mapper = ObjectMapper()
             mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL)
             response.status = SC_FORBIDDEN
             response.contentType = "application/json"
             val dto = object {
                 val isBanned = true
-                // TODO Add banned until
+                val bannedUntil = authentication.banUntil
             }
             response.writer.write(mapper.writeValueAsString(dto))
         } else {
@@ -218,7 +218,7 @@ class WebSecurityConfig {
     @Primary
     fun webClient(): WebClient {
         val httpClient: HttpClient = HttpClient.create().resolver(DefaultAddressResolverGroup.INSTANCE)
-        val size = 80 * 1024 * 1024
+        val size = 100 * 1024 * 1024
         val strategies = ExchangeStrategies.builder()
                 .codecs { codecs: ClientCodecConfigurer -> codecs.defaultCodecs().maxInMemorySize(size) }
                 .build()
