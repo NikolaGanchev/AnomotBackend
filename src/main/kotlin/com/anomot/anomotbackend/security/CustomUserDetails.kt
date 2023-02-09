@@ -55,10 +55,10 @@ open class CustomUserDetails(user: User, ban: Ban? = null): UserDetails {
                 username = _username,
                 isEmailVerified = isEmailVerified,
                 roles = getAuthoritiesAsList(),
-                id.toString(),
                 isMfaActive = isMfaActive,
                 if (isMfaActive) _mfaMethods else null,
-                avatarId,)
+                avatarId,
+                id.toString())
     }
 
     private fun getAuthoritiesAsList(): List<String> {

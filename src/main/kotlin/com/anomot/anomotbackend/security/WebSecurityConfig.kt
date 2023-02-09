@@ -140,8 +140,10 @@ class WebSecurityConfig {
         // Get user
         val userDto = (authentication.principal as CustomUserDetails).getAsSelfDto()
 
+        val ip = request.getHeader("X-Real-IP") ?: request.remoteAddr
+
         // Store login info
-        val successfulLogin = loginInfoExtractorService.getInfo(request.getHeader("X-Real-IP"), request.getHeader("User-Agent"))
+        val successfulLogin = loginInfoExtractorService.getInfo(ip, request.getHeader("User-Agent"))
         loginInfoExtractorService.saveLoginAndSendNotification((authentication.principal as CustomUserDetails), successfulLogin)
 
         // Set up mapper
