@@ -12,6 +12,7 @@ import com.bastiaanjansen.otp.TOTP
 import org.hibernate.Hibernate
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Lazy
+import org.springframework.context.i18n.LocaleContextHolder
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.security.access.AccessDeniedException
@@ -65,6 +66,8 @@ class UserDetailsServiceImpl: UserDetailsService {
     private lateinit var banRepository: BanRepository
     @Autowired
     private lateinit var rememberMeTokenRepository: RememberMeTokenRepository
+    @Autowired
+    private lateinit var emailService: EmailService
     @Autowired
     @Lazy
     private lateinit var authenticationService: AuthenticationService
@@ -124,6 +127,8 @@ class UserDetailsServiceImpl: UserDetailsService {
         userRepository.setPassword(hashedPassword, (user.principal as CustomUserDetails).id!!)
 
         authenticationService.reAuthenticate(user)
+
+        emailService.sendPasswordChangeEmail((user.principal as CustomUserDetails).username, LocaleContextHolder.getLocale())
     }
 
     @Transactional
