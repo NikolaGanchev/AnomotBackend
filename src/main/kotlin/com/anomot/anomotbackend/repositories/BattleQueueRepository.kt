@@ -21,9 +21,9 @@ interface BattleQueueRepository: JpaRepository<BattleQueuePost, Long> {
             "and p.poster_id <> :#{#post.post.poster.id} " +
             "and abs(u.elo - :#{#post.post.poster.elo}) < case " +
             // 1 minute
-            "when (extract(epoch from now() - p.creation_date) < 60) then ${Constants.MAX_ELO_1_MINUTE} " +
-            "when (extract(epoch from now() - p.creation_date) < 60 * 5) then ${Constants.MAX_ELO_5_MINUTES} " +
-            "when (extract(epoch from now() - p.creation_date) < 60 * 60) then ${Constants.MAX_ELO_1_HOUR} " +
+            "when (extract(epoch from now() - bp.creation_date) < 60) then ${Constants.MAX_ELO_1_MINUTE} " +
+            "when (extract(epoch from now() - bp.creation_date) < 60 * 5) then ${Constants.MAX_ELO_5_MINUTES} " +
+            "when (extract(epoch from now() - bp.creation_date) < 60 * 60) then ${Constants.MAX_ELO_1_HOUR} " +
             "else ${Constants.MAX_ELO_DIFFERENCE} end " +
             "order by abs(u.elo - :#{#post.post.poster.elo}) asc, p.creation_date asc", nativeQuery = true)
     fun findSimilarByElo(@Param("post") post: BattleQueuePost, pageable: Pageable =
@@ -43,7 +43,7 @@ interface BattleQueueRepository: JpaRepository<BattleQueuePost, Long> {
     @Query("delete from BattleQueuePost p where p.post.id in (select p.id from Post p where p.poster = ?1)")
     fun deleteByUser(user: User)
 
-    @Query("select count(b) from BattleQueuePost b where b.post.creationDate > ?1")
+    @Query("select count(b) from BattleQueuePost b where b.creationDate > ?1")
     fun findByAfterDate(from: Date): Long
 
     @Query("from BattleQueuePost post")
