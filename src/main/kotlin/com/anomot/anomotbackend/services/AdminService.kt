@@ -542,11 +542,12 @@ class AdminService @Autowired constructor(
 
     @Secured("ROLE_ADMIN")
     fun deleteComment(comment: Comment): Boolean {
+        commentLikeRepository.deleteByComment(comment)
+        previousCommentVersionRepository.deleteAllByComment(comment)
+
         if (commentRepository.existsByParentComment(comment)) {
-            previousCommentVersionRepository.deleteAllByComment(comment)
             commentRepository.setDeleted(comment.commenter!!, comment.id!!)
         } else {
-            previousCommentVersionRepository.deleteAllByComment(comment)
             commentRepository.delete(comment)
         }
 

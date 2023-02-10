@@ -126,11 +126,12 @@ class CommentService @Autowired constructor(
 
         if (comment.commenter!!.id != user.id) return false
 
+        commentLikeRepository.deleteByComment(comment)
+        previousCommentVersionRepository.deleteAllByComment(comment)
+
         if (commentRepository.existsByParentComment(comment)) {
-            previousCommentVersionRepository.deleteAllByComment(comment)
             commentRepository.setDeleted(user, comment.id!!)
         } else {
-            previousCommentVersionRepository.deleteAllByComment(comment)
             commentRepository.delete(comment)
         }
 

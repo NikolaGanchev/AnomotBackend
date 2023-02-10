@@ -22,4 +22,5 @@ interface CommentLikeRepository: JpaRepository<CommentLike, Long> {
     @Modifying
     @Query("delete from CommentLike l where l.likedBy = ?1")
     fun deleteByUser(user: User)
+    fun deleteByComment(comment: Comment)
 }
