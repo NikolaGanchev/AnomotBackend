@@ -38,16 +38,12 @@ class CustomAuthenticationProvider(userDetailsService: UserDetailsServiceImpl): 
     override fun additionalAuthenticationChecks(userDetails: UserDetails, authentication: UsernamePasswordAuthenticationToken) {
         super.additionalAuthenticationChecks(userDetails, authentication)
 
-        val authenticationDetails = authentication.details as CustomAuthenticationDetails
-        val user: CustomUserDetails = userDetails as CustomUserDetails
-
         if (!shouldUseMfa) {
-            if (user.isBanned) {
-                throw UserBannedException("User banned", user.bannedUntil!!)
-            }
-
             return
         }
+
+        val authenticationDetails = authentication.details as CustomAuthenticationDetails
+        val user: CustomUserDetails = userDetails as CustomUserDetails
 
         if (user.isMfaEnabled()) {
             if (!authenticationDetails.recoveryCode.isNullOrEmpty() && user.id != null) {
