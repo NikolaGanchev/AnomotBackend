@@ -31,11 +31,9 @@ class BattleScheduledService@Autowired constructor(
                 battleService.finish(it)
                 if (it.goldPost != null) {
                     notificationService.sendBattleEndNotification(it.goldPost!!.poster, it)
-                    notificationService.sendBattleEndNotificationToVotersAndPost(it, it.goldPost!!)
                 }
                 if (it.redPost != null) {
                     notificationService.sendBattleEndNotification(it.redPost!!.poster, it)
-                    notificationService.sendBattleEndNotificationToVotersAndPost(it, it.redPost!!)
                 }
             } catch (_: Exception) {}
         }
