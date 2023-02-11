@@ -29,29 +29,24 @@ class BattleService @Autowired constructor(
 ) {
 
     @Transactional
-    fun findBattle(battleQueuePost: BattleQueuePost): Battle? {
-        val candidates = battleQueueRepository.findSimilarByElo(battleQueuePost)
-
-        if (candidates.isEmpty()) return null
-        val candidate = candidates[0]
-
-        if (battleQueuePost.post.type != candidate.post.type)
+    fun createBattle(firstCandidate: BattleQueuePost, secondCandidate: BattleQueuePost): Battle{
+        if (firstCandidate.post.type != secondCandidate.post.type)
             throw Exception("Candidates for battle don't have a matching post type (if this ever happens, there is a problem in the matchmaking queries)")
 
-        val battle = Battle(battleQueuePost.post,
-                candidate.post,
-                candidate.post.type,
+        val battle = Battle(firstCandidate.post,
+                secondCandidate.post,
+                firstCandidate.post.type,
                 totalVotePossibilities = 0,
                 finishDate = Date.from(Date().toInstant().plusSeconds(Constants.BATTLE_DURATION.toLong())))
 
         val savedBattle = battleRepository.save(battle)
-        notificationService.sendBattleBeginNotification(battleQueuePost.post.poster, savedBattle)
-        notificationService.sendBattleBeginNotification(candidate.post.poster, savedBattle)
-        battleQueueRepository.delete(battleQueuePost)
-        battleQueueRepository.delete(candidate)
+        notificationService.sendBattleBeginNotification(firstCandidate.post.poster, savedBattle)
+        notificationService.sendBattleBeginNotification(secondCandidate.post.poster, savedBattle)
+        battleQueueRepository.deleteAll(listOf(firstCandidate, secondCandidate))
 
         return savedBattle
     }
+
 
     fun queuePostForBattle(post: Post): Battle? {
         val battleQueuePost = battleQueueRepository.save(BattleQueuePost(post))
@@ -105,7 +100,7 @@ class BattleService @Autowired constructor(
 
     @Transactional
     fun getBattle(user: User, page: Int): BattleDto? {
-        val battles = battleRepository.getBattle(user.id!!, PageRequest.of(page, 1))
+        val battles = battleRepository.getBattle(user.id!!, PageRequest.of(page, 1, Sort.by("total_vote_possibilities").ascending()))
         if (battles.isEmpty()) return null
         val battle = battles[0] ?: return null
 

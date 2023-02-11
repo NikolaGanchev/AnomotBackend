@@ -7,6 +7,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
+import java.time.Instant
 import java.util.*
 
 @ConditionalOnProperty(
@@ -20,6 +21,6 @@ class ClearRememberMeTokens @Autowired constructor(
     @Scheduled(cron = "0 0 0 * * ?")
     @Transactional
     fun clearEmailVerificationCodes() {
-        rememberMeTokenRepository.deleteOldTokens(Date(System.currentTimeMillis() - Constants.REMEMBER_ME_VALIDITY_DURATION * 1000L))
+        rememberMeTokenRepository.deleteOldTokens(Date.from(Instant.now().minusSeconds(Constants.REMEMBER_ME_VALIDITY_DURATION.toLong())))
     }
 }

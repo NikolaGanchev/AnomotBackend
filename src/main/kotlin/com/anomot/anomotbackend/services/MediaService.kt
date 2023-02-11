@@ -23,6 +23,7 @@ import org.springframework.web.reactive.function.BodyInserters
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.WebClientResponseException
 import reactor.core.publisher.Mono
+import java.lang.Exception
 import java.util.*
 import javax.transaction.Transactional
 
@@ -134,27 +135,31 @@ class MediaService @Autowired constructor(
         val header = String.format("form-data; name=%s; filename=%s", "file", file.originalFilename)
         builder.part("file", ByteArrayResource(file.bytes)).header("Content-Disposition", header)
 
-        val content = webClient.post()
-                .uri {
-                    it.path("$mediaServerUrl/media")
-                            .queryParam("phash", shouldHash)
-                            .queryParam("nsfw", shouldNsfwScan)
-                            .build()
-                }
-                .body(BodyInserters.fromMultipartData(builder.build()))
-                .accept(org.springframework.http.MediaType.APPLICATION_JSON, org.springframework.http.MediaType.TEXT_PLAIN)
-                .retrieve()
-                .onStatus(HttpStatus::is4xxClientError) {
-                    return@onStatus Mono.empty()
-                }
-                .bodyToMono(MediaSaveDto::class.java)
-                .blockOptional()
+        try {
+            val content = webClient.post()
+                    .uri {
+                        it.path("$mediaServerUrl/media")
+                                .queryParam("phash", shouldHash)
+                                .queryParam("nsfw", shouldNsfwScan)
+                                .build()
+                    }
+                    .body(BodyInserters.fromMultipartData(builder.build()))
+                    .accept(org.springframework.http.MediaType.APPLICATION_JSON, org.springframework.http.MediaType.TEXT_PLAIN)
+                    .retrieve()
+                    .onStatus(HttpStatus::is4xxClientError) {
+                        return@onStatus Mono.empty()
+                    }
+                    .bodyToMono(MediaSaveDto::class.java)
+                    .blockOptional()
 
-        if (content.isEmpty) {
+            if (content.isEmpty) {
+                return null
+            }
+
+            return content.get()
+        } catch (e: Exception) {
             return null
         }
-
-        return content.get()
     }
 
     fun getMediaFromServer(name: String): MediaResponse? {
@@ -288,31 +293,34 @@ class MediaService @Autowired constructor(
         val header = String.format("form-data; name=%s; filename=%s", "file", file.originalFilename)
         builder.part("file", ByteArrayResource(file.bytes)).header("Content-Disposition", header)
 
-        val content = webClient.post()
-                .uri {
-                    it.path("$mediaServerUrl/image/square")
-                            .queryParam("size", size)
-                            .queryParam("left", left)
-                            .queryParam("top", top)
-                            .queryParam("cropSize", cropSize)
-                            .build()
-                }
-                .body(BodyInserters.fromMultipartData(builder.build()))
-                .retrieve()
-                .onStatus(HttpStatus::is4xxClientError) {
-                    return@onStatus Mono.empty()
-                }
-                .bodyToMono(SquareImageSaveDto::class.java)
-                .onErrorResume(WebClientResponseException.UnsupportedMediaType::class.java) {
-                    return@onErrorResume Mono.empty()
-                }
-                .blockOptional()
+        try {
+            val content = webClient.post()
+                    .uri {
+                        it.path("$mediaServerUrl/image/square")
+                                .queryParam("size", size)
+                                .queryParam("left", left)
+                                .queryParam("top", top)
+                                .queryParam("cropSize", cropSize)
+                                .build()
+                    }
+                    .body(BodyInserters.fromMultipartData(builder.build()))
+                    .retrieve()
+                    .onStatus(HttpStatus::is4xxClientError) {
+                        return@onStatus Mono.empty()
+                    }
+                    .bodyToMono(SquareImageSaveDto::class.java)
+                    .onErrorResume(WebClientResponseException.UnsupportedMediaType::class.java) {
+                        return@onErrorResume Mono.empty()
+                    }
+                    .blockOptional()
 
-        if (content.isEmpty) {
+            if (content.isEmpty) {
+                return null
+            }
+            return content.get()
+        } catch (e: Exception) {
             return null
         }
-
-        return content.get()
     }
 
     fun inNsfwRequirements(media: MediaResponse, name: String): Boolean {

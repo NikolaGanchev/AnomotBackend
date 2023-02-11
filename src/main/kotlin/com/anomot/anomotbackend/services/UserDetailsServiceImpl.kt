@@ -28,6 +28,7 @@ import org.springframework.session.FindByIndexNameSessionRepository
 import org.springframework.session.Session
 import org.springframework.session.data.redis.RedisIndexedSessionRepository
 import org.springframework.stereotype.Service
+import org.springframework.web.context.request.RequestContextHolder
 import org.springframework.web.multipart.MultipartFile
 import java.nio.charset.StandardCharsets
 import java.time.Duration
@@ -412,10 +413,19 @@ class UserDetailsServiceImpl: UserDetailsService {
         return userRepository.findByEmail(userRegisterDto.email) != null
     }
 
-    // TODO add expire sessions path
     fun expireUserSessions(user: User) {
         val sessionRepository = redisSessionRepository as FindByIndexNameSessionRepository<Session>
         sessionRepository.findByPrincipalName(user.email).keys.forEach(redisSessionRepository::deleteById)
+    }
+
+    fun expireUserSessionsExceptCurrent(user: User) {
+        val sessionRepository = redisSessionRepository as FindByIndexNameSessionRepository<Session>
+        val currentSessionId = RequestContextHolder.currentRequestAttributes().getSessionId();
+        sessionRepository.findByPrincipalName(user.email).keys.forEach{
+            if (it != currentSessionId) {
+                redisSessionRepository.deleteById(it)
+            }
+        }
     }
 
     fun resetAvatarSessionInfo(user: User) {

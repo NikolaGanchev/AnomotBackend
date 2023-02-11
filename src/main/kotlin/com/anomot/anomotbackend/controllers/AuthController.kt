@@ -250,4 +250,11 @@ class AuthController(private val userDetailsService: UserDetailsServiceImpl,
             ResponseEntity(AvatarResultDto(result.avatarId, result.hasNsfw, null), HttpStatus.OK)
         }
     }
+
+    @PostMapping("/logout/all")
+    fun logoutAllSession(authentication: Authentication): ResponseEntity<String> {
+        val user = userDetailsService.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
+        userDetailsService.expireUserSessionsExceptCurrent(user)
+        return ResponseEntity(HttpStatus.OK)
+    }
 }

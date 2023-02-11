@@ -10,6 +10,7 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
+import java.math.BigInteger
 
 @ConditionalOnProperty(
         value = ["scaling.is.main"], havingValue = "true"
@@ -26,7 +27,7 @@ class BattleScheduledService@Autowired constructor(
     @Transactional
     fun findFinishedBattles() {
         val battles = battleRepository.getUnprocessedFinishedBattlesAndUpdate()
-        battles.parallelStream().forEach {
+        battles.forEach {
             try {
                 battleService.finish(it)
                 if (it.goldPost != null) {
@@ -35,25 +36,25 @@ class BattleScheduledService@Autowired constructor(
                 if (it.redPost != null) {
                     notificationService.sendBattleEndNotification(it.redPost!!.poster, it)
                 }
-            } catch (_: Exception) {}
+            } catch (e: Exception) {
+                logger.error(e.message)
+            }
         }
     }
 
-    //This works, however it can be slow if, for example, you try to matchmake 20000 posts
-    @Scheduled(fixedDelay = 20 * 1000)
+
+    @Scheduled(fixedDelay = 5 * 1000)
     @Transactional
     fun findBattles() {
-        val posts = battleQueuePostRepository.getAll()
-        val found = hashSetOf<Long>()
-        for (it in posts) {
+        val matchmade = battleQueuePostRepository.matchmake()
+        matchmade.forEach {
             try {
-                if (found.contains(it.id)) continue
-
-                val battle = battleService.findBattle(it) ?: continue
-                val otherId = if (battle.goldPost!!.id == it.id) battle.redPost!!.id else battle.goldPost!!.id
-
-                found.add(otherId!!)
-            } catch (_: Exception) {}
+                val firstCandidate = battleQueuePostRepository.getReferenceById(it.get(0, BigInteger::class.java).longValueExact())
+                val secondCandidate = battleQueuePostRepository.getReferenceById(it.get(1, BigInteger::class.java).longValueExact())
+                battleService.createBattle(firstCandidate, secondCandidate)
+            } catch (e: Exception) {
+                logger.error(e.message)
+            }
         }
     }
 }
