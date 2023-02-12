@@ -22,6 +22,8 @@ class EmailService @Autowired constructor(
     private val logoUrl: String,
     @Value("\${contact.mail}")
     private val contactMail: String,
+    @Value("\${noreply.mail}")
+    private val noreplyMail: String,
     private val emailMessageSource: ResourceBundleMessageSource,
     @Value("\${environment.is-local}")
     private val isLocal: String?
@@ -97,7 +99,7 @@ class EmailService @Autowired constructor(
     private fun sendEmail(recipientEmail: String, subject: String, text: String) {
         val mimeMessage = mailSender.createMimeMessage()
         val message = MimeMessageHelper(mimeMessage, "UTF-8")
-        message.setFrom("anomotapp@gmail.com")
+        message.setFrom("Anomot <$noreplyMail>")
         message.setTo(recipientEmail)
         message.setSubject(subject)
         message.setText(text, true)

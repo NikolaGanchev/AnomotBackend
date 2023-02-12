@@ -8,10 +8,12 @@ http {
     limit_req_status 429;
 
     server {
-        listen 443;
-        listen [::]:443;
-
-        proxy_request_buffering off;
+        listen 443 ssl http2;
+        listen [::]:443 ssl http2;
+        ssl_certificate         /etc/ssl/cert.pem;
+        ssl_certificate_key     /etc/ssl/key.pem;
+        ssl_client_certificate  /etc/ssl/cloudflare.crt;
+        ssl_verify_client on;
 
         error_page 429 @ratelimiterror;
         error_page 413 @filetoobigerror;
@@ -31,7 +33,7 @@ http {
         location /account/login {
             limit_req zone=restricted burst=10 nodelay;
 
-            proxy_set_header X-Real-IP $remote_addr;
+            proxy_set_header X-Real-IP $http_CF_Connecting_IP;
 
             proxy_pass http://web:8080;
         }
