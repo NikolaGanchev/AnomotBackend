@@ -41,7 +41,7 @@ class CommentService @Autowired constructor(
     fun addCommentToBattle(text: String, user: User, battleId: String): CommentDto? {
         val battle = battleService.getBattleReferenceFromIdUnsafe(battleId) ?: return null
 
-        if (!voteRepository.existsByBattleAndVoter(battle, user)) return null
+        if (!battleRepository.canSeeBattle(user, battle)) return null
 
         return addComment(text, user, battle, null, null)
     }
