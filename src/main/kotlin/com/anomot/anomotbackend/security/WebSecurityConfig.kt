@@ -70,6 +70,8 @@ class WebSecurityConfig {
     private val username: String? = null
     @Value("\${mail.password}")
     private val password: String? = null
+    @Value("\${cookie.domain}")
+    private val cookieDomain: String? = null
     @Value("classpath:mail/mail.properties")
     private val resourceFile: Resource? = null
 
@@ -107,7 +109,9 @@ class WebSecurityConfig {
                     .invalidateHttpSession(true)
                     .and()
                 .csrf()
-                    .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                    .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse().also {
+                        it.setCookieDomain(cookieDomain)
+                    })
                     .and()
                 .authenticationProvider(authenticationProvider())
                 .rememberMe()
