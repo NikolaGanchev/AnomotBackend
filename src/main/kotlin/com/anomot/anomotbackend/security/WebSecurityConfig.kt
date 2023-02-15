@@ -18,6 +18,7 @@ import org.springframework.context.annotation.Scope
 import org.springframework.context.support.ResourceBundleMessageSource
 import org.springframework.core.io.Resource
 import org.springframework.http.HttpMethod
+import org.springframework.http.HttpStatus
 import org.springframework.http.client.reactive.ReactorClientHttpConnector
 import org.springframework.http.codec.ClientCodecConfigurer
 import org.springframework.mail.javamail.JavaMailSender
@@ -126,6 +127,9 @@ class WebSecurityConfig {
                 .addFilterBefore(CustomJsonReaderFilter(), UsernamePasswordAuthenticationFilter::class.java)
                 .addFilterAfter(LoginArgumentValidationFilter(), CustomJsonReaderFilter::class.java)
                 .httpBasic()
+                .authenticationEntryPoint { _, response, _ ->
+                    response.sendError(HttpStatus.UNAUTHORIZED.value(), HttpStatus.UNAUTHORIZED.reasonPhrase)
+                }
 
         return http.build()
     }
