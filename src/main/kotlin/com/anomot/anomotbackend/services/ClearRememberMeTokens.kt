@@ -11,14 +11,14 @@ import java.time.Instant
 import java.util.*
 
 @ConditionalOnProperty(
-        value = ["scaling.is.main"], havingValue = "true"
+        value = ["clear.remember-me"], havingValue = "true"
 )
 @Component
 class ClearRememberMeTokens @Autowired constructor(
         private val rememberMeTokenRepository: RememberMeTokenRepository
 ) {
 
-    @Scheduled(cron = "0 0 0 * * ?")
+    @Scheduled(fixedRate = 1000 * 60 * 60 * 24)
     @Transactional
     fun clearEmailVerificationCodes() {
         rememberMeTokenRepository.deleteOldTokens(Date.from(Instant.now().minusSeconds(Constants.REMEMBER_ME_VALIDITY_DURATION.toLong())))

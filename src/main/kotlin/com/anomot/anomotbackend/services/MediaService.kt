@@ -1,5 +1,6 @@
 package com.anomot.anomotbackend.services
 
+import com.anomot.anomotbackend.AnomotBackendApplication
 import com.anomot.anomotbackend.dto.*
 import com.anomot.anomotbackend.entities.*
 import com.anomot.anomotbackend.repositories.*
@@ -7,6 +8,8 @@ import com.anomot.anomotbackend.utils.Constants
 import com.anomot.anomotbackend.utils.MediaType
 import com.anomot.anomotbackend.utils.NsfwScanType
 import com.anomot.anomotbackend.utils.SecureRandomStringGenerator
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.core.io.ByteArrayResource
@@ -41,6 +44,7 @@ class MediaService @Autowired constructor(
 ) {
     data class MediaUploadResult(val media: Media?, val avgNsfwScan: NsfwScan?, val maxNsfwScan: NsfwScan?)
     data class SquareImageSaveResult(val media: Media?, val avgNsfwScan: NsfwScan?)
+    private val logger: Logger = LoggerFactory.getLogger(AnomotBackendApplication::class.java)
 
     val secureRandomStringGenerator = SecureRandomStringGenerator(SecureRandomStringGenerator.ALPHANUMERIC)
 
@@ -158,6 +162,7 @@ class MediaService @Autowired constructor(
 
             return content.get()
         } catch (e: Exception) {
+            logger.error(e.message)
             return null
         }
     }
@@ -319,6 +324,7 @@ class MediaService @Autowired constructor(
             }
             return content.get()
         } catch (e: Exception) {
+            logger.error(e.message)
             return null
         }
     }
