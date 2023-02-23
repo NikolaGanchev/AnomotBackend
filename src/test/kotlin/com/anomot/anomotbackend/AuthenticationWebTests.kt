@@ -519,7 +519,7 @@ class AuthenticationWebTests @Autowired constructor(
     fun `When verify email code valid then return 201`() {
         val token = EmailVerifyDto("code")
 
-        every { emailVerificationService.verifyEmail("code", any()) } returns true
+        every { emailVerificationService.verifyEmail("code", any(), any()) } returns true
 
         mockMvc.perform(post("/account/email/verify")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -532,7 +532,7 @@ class AuthenticationWebTests @Autowired constructor(
     fun `When verify email code invalid then return 401`() {
         val token = EmailVerifyDto("code")
 
-        every { emailVerificationService.verifyEmail("code", any()) } returns false
+        every { emailVerificationService.verifyEmail("code", any(), any()) } returns false
 
         mockMvc.perform(post("/account/email/verify")
                 .contentType(MediaType.APPLICATION_JSON)

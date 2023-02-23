@@ -118,6 +118,7 @@ class WebSecurityConfig {
                     .rememberMeParameter(Constants.REMEMBER_ME_PARAMETER)
                     .rememberMeCookieName(Constants.REMEMBER_ME_COOKIE_NAME)
                     .tokenRepository(customRememberMeTokenRepository)
+                    .userDetailsService(userDetailsService())
                     .key(rememberKey)
                 .and()
                 .cors()
