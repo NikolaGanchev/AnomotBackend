@@ -66,13 +66,17 @@ class EmailVerificationService @Autowired constructor(
     }
 
     @Transactional
-    fun verifyEmail(verificationCode: String, now: Instant): Boolean {
+    fun verifyEmail(verificationCode: String, now: Instant, onVerified: (user: User) -> Unit = {}): Boolean {
         val emailVerificationToken = emailVerificationTokenRepository
                 .findByVerificationCode(verificationCode) ?: return false
 
         return if (isNotExpired(emailVerificationToken, now)) {
             val editedRows = userRepository.setIsEmailVerifiedByEmail(true,
                     emailVerificationToken.user.email)
+
+            if (editedRows != 0) {
+                onVerified(emailVerificationToken.user)
+            }
 
             try {
                 emailVerificationTokenRepository.delete(emailVerificationToken)

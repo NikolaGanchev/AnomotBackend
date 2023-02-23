@@ -286,7 +286,10 @@ class AdminService @Autowired constructor(
     @Secured("ROLE_ADMIN")
     fun deleteAvatar(user: User): Boolean {
         userDetailsServiceImpl.deleteAvatar(user)
-        userDetailsServiceImpl.resetAvatarSessionInfo(user)
+        userDetailsServiceImpl.changeSessions(user) {
+            it.clearAvatar()
+            return@changeSessions it
+        }
         return true
     }
 

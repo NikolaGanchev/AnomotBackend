@@ -17,7 +17,7 @@ open class CustomUserDetails(user: User, ban: Ban? = null): UserDetails {
     private val _email = user.email
     private val _mfaMethods: List<String>? = user.mfaMethods?.map { it.method }?.toCollection(mutableListOf())
     private var avatarId: String? = if (user.avatar == null) null else user.avatar!!.name.toString()
-    val isEmailVerified = user.isEmailVerified
+    var isEmailVerified = user.isEmailVerified
     private val isMfaActive = user.isMfaActive
     val isBanned = ban != null
     val bannedUntil: Date? = ban?.until

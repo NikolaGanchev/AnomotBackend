@@ -420,7 +420,7 @@ class UserDetailsServiceImpl: UserDetailsService {
 
     fun expireUserSessionsExceptCurrent(user: User) {
         val sessionRepository = redisSessionRepository as FindByIndexNameSessionRepository<Session>
-        val currentSessionId = RequestContextHolder.currentRequestAttributes().getSessionId();
+        val currentSessionId = RequestContextHolder.currentRequestAttributes().sessionId
         sessionRepository.findByPrincipalName(user.email).keys.forEach{
             if (it != currentSessionId) {
                 redisSessionRepository.deleteById(it)
@@ -428,13 +428,13 @@ class UserDetailsServiceImpl: UserDetailsService {
         }
     }
 
-    fun resetAvatarSessionInfo(user: User) {
+    fun changeSessions(user: User, change: (customUserDetails: CustomUserDetails) -> CustomUserDetails) {
         val sessionRepository = redisSessionRepository as FindByIndexNameSessionRepository<Session>
         val sessions = sessionRepository.findByPrincipalName(user.email).values.filterIsInstance<Session>()
         sessions.forEach {
             val securityContext = it.getAttribute<SecurityContext>("SPRING_SECURITY_CONTEXT")
-            val customUserDetails = securityContext.authentication.principal as CustomUserDetails
-            customUserDetails.clearAvatar()
+            var customUserDetails = securityContext.authentication.principal as CustomUserDetails
+            customUserDetails = change(customUserDetails)
             val newAuthentication = UsernamePasswordAuthenticationToken.authenticated(customUserDetails,
                     customUserDetails.password, customUserDetails.authorities)
             newAuthentication.details = customUserDetails

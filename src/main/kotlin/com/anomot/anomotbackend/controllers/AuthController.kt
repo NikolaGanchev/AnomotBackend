@@ -52,7 +52,12 @@ class AuthController(private val userDetailsService: UserDetailsServiceImpl,
 
     @PostMapping("/email/verify")
     fun verifyEmail(@RequestBody @Valid emailVerifyDto: EmailVerifyDto): ResponseEntity<String> {
-        val isVerified = emailVerificationService.verifyEmail(emailVerifyDto.verificationCode, Instant.now())
+        val isVerified = emailVerificationService.verifyEmail(emailVerifyDto.verificationCode, Instant.now()) {
+            userDetailsService.changeSessions(it) {customUserDetails ->
+                customUserDetails.isEmailVerified = true
+                return@changeSessions customUserDetails
+            }
+        }
         return ResponseEntity(if (isVerified) HttpStatus.CREATED else HttpStatus.UNAUTHORIZED)
     }
 
