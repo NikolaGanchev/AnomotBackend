@@ -22,7 +22,6 @@ class Constants {
         const val PASSWORD_RESET_CODE_LENGTH = 64
         const val PASSWORD_RESET_TOKEN_LIFETIME = 60 // minutes
         const val REMEMBER_ME_VALIDITY_DURATION = 60 * 60 * 24 * 14 // two weeks
-        const val REMEMBER_ME_COOKIE_DOMAIN = "domain"
         const val LOGINS_PER_PAGE = 20
         const val REMEMBER_ME_PARAMETER = "rememberMe"
         const val REMEMBER_ME_COOKIE_NAME = "remember-me"

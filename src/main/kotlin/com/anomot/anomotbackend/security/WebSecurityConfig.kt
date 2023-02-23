@@ -33,7 +33,6 @@ import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.AuthenticationFailureHandler
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
-import org.springframework.security.web.authentication.rememberme.PersistentTokenBasedRememberMeServices
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository
 import org.springframework.web.reactive.function.client.ExchangeStrategies
 import org.springframework.web.reactive.function.client.WebClient
@@ -113,21 +112,17 @@ class WebSecurityConfig {
                         it.setCookieDomain(cookieDomain)
                     })
                     .and()
-                .authenticationProvider(authenticationProvider())
                 .rememberMe()
                     .useSecureCookie(true)
                     .tokenValiditySeconds(Constants.REMEMBER_ME_VALIDITY_DURATION)
-                    .rememberMeCookieDomain(Constants.REMEMBER_ME_COOKIE_DOMAIN)
                     .rememberMeParameter(Constants.REMEMBER_ME_PARAMETER)
                     .rememberMeCookieName(Constants.REMEMBER_ME_COOKIE_NAME)
-                    .rememberMeServices(PersistentTokenBasedRememberMeServices(
-                            rememberKey, userDetailsService(), customRememberMeTokenRepository
-                    ).also {
-                        it.parameter = Constants.REMEMBER_ME_PARAMETER
-                    })
+                    .tokenRepository(customRememberMeTokenRepository)
+                    .key(rememberKey)
                 .and()
                 .cors()
                 .and()
+                .authenticationProvider(authenticationProvider())
                 .addFilterBefore(CustomJsonReaderFilter(), UsernamePasswordAuthenticationFilter::class.java)
                 .addFilterAfter(LoginArgumentValidationFilter(), CustomJsonReaderFilter::class.java)
                 .httpBasic()

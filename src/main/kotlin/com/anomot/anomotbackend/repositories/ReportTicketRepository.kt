@@ -15,28 +15,32 @@ interface ReportTicketRepository: JpaRepository<ReportTicket, Long> {
     @Query("select rt.type as reportType, " +
             "rt.post_id as post," +
             "(select count(l.id) from \"like\" l where l.post_id=rt.post_id) as postLikes, " +
+            "(select count(l.id) > 0 from \"like\" l where l.post_id=rt.post_id and l.liked_by_id=?1) as hasUserLiked, " +
             "rt.battle_id as battle, " +
             "(select count(v.id) from vote v where v.battle_id=rt.battle_id and (v.post_id in (select b.gold_post_id from battle b where b.gold_post_id=rt.post_id))) as goldVotes, " +
             "(select count(v.id) from vote v where v.battle_id=rt.battle_id and (v.post_id in (select b.red_post_id from battle b where b.red_post_id=rt.post_id))) as redVotes, " +
             "rt.comment_id as comment, (select count(c.id) from comment c where c.parent_comment_id=rt.comment_id) as commentResponseCount, " +
             "(select count(cl.id) from comment_like cl where cl.comment_id=rt.comment_id) as commentLikes, " +
+            "(select count(cl.id) > 0 from comment_like cl where cl.comment_id=rt.comment_id and cl.liked_by_id=?1) as hasUserLikedComment, " +
             "rt.user_id as \"user\", rt.decided, (select count(rd.id) from report_decision rd where rd.report_ticket_id=rt.id) as decisions, " +
             "rt.creation_date as creationDate, rt.id as id " +
             "from report_ticket rt where rt.decided = false and (rt.post_id is not null or ( rt.battle_id is not null ) and ( rt.post_id is not null ) or rt.comment_id is not null or rt.user_id is not null)", nativeQuery = true)
-    fun getAllByDecidedIsFalse(pageable: Pageable): List<ReportTicketIntermediary>
+    fun getAllByDecidedIsFalse(adminId: Long, pageable: Pageable): List<ReportTicketIntermediary>
 
     @Query("select rt.type as reportType, " +
             "rt.post_id as post," +
             "(select count(l.id) from \"like\" l where l.post_id=rt.post_id) as postLikes, " +
+            "(select count(l.id) > 0 from \"like\" l where l.post_id=rt.post_id and l.liked_by_id=?1) as hasUserLiked, " +
             "rt.battle_id as battle, " +
             "(select count(v.id) from vote v where v.battle_id=rt.battle_id and (v.post_id in (select b.gold_post_id from battle b where b.gold_post_id=rt.post_id))) as goldVotes, " +
             "(select count(v.id) from vote v where v.battle_id=rt.battle_id and (v.post_id in (select b.red_post_id from battle b where b.red_post_id=rt.post_id))) as redVotes, " +
             "rt.comment_id as comment, (select count(c.id) from comment c where c.parent_comment_id=rt.comment_id) as commentResponseCount, " +
             "(select count(cl.id) from comment_like cl where cl.comment_id=rt.comment_id) as commentLikes, " +
+            "(select count(cl.id) > 0 from comment_like cl where cl.comment_id=rt.comment_id and cl.liked_by_id=?1) as hasUserLikedComment, " +
             "rt.user_id as \"user\", rt.decided, (select count(rd.id) from report_decision rd where rd.report_ticket_id=rt.id) as decisions, " +
             "rt.creation_date as creationDate, rt.id as id " +
             "from report_ticket rt where rt.post_id is not null or ( rt.battle_id is not null ) and ( rt.post_id is not null ) or rt.comment_id is not null or rt.user_id is not null", nativeQuery = true)
-    fun getAll(pageable: Pageable): List<ReportTicketIntermediary>
+    fun getAll(adminId: Long, pageable: Pageable): List<ReportTicketIntermediary>
 
     @Query("update ReportTicket r set r.post = NULL where r.post = ?1")
     @Modifying
@@ -50,27 +54,31 @@ interface ReportTicketRepository: JpaRepository<ReportTicket, Long> {
     @Query("select rt.type as reportType, " +
             "rt.post_id as post," +
             "(select count(l.id) from \"like\" l where l.post_id=rt.post_id) as postLikes, " +
+            "(select count(l.id) > 0 from \"like\" l where l.post_id=rt.post_id and l.liked_by_id=?1) as hasUserLiked, " +
             "rt.battle_id as battle, " +
             "(select count(v.id) from vote v where v.battle_id=rt.battle_id and (v.post_id in (select b.gold_post_id from battle b where b.gold_post_id=rt.post_id))) as goldVotes, " +
             "(select count(v.id) from vote v where v.battle_id=rt.battle_id and (v.post_id in (select b.red_post_id from battle b where b.red_post_id=rt.post_id))) as redVotes, " +
             "rt.comment_id as comment, (select count(c.id) from comment c where c.parent_comment_id=rt.comment_id) as commentResponseCount, " +
             "(select count(cl.id) from comment_like cl where cl.comment_id=rt.comment_id) as commentLikes, " +
+            "(select count(cl.id) > 0 from comment_like cl where cl.comment_id=rt.comment_id and cl.liked_by_id=?1) as hasUserLikedComment, " +
             "rt.user_id as \"user\", rt.decided, (select count(rd.id) from report_decision rd where rd.report_ticket_id=rt.id) as decisions, " +
             "rt.creation_date as creationDate, rt.id as id " +
             "from report_ticket rt where rt.id = ?1", nativeQuery = true)
-    fun getIntermediaryById(id: Long): ReportTicketIntermediary
+    fun getIntermediaryById(adminId: Long, id: Long): ReportTicketIntermediary
 }
 
 interface ReportTicketIntermediary {
     val reportType: Int
     val post: Long?
     val postLikes: Long
+    val hasUserLiked: Boolean
     val battle: Long?
     val goldVotes: Long
     val redVotes: Long
     val comment: Long?
     val commentResponseCount: Long
     val commentLikes: Long
+    val hasUserLikedComment: Boolean
     val user: Long?
     val isDecided: Boolean
     val decisions: Long

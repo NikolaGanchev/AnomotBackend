@@ -53,8 +53,8 @@ class AdminService @Autowired constructor(
         private val rememberMeTokenRepository: RememberMeTokenRepository
 ) {
     @Secured("ROLE_ADMIN")
-    fun getReports(page: Int): List<ReportTicketDto> {
-        return reportTicketRepository.getAll(PageRequest.of(page, 10, Sort.by("creation_date").descending())).map {
+    fun getReports(adminId: Long, page: Int): List<ReportTicketDto> {
+        return reportTicketRepository.getAll(adminId, PageRequest.of(page, 10, Sort.by("creation_date").descending())).map {
             getAsReportTicketDto(it)
         }
     }
@@ -66,16 +66,16 @@ class AdminService @Autowired constructor(
         val user = if (it.user != null) userRepository.getReferenceById(it.user!!) else null
 
         return ReportTicketDto(ReportType.values().first {i -> i.ordinal == it.reportType},
-                if (post != null) asPostDto(post, it.postLikes) else null,
+                if (post != null) asPostDto(post, it.postLikes, it.hasUserLiked) else null,
                 if (battle != null) AdminBattleDto(
-                        if (battle.goldPost != null) asPostDto(battle.goldPost!!, null) else null,
-                        if (battle.redPost != null) asPostDto(battle.redPost!!, null) else null,
+                        if (battle.goldPost != null) asPostDto(battle.goldPost!!, null, null) else null,
+                        if (battle.redPost != null) asPostDto(battle.redPost!!, null, null) else null,
                         it.goldVotes,
                         it.redVotes,
                         battle.finished,
                         battle.finishDate!!,
                 battle.id.toString()) else null,
-                if (comment != null) getAsCommentDto(comment, it.commentLikes, it.commentResponseCount.toInt()) else null,
+                if (comment != null) getAsCommentDto(comment, it.commentLikes, it.commentResponseCount.toInt(), it.hasUserLikedComment) else null,
                 if (user != null) userDetailsServiceImpl.getAsDto(user) else null,
                 it.isDecided,
                 it.decisions.toInt(),
@@ -83,33 +83,33 @@ class AdminService @Autowired constructor(
                 it.id.toString())
     }
 
-    private fun getAsCommentDto(comment: Comment, commentLikes: Long, responseCount: Int): CommentDto {
+    private fun getAsCommentDto(comment: Comment, commentLikes: Long, responseCount: Int, hasUserLiked: Boolean?): CommentDto {
         return CommentDto(
                 comment.text,
                 if (comment.commenter != null) userDetailsServiceImpl.getAsDto(comment.commenter!!) else null,
                 comment.isEdited,
                 responseCount,
                 commentLikes,
-                null,
+                hasUserLiked,
                 comment.creationDate,
                 comment.id.toString()
         )
     }
 
-    private fun asPostDto(post: Post, likes: Long?): PostDto {
+    private fun asPostDto(post: Post, likes: Long?, hasUserLiked: Boolean?): PostDto {
         return PostDto(post.type,
                     post.text,
                     if (post.media != null) MediaDto(post.media!!.mediaType, post.media!!.name.toString()) else null,
                     userDetailsServiceImpl.getAsDto(post.poster),
                     likes,
-                    hasUserLiked = null,
+                    hasUserLiked,
                     post.creationDate,
                     post.id.toString())
     }
 
     @Secured("ROLE_ADMIN")
-    fun getUndecidedReports(page: Int): List<ReportTicketDto> {
-        return reportTicketRepository.getAllByDecidedIsFalse(PageRequest.of(page, 10, Sort.by("creationDate").ascending())).map {
+    fun getUndecidedReports(adminId: Long, page: Int): List<ReportTicketDto> {
+        return reportTicketRepository.getAllByDecidedIsFalse(adminId, PageRequest.of(page, 10, Sort.by("creationDate").ascending())).map {
             getAsReportTicketDto(it)
         }
     }
@@ -415,30 +415,30 @@ class AdminService @Autowired constructor(
     }
 
     @Secured("ROLE_ADMIN")
-    fun getUserComments(user: User, page: Int): List<CommentDto> {
-        return commentRepository.getAllByCommenter(user, PageRequest.of(page, Constants.COMMENTS_PAGE, Sort.by("creationDate").descending())).map {
-            getAsCommentDto(it.comment, it.likes, it.responseCount.toInt())
+    fun getUserComments(admin: User, user: User, page: Int): List<CommentDto> {
+        return commentRepository.getAllByCommenter(admin, user, PageRequest.of(page, Constants.COMMENTS_PAGE, Sort.by("creationDate").descending())).map {
+            getAsCommentDto(it.comment, it.likes, it.responseCount.toInt(), it.hasUserLiked)
         }
     }
 
     @Secured("ROLE_ADMIN")
-    fun getCommentPost(post: Post, page: Int): List<CommentDto> {
-        return commentRepository.getAllByParentPost(post, PageRequest.of(page, Constants.COMMENTS_PAGE)).map {
-            getAsCommentDto(it.comment, it.likes, it.responseCount.toInt())
+    fun getCommentPost(admin: User, post: Post, page: Int): List<CommentDto> {
+        return commentRepository.getAllByParentPost(admin, post, PageRequest.of(page, Constants.COMMENTS_PAGE)).map {
+            getAsCommentDto(it.comment, it.likes, it.responseCount.toInt(), it.hasUserLiked)
         }
     }
 
     @Secured("ROLE_ADMIN")
-    fun getCommentBattle(battle: Battle, page: Int): List<CommentDto> {
-        return commentRepository.getAllByParentBattle(battle, PageRequest.of(page, Constants.COMMENTS_PAGE)).map {
-            getAsCommentDto(it.comment, it.likes, it.responseCount.toInt())
+    fun getCommentBattle(admin: User, battle: Battle, page: Int): List<CommentDto> {
+        return commentRepository.getAllByParentBattle(admin, battle, PageRequest.of(page, Constants.COMMENTS_PAGE)).map {
+            getAsCommentDto(it.comment, it.likes, it.responseCount.toInt(), it.hasUserLiked)
         }
     }
 
     @Secured("ROLE_ADMIN")
-    fun getCommentComment(comment: Comment, page: Int): List<CommentDto> {
-        return commentRepository.getAllByParentComment(comment, PageRequest.of(page, Constants.COMMENTS_PAGE)).map {
-            getAsCommentDto(it.comment, it.likes, it.responseCount.toInt())
+    fun getCommentComment(admin: User, comment: Comment, page: Int): List<CommentDto> {
+        return commentRepository.getAllByParentComment(admin, comment, PageRequest.of(page, Constants.COMMENTS_PAGE)).map {
+            getAsCommentDto(it.comment, it.likes, it.responseCount.toInt(), it.hasUserLiked)
         }
     }
 
@@ -450,8 +450,8 @@ class AdminService @Autowired constructor(
     }
 
     @Secured("ROLE_ADMIN")
-    fun getTicketById(reportTicket: ReportTicket): ReportTicketDto {
-        return getAsReportTicketDto(reportTicketRepository.getIntermediaryById(reportTicket.id!!))
+    fun getTicketById(adminId: Long, reportTicket: ReportTicket): ReportTicketDto {
+        return getAsReportTicketDto(reportTicketRepository.getIntermediaryById(adminId, reportTicket.id!!))
     }
 
     @Secured("ROLE_ADMIN")

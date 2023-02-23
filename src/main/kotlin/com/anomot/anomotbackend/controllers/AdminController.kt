@@ -25,14 +25,16 @@ class AdminController(
 ) {
     @Secured("ROLE_ADMIN")
     @GetMapping("/admin/tickets")
-    fun getReports(@RequestParam("page") page: Int): ResponseEntity<List<ReportTicketDto>> {
-        return ResponseEntity(adminService.getReports(page), HttpStatus.OK)
+    fun getReports(@RequestParam("page") page: Int, authentication: Authentication): ResponseEntity<List<ReportTicketDto>> {
+        val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
+        return ResponseEntity(adminService.getReports(user.id!!, page), HttpStatus.OK)
     }
 
     @Secured("ROLE_ADMIN")
     @GetMapping("/admin/ticket/undecided")
-    fun getUndecidedReports(@RequestParam("page") page: Int): ResponseEntity<List<ReportTicketDto>> {
-        return ResponseEntity(adminService.getUndecidedReports(page), HttpStatus.OK)
+    fun getUndecidedReports(@RequestParam("page") page: Int, authentication: Authentication): ResponseEntity<List<ReportTicketDto>> {
+        val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
+        return ResponseEntity(adminService.getUndecidedReports(user.id!!, page), HttpStatus.OK)
     }
 
     @Secured("ROLE_ADMIN")
@@ -310,32 +312,36 @@ class AdminController(
     @GetMapping("/admin/users/comments")
     fun getUserComments(@RequestParam("id") id: String, @RequestParam("page") page: Int, authentication: Authentication): ResponseEntity<List<CommentDto>> {
         val user = userDetailsServiceImpl.getUserReferenceFromIdUnsafe(id) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+        val admin = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
 
-        return ResponseEntity(adminService.getUserComments(user, page), HttpStatus.OK)
+        return ResponseEntity(adminService.getUserComments(admin, user, page), HttpStatus.OK)
     }
 
     @Secured("ROLE_ADMIN")
     @GetMapping("/admin/post/comment")
     fun getCommentPost(@RequestParam("id") postId: String, @RequestParam("page") page: Int, authentication: Authentication): ResponseEntity<List<CommentDto>> {
         val post = postService.getPostReferenceFromIdUnsafe(postId) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+        val admin = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
 
-        return ResponseEntity(adminService.getCommentPost(post, page), HttpStatus.OK)
+        return ResponseEntity(adminService.getCommentPost(admin, post, page), HttpStatus.OK)
     }
 
     @Secured("ROLE_ADMIN")
     @GetMapping("/admin/battle/comment")
     fun getCommentBattle(@RequestParam("id") battleId: String, @RequestParam("page") page: Int, authentication: Authentication): ResponseEntity<List<CommentDto>> {
         val battle = battleService.getBattleReferenceFromIdUnsafe(battleId) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+        val admin = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
 
-        return ResponseEntity(adminService.getCommentBattle(battle, page), HttpStatus.OK)
+        return ResponseEntity(adminService.getCommentBattle(admin, battle, page), HttpStatus.OK)
     }
 
     @Secured("ROLE_ADMIN")
     @GetMapping("/admin/comment/comment")
     fun getCommentComment(@RequestParam("id") commentId: String, @RequestParam("page") page: Int, authentication: Authentication): ResponseEntity<List<CommentDto>> {
         val comment = commentService.getCommentReferenceFromIdUnsafe(commentId) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+        val admin = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
 
-        return ResponseEntity(adminService.getCommentComment(comment, page), HttpStatus.OK)
+        return ResponseEntity(adminService.getCommentComment(admin, comment, page), HttpStatus.OK)
     }
 
     @Secured("ROLE_ADMIN")
@@ -358,8 +364,9 @@ class AdminController(
     @GetMapping("/admin/report/ticket")
     fun getTicketById(@RequestParam("id") id: String, authentication: Authentication): ResponseEntity<ReportTicketDto> {
         val reportTicket = adminService.getReportTicketReferenceByIdStringUnsafe(id) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+        val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
 
-        return ResponseEntity(adminService.getTicketById(reportTicket), HttpStatus.OK)
+        return ResponseEntity(adminService.getTicketById(user.id!!, reportTicket), HttpStatus.OK)
     }
 
     @Secured("ROLE_ADMIN")
