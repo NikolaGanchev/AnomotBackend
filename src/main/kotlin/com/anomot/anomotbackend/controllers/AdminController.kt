@@ -223,8 +223,9 @@ class AdminController(
     @GetMapping("/admin/posts")
     fun getUserPosts(@RequestParam("id") id: String, @RequestParam("page") page: Int, authentication: Authentication): ResponseEntity<List<PostDto>> {
         val user = userDetailsServiceImpl.getUserReferenceFromIdUnsafe(id) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+        val admin = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
 
-        return ResponseEntity(adminService.getUserPosts(user, page), HttpStatus.OK)
+        return ResponseEntity(adminService.getUserPosts(admin, user, page), HttpStatus.OK)
     }
 
     @Secured("ROLE_ADMIN")

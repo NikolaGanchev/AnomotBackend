@@ -85,9 +85,10 @@ interface PostRepository: JpaRepository<Post, Long> {
     fun deleteByUser(user: User)
 
     @Query("select new com.anomot.anomotbackend.dto.PostWithLikeNumber(p, " +
-            "(select count(l) from Like l where l.post = p)) " +
-            "from Post p where p.poster = ?1")
-    fun getAllByPoster(user: User, page: Pageable): List<PostWithLikeNumber>
+            "(select count(l) from Like l where l.post = p)," +
+            "(select count(l) > 0 from Like l where l.post = p and l.likedBy = ?1)) " +
+            "from Post p where p.poster = ?2")
+    fun getAllByPoster(admin: User, user: User, page: Pageable): List<PostWithLikeNumber>
 
     @Query("select count(l) from Like l join Post p where l.post = p")
     fun getLikesByPost(): Long

@@ -324,15 +324,15 @@ class AdminService @Autowired constructor(
     }
 
     @Secured("ROLE_ADMIN")
-    fun getUserPosts(user: User, page: Int): List<PostDto> {
-        return postRepository.getAllByPoster(user, PageRequest.of(page, Constants.POST_PAGE)).map {
+    fun getUserPosts(admin: User, user: User, page: Int): List<PostDto> {
+        return postRepository.getAllByPoster(admin, user, PageRequest.of(page, Constants.POST_PAGE, Sort.by("creationDate").descending())).map {
             val post = it.post
             PostDto(post.type,
                     post.text,
                     if (post.media != null) MediaDto(post.media!!.mediaType, post.media!!.name.toString()) else null,
                     userDetailsServiceImpl.getAsDto(post.poster),
                     it.likes,
-                    null,
+                    it.hasUserLiked,
                     post.creationDate,
                     post.id.toString())
         }
