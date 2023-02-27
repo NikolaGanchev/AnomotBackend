@@ -120,6 +120,7 @@ class AdminService @Autowired constructor(
         val report = getReportTicketReferenceByIdUnsafe(reportTicketId) ?: return false
 
         reportDecisionRepository.save(ReportDecision(report, decision, user))
+        report.decided = true
         return true
     }
 
