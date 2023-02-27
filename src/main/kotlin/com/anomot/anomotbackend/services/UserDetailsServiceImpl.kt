@@ -416,11 +416,13 @@ class UserDetailsServiceImpl: UserDetailsService {
     fun expireUserSessions(user: User) {
         val sessionRepository = redisSessionRepository as FindByIndexNameSessionRepository<Session>
         sessionRepository.findByPrincipalName(user.email).keys.forEach(redisSessionRepository::deleteById)
+        rememberMeTokenRepository.deleteAllByEmail(user.email)
     }
 
     fun expireUserSessionsExceptCurrent(user: User) {
         val sessionRepository = redisSessionRepository as FindByIndexNameSessionRepository<Session>
         val currentSessionId = RequestContextHolder.currentRequestAttributes().sessionId
+        rememberMeTokenRepository.deleteAllByEmail(user.email)
         sessionRepository.findByPrincipalName(user.email).keys.forEach{
             if (it != currentSessionId) {
                 redisSessionRepository.deleteById(it)
