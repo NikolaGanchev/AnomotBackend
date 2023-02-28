@@ -67,7 +67,17 @@ interface PostRepository: JpaRepository<Post, Long> {
     @Query("select new com.anomot.anomotbackend.dto.PostWithLikes(p, " +
             "(select count(l) from Like l where l.post = p), " +
             "(select count(l) > 0 from Like l where l.post = p and l.likedBy = ?1)) " +
-            "from Post p join Follow f on p.poster = f.followed where f.follower = ?1")
+            "from Post p join Follow f on p.poster = f.followed where f.follower = ?1 and (p.poster = ?1 " +
+            // Check if in battle queue
+            "or (not exists(from BattleQueuePost bp where bp.post = p) " +
+            // Check if battle exists
+            "and not exists(from Battle b where b.goldPost = p or b.redPost = p)) " +
+            // Check if battle is finished
+            "or exists(from Battle b where (b.goldPost = p or b.redPost = p) and b.finished = true)" +
+            // Check if there is a vote from the user
+            "or exists(from Vote v where v.post = p and v.voter = ?1)" +
+            // Check if the user is in the battle
+            "or exists(from Battle b where (b.goldPost = p or b.redPost = p) and (b.goldPost.poster = ?1 or b.redPost.poster = ?1)))")
     fun getFeed(user: User, pageable: Pageable): List<PostWithLikes>
 
     @Query("select p.poster from Post p where p.id = ?1")
