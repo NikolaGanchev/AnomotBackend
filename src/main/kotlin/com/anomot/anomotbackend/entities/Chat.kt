@@ -10,9 +10,10 @@ class Chat(
         @Column(length = Constants.MAX_CHAT_TITLE_LENGTH)
         val title: String,
         @Column(columnDefinition="TEXT")
-        val description: String,
+        val description: String?,
         @Column(columnDefinition="TEXT")
-        val info: String,
+        val info: String?,
+        val password: String?,
         val creationDate: Date = Date(),
         @Id @GeneratedValue(strategy = GenerationType.AUTO) var id: Long? = null
 ): Serializable

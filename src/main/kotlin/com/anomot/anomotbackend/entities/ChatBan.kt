@@ -7,7 +7,7 @@ import javax.persistence.*
 @Entity
 class ChatBan(
         @ManyToOne
-        val member: ChatMember,
+        val user: User,
         @Column(columnDefinition="TEXT")
         val reason: String,
         @ManyToOne
