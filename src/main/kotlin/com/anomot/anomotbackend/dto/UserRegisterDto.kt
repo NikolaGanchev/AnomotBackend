@@ -1,6 +1,7 @@
 package com.anomot.anomotbackend.dto
 
 import com.anomot.anomotbackend.security.password.ValidPassword
+import com.anomot.anomotbackend.utils.Constants
 import org.jetbrains.annotations.NotNull
 import javax.validation.constraints.Email
 import javax.validation.constraints.NotEmpty
@@ -14,5 +15,5 @@ data class UserRegisterDto (@NotNull @NotEmpty
                     val password: String,
                     @NotNull
                     @NotEmpty
-                    @Size(min = 1, max = 40, message = "Username is too long")
+                    @Size(min = 1, max = Constants.USERNAME_MAX_LENGTH, message = "Username is too long")
                     val username: String)
