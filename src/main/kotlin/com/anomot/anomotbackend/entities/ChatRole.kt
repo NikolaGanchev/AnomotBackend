@@ -1,18 +1,16 @@
 package com.anomot.anomotbackend.entities
 
-import com.anomot.anomotbackend.utils.Constants
+import com.anomot.anomotbackend.utils.ChatRoles
 import java.io.Serializable
 import java.util.*
 import javax.persistence.*
 
 @Entity
-class ChatMember(
+class ChatRole(
         @ManyToOne
-        val chat: Chat,
-        @ManyToOne
-        val user: User,
-        @Column(length = Constants.USERNAME_MAX_LENGTH)
-        var chatUsername: String,
+        val chatMember: ChatMember,
+        @Enumerated(EnumType.ORDINAL)
+        val role: ChatRoles,
         val creationDate: Date = Date(),
         @Id @GeneratedValue(strategy = GenerationType.AUTO) var id: Long? = null
 ): Serializable

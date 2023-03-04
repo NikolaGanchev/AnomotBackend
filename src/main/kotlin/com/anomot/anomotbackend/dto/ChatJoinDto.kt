@@ -1,0 +1,14 @@
+package com.anomot.anomotbackend.dto
+
+import com.anomot.anomotbackend.utils.Constants
+import org.jetbrains.annotations.NotNull
+import javax.validation.constraints.NotEmpty
+import javax.validation.constraints.Size
+
+data class ChatJoinDto(
+        val chatId: String,
+        @NotNull
+        @NotEmpty
+        @Size(min = 1, max = Constants.USERNAME_MAX_LENGTH, message = "Username has to be between 1 and ${Constants.USERNAME_MAX_LENGTH} characters")
+        val username: String
+)

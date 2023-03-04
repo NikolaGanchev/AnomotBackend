@@ -7,11 +7,11 @@ import javax.persistence.*
 @Entity
 class ChatBan(
         @ManyToOne
-        val user: User,
+        val chatMember: ChatMember,
         @Column(columnDefinition="TEXT")
         val reason: String,
         @ManyToOne
-        val bannedBy: User,
+        val bannedBy: ChatMember,
         val until: Date,
         val creationDate: Date = Date(),
         @Id @GeneratedValue(strategy = GenerationType.AUTO) var id: Long? = null

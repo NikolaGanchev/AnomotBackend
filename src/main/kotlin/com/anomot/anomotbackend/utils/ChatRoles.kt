@@ -1,6 +1,6 @@
 package com.anomot.anomotbackend.utils
 
-enum class ChatRole {
+enum class ChatRoles {
     ADMIN,
     MODERATOR,
     USER

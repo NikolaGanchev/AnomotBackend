@@ -8,12 +8,12 @@ import javax.persistence.*
 @Entity
 class Chat(
         @Column(length = Constants.MAX_CHAT_TITLE_LENGTH)
-        val title: String,
+        var title: String,
         @Column(columnDefinition="TEXT")
-        val description: String?,
+        var description: String?,
         @Column(columnDefinition="TEXT")
-        val info: String?,
-        val password: String?,
+        var info: String?,
+        var password: String?,
         val creationDate: Date = Date(),
         @Id @GeneratedValue(strategy = GenerationType.AUTO) var id: Long? = null
 ): Serializable
