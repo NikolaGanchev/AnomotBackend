@@ -39,4 +39,9 @@ class CustomRememberMeTokenRepository @Autowired constructor(
     override fun removeUserTokens(email: String) {
         rememberMeTokenRepository.deleteAllByEmail(email)
     }
+
+    @Transactional
+    fun removeUserTokenBySeries(email: String, series: String) {
+        rememberMeTokenRepository.deleteAllByEmailAndSeries(email, series)
+    }
 }

@@ -25,4 +25,6 @@ interface RememberMeTokenRepository: JpaRepository<RememberMeToken, Long> {
     @Modifying
     @Query("delete from RememberMeToken token where token.email = :#{#user.email}")
     fun deleteByUser(user: User)
+
+    fun deleteAllByEmailAndSeries(email: String, series: String): Int
 }

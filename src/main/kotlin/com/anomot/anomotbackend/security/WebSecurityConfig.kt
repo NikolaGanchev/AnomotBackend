@@ -28,11 +28,13 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.builders.WebSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer
+import org.springframework.security.core.Authentication
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder
 import org.springframework.security.web.SecurityFilterChain
 import org.springframework.security.web.authentication.AuthenticationFailureHandler
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
+import org.springframework.security.web.authentication.rememberme.PersistentTokenBasedRememberMeServices
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository
 import org.springframework.web.reactive.function.client.ExchangeStrategies
 import org.springframework.web.reactive.function.client.WebClient
@@ -45,6 +47,8 @@ import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver
 import org.thymeleaf.templateresolver.ITemplateResolver
 import reactor.netty.http.client.HttpClient
 import java.util.*
+import javax.servlet.http.HttpServletRequest
+import javax.servlet.http.HttpServletResponse
 import javax.servlet.http.HttpServletResponse.*
 
 
@@ -117,6 +121,23 @@ class WebSecurityConfig {
                     .tokenValiditySeconds(Constants.REMEMBER_ME_VALIDITY_DURATION)
                     .rememberMeParameter(Constants.REMEMBER_ME_PARAMETER)
                     .rememberMeCookieName(Constants.REMEMBER_ME_COOKIE_NAME)
+                    .rememberMeServices(object : PersistentTokenBasedRememberMeServices(rememberKey, userDetailsService(), customRememberMeTokenRepository) {
+                        override fun logout(request: HttpServletRequest, response: HttpServletResponse, authentication: Authentication?) {
+                            cancelCookie(request, response)
+                            if (authentication != null) {
+                                request.cookies.forEach {
+                                    if (it.name == this.cookieName) {
+                                        val tokens = decodeCookie(it.value)
+                                        if (tokens.size != 2) return
+                                        val series = tokens[0]
+                                        customRememberMeTokenRepository.removeUserTokenBySeries(authentication.name, series)
+                                    }
+                                }
+                            }
+                        }
+                    }.also {
+                        it.parameter = Constants.REMEMBER_ME_PARAMETER
+                    })
                     .tokenRepository(customRememberMeTokenRepository)
                     .userDetailsService(userDetailsService())
                     .key(rememberKey)
