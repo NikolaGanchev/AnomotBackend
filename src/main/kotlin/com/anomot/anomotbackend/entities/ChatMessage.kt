@@ -10,6 +10,7 @@ class ChatMessage(
         val member: ChatMember,
         @Column(columnDefinition="TEXT")
         val message: String,
+        val isSystem: Boolean = false,
         val creationDate: Date = Date(),
         @Id @GeneratedValue(strategy = GenerationType.AUTO) var id: Long? = null
 ): Serializable

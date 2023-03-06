@@ -1,11 +1,9 @@
 package com.anomot.anomotbackend.services
 
-import com.anomot.anomotbackend.dto.ChatCreationDto
-import com.anomot.anomotbackend.dto.ChatJoinDto
-import com.anomot.anomotbackend.dto.ChatMemberDto
-import com.anomot.anomotbackend.dto.ChatMessageDto
+import com.anomot.anomotbackend.dto.*
 import com.anomot.anomotbackend.entities.*
 import com.anomot.anomotbackend.repositories.*
+import com.anomot.anomotbackend.utils.ChatEventType
 import com.anomot.anomotbackend.utils.ChatRoles
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.PageRequest
@@ -127,16 +125,17 @@ class ChatService @Autowired constructor(
         } else false
     }
 
-    fun banMember(chatId: String, user: User, userToBan: User, until: Date, reason: String): Boolean {
-        val (chat, member, roles) = loadInChat(chatId, user) ?: return false
+    fun banMember(chatId: String, chatMemberToBan: String, user: User, until: Date, reason: String): Boolean {
+        val memberToBan = getChatMemberReferenceFromIdUnsafe(chatMemberToBan) ?: return false
+        val (chat, admin, roles) = loadInChat(chatId, user) ?: return false
+        if (memberToBan.chat.id != chat.id) return false
 
-        val memberToBan = chatMemberRepository.getByChatAndUser(chat, userToBan) ?: return false
         val memberToBanRoles = chatRoleRepository.getByChatMember(memberToBan)
 
-        if (roles.none { it.role == ChatRoles.ADMIN }) return false
+        if (roles.none { it.role == ChatRoles.ADMIN || it.role == ChatRoles.MODERATOR }) return false
         if (memberToBanRoles.any { it.role == ChatRoles.ADMIN }) return false
 
-        val ban = ChatBan(memberToBan, reason, member, until)
+        val ban = chatBanRepository.save(ChatBan(memberToBan, reason, admin, until))
         return true
     }
 
@@ -152,23 +151,50 @@ class ChatService @Autowired constructor(
                 .map {
                     ChatMessageDto(ChatMemberDto(
                         if (it.user != null) userDetailsServiceImpl.getAsDto(it.user) else null,
-                        it.chatMessage.member.chatUsername),
+                        it.chatMessage.member.chatUsername, it.chatMessage.member.id.toString()),
                         it.chatMessage.message,
+                        it.chatMessage.isSystem,
                         it.chatMessage.creationDate
                     )
         }
     }
 
-    fun publishMessage() {
-        //TODO
+    fun publishMessage(message: String, chatId: String, user: User): ChatMessageDto? {
+        val (chat, member, roles) = loadInChat(chatId, user) ?: return null
+
+        val ban = chatBanRepository.getByChatMember(member, PageRequest.of(0, 1, Sort.by("until").descending()))
+        if (ban != null && ban.until.after(Date())) return null
+
+        val savedMessage = chatMessageRepository.save(ChatMessage(member, message))
+
+        return ChatMessageDto(ChatMemberDto(
+                userDetailsServiceImpl.getAsDto(user),
+                member.chatUsername,
+                member.id.toString()),
+                savedMessage.message,
+                false,
+                savedMessage.creationDate)
     }
 
-    fun publishSystemMessage() {
-        //TODO
+    fun publishSystemMessage(message: ChatEventType, chat: Chat, chatMember: ChatMember): ChatMessage {
+        return chatMessageRepository.save(ChatMessage(
+                chatMember,
+                message.name,
+                true
+        ))
     }
 
-    fun promote() {
+    fun changeRole(chatId: String,
+                roleToChangeTo: ChatRoles,
+                chatMemberToPromoteId: String,
+                admin: User): Boolean {
+        val (chat, member, roles) = loadInChat(chatId, admin) ?: return false
+
+        if (roles.none { it.role == ChatRoles.ADMIN}) return false
+
+
         //TODO
+        return true
     }
 
     fun loadInChat(chatId: String, user: User): Triple<Chat, ChatMember, List<ChatRole>>? {
@@ -183,5 +209,10 @@ class ChatService @Autowired constructor(
     fun getChatReferenceFromIdUnsafe(chatId: String): Chat? {
         val id = chatId.toLongOrNull() ?: return null
         return if (chatRepository.existsById(id)) chatRepository.getReferenceById(id) else null
+    }
+
+    fun getChatMemberReferenceFromIdUnsafe(chatMemberId: String): ChatMember? {
+        val id = chatMemberId.toLongOrNull() ?: return null
+        return if (chatMemberRepository.existsById(id)) chatMemberRepository.getReferenceById(id) else null
     }
 }
