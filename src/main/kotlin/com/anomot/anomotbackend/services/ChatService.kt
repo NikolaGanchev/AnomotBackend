@@ -162,8 +162,8 @@ class ChatService @Autowired constructor(
     fun publishMessage(message: String, chatId: String, user: User): ChatMessageDto? {
         val (chat, member, roles) = loadInChat(chatId, user) ?: return null
 
-        val ban = chatBanRepository.getByChatMember(member, PageRequest.of(0, 1, Sort.by("until").descending()))
-        if (ban != null && ban.until.after(Date())) return null
+        val bans = chatBanRepository.getByChatMember(member, PageRequest.of(0, 1, Sort.by("until").descending()))
+        if (bans.isNotEmpty() && bans[0].until.after(Date())) return null
 
         val savedMessage = chatMessageRepository.save(ChatMessage(member, message))
 

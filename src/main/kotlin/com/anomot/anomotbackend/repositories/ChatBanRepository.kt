@@ -9,5 +9,5 @@ import org.springframework.data.jpa.repository.JpaRepository
 interface ChatBanRepository: JpaRepository<ChatBan, Long> {
     fun deleteAllByChatMemberChat(chat: Chat): Int
 
-    fun getByChatMember(chatMember: ChatMember, pageable: Pageable): ChatBan?
+    fun getByChatMember(chatMember: ChatMember, pageable: Pageable): List<ChatBan>
 }
