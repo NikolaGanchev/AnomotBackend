@@ -8,6 +8,7 @@ import com.anomot.anomotbackend.utils.ChatRoles
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
+import org.springframework.security.crypto.argon2.Argon2PasswordEncoder
 import org.springframework.stereotype.Service
 import java.util.Date
 import javax.transaction.Transactional
@@ -19,14 +20,15 @@ class ChatService @Autowired constructor(
         private val chatBanRepository: ChatBanRepository,
         private val chatMessageRepository: ChatMessageRepository,
         private val chatRoleRepository: ChatRoleRepository,
-        private val userDetailsServiceImpl: UserDetailsServiceImpl
+        private val userDetailsServiceImpl: UserDetailsServiceImpl,
+        private val passwordEncoder: Argon2PasswordEncoder
 ) {
 
     fun createChat(chatCreationDto: ChatCreationDto, creator: User): Chat {
         val chat = chatRepository.save(Chat(chatCreationDto.title,
                 chatCreationDto.description,
                 chatCreationDto.info,
-                chatCreationDto.password))
+                if (chatCreationDto.password == null) null else passwordEncoder.encode(chatCreationDto.password)))
 
         val member = chatMemberRepository.save(ChatMember(
                 chat,
@@ -42,10 +44,11 @@ class ChatService @Autowired constructor(
     }
 
     @Transactional
-    fun delete(chatId: String, user: User): Boolean {
+    fun delete(chatId: String, password: String?, user: User): Boolean {
         val (chat, member, roles) = loadInChat(chatId, user) ?: return false
 
         if (roles.none { it.role == ChatRoles.ADMIN }) return false
+        if (chat.password != null && !passwordEncoder.matches(chat.password, password)) return false
 
         chatBanRepository.deleteAllByChatMemberChat(chat)
         chatMessageRepository.deleteAllByMemberChat(chat)
@@ -59,6 +62,8 @@ class ChatService @Autowired constructor(
         val chat = getChatReferenceFromIdUnsafe(chatJoinDto.chatId) ?: return null
 
         if (chatMemberRepository.existsByChatAndUser(chat, user)) return null
+
+        if (chat.password != null && !passwordEncoder.matches(chat.password, chatJoinDto.password)) return null
 
         val member = chatMemberRepository.save(ChatMember(
                 chat,
@@ -126,8 +131,11 @@ class ChatService @Autowired constructor(
 
         if (roles.none { it.role == ChatRoles.ADMIN }) return false
 
-        return if (chat.password == oldPassword) {
-            chat.password = newPassword
+        return if (passwordEncoder.matches(chat.password, oldPassword)) {
+            if (newPassword == null) chat.password = null
+            else {
+                chat.password = passwordEncoder.encode(newPassword)
+            }
             true
         } else false
     }
@@ -199,11 +207,14 @@ class ChatService @Autowired constructor(
     fun addRole(chatId: String,
                 roleToChangeTo: ChatRoles,
                 chatMemberToPromoteId: String,
+                password: String?,
                 admin: User): Boolean {
         val memberToPromote = getChatMemberReferenceFromIdUnsafe(chatMemberToPromoteId) ?: return false
         val (chat, member, roles) = loadInChat(chatId, admin) ?: return false
 
         if (roles.none { it.role == ChatRoles.ADMIN}) return false
+
+        if (chat.password != null && !passwordEncoder.matches(chat.password, password)) return false
 
         val role = chatRoleRepository.save(ChatRole(member, roleToChangeTo))
 
@@ -213,11 +224,14 @@ class ChatService @Autowired constructor(
     fun removeRole(chatId: String,
                    roleToRemove: ChatRoles,
                    chatMemberToDemoteId: String,
+                   password: String?,
                    admin: User): Boolean {
         val memberToDemote = getChatMemberReferenceFromIdUnsafe(chatMemberToDemoteId) ?: return false
         val (chat, member, roles) = loadInChat(chatId, admin) ?: return false
 
         if (roles.none { it.role == ChatRoles.ADMIN}) return false
+
+        if (chat.password != null && !passwordEncoder.matches(chat.password, password)) return false
 
         return chatRoleRepository.deleteByMemberAndRole(memberToDemote, roleToRemove) > 0
     }
