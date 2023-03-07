@@ -167,7 +167,7 @@ class ChatService @Autowired constructor(
                             Sort.by("creationDate").descending()))
                 .map {
                     ChatMessageDto(ChatMemberDto(
-                        if (it.user != null) userDetailsServiceImpl.getAsDto(it.user) else null,
+                        if (it.user != null) userDetailsServiceImpl.getAsDto(it.user!!) else null,
                         it.chatMessage.member.chatUsername,
                         it.roles.map { role -> role.name },
                         it.chatMessage.member.id.toString()),
@@ -233,7 +233,7 @@ class ChatService @Autowired constructor(
 
         if (chat.password != null && !passwordEncoder.matches(chat.password, password)) return false
 
-        return chatRoleRepository.deleteByMemberAndRole(memberToDemote, roleToRemove) > 0
+        return chatRoleRepository.deleteByChatMemberAndRole(memberToDemote, roleToRemove) > 0
     }
 
     fun loadInChat(chatId: String, user: User): Triple<Chat, ChatMember, List<ChatRole>>? {
