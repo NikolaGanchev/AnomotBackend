@@ -34,6 +34,10 @@ class ChatService @Autowired constructor(
                 chatCreationDto.chatUsername
         ))
 
+        val role = chatRoleRepository.saveAll(listOf(
+                ChatRole(member, ChatRoles.USER),
+                ChatRole(member, ChatRoles.ADMIN)))
+
         return chat
     }
 
@@ -56,11 +60,14 @@ class ChatService @Autowired constructor(
 
         if (chatMemberRepository.existsByChatAndUser(chat, user)) return null
 
-        return chatMemberRepository.save(ChatMember(
+        val member = chatMemberRepository.save(ChatMember(
                 chat,
                 user,
                 chatJoinDto.username
         ))
+
+        val role = chatRoleRepository.save(ChatRole(member, ChatRoles.USER))
+        return member
     }
 
     fun report() {
@@ -136,6 +143,8 @@ class ChatService @Autowired constructor(
         if (memberToBanRoles.any { it.role == ChatRoles.ADMIN }) return false
 
         val ban = chatBanRepository.save(ChatBan(memberToBan, reason, admin, until))
+        publishSystemMessage(ChatEventType.BAN, chat, memberToBan)
+
         return true
     }
 
@@ -151,7 +160,9 @@ class ChatService @Autowired constructor(
                 .map {
                     ChatMessageDto(ChatMemberDto(
                         if (it.user != null) userDetailsServiceImpl.getAsDto(it.user) else null,
-                        it.chatMessage.member.chatUsername, it.chatMessage.member.id.toString()),
+                        it.chatMessage.member.chatUsername,
+                        it.roles.map { role -> role.name },
+                        it.chatMessage.member.id.toString()),
                         it.chatMessage.message,
                         it.chatMessage.isSystem,
                         it.chatMessage.creationDate
@@ -170,6 +181,7 @@ class ChatService @Autowired constructor(
         return ChatMessageDto(ChatMemberDto(
                 userDetailsServiceImpl.getAsDto(user),
                 member.chatUsername,
+                roles.map { it.role.name },
                 member.id.toString()),
                 savedMessage.message,
                 false,
@@ -184,17 +196,30 @@ class ChatService @Autowired constructor(
         ))
     }
 
-    fun changeRole(chatId: String,
+    fun addRole(chatId: String,
                 roleToChangeTo: ChatRoles,
                 chatMemberToPromoteId: String,
                 admin: User): Boolean {
+        val memberToPromote = getChatMemberReferenceFromIdUnsafe(chatMemberToPromoteId) ?: return false
         val (chat, member, roles) = loadInChat(chatId, admin) ?: return false
 
         if (roles.none { it.role == ChatRoles.ADMIN}) return false
 
+        val role = chatRoleRepository.save(ChatRole(member, roleToChangeTo))
 
-        //TODO
         return true
+    }
+
+    fun removeRole(chatId: String,
+                   roleToRemove: ChatRoles,
+                   chatMemberToDemoteId: String,
+                   admin: User): Boolean {
+        val memberToDemote = getChatMemberReferenceFromIdUnsafe(chatMemberToDemoteId) ?: return false
+        val (chat, member, roles) = loadInChat(chatId, admin) ?: return false
+
+        if (roles.none { it.role == ChatRoles.ADMIN}) return false
+
+        return chatRoleRepository.deleteByMemberAndRole(memberToDemote, roleToRemove) > 0
     }
 
     fun loadInChat(chatId: String, user: User): Triple<Chat, ChatMember, List<ChatRole>>? {
