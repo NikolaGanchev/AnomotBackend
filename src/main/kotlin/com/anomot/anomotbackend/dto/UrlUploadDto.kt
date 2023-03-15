@@ -1,7 +1,7 @@
 package com.anomot.anomotbackend.dto
 
 import com.anomot.anomotbackend.security.text.ValidUrl
-import javax.validation.constraints.Max
+import jakarta.validation.constraints.Max
 
 
 data class UrlUploadDto(

@@ -822,7 +822,7 @@ class AuthenticationWebTests @Autowired constructor(
 
         every { userDeletionService.deleteUser(any<String>()) } throws AccessDeniedException("No authentication present")
 
-        mockMvc.perform(delete("/account/")
+        mockMvc.perform(delete("/account")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(TestUtils.objectToJson(accountDeleteDto))
                 .with(csrf()))
@@ -836,7 +836,7 @@ class AuthenticationWebTests @Autowired constructor(
 
         every { userDeletionService.deleteUser(any<String>()) } throws BadCredentialsException("Bad credentials")
 
-        mockMvc.perform(delete("/account/")
+        mockMvc.perform(delete("/account")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(TestUtils.objectToJson(accountDeleteDto))
                 .with(csrf()))

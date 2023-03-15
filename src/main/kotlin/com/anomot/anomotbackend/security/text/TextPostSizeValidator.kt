@@ -1,8 +1,8 @@
 package com.anomot.anomotbackend.security.text
 
 import com.anomot.anomotbackend.utils.TextUtils
-import javax.validation.ConstraintValidator
-import javax.validation.ConstraintValidatorContext
+import jakarta.validation.ConstraintValidator
+import jakarta.validation.ConstraintValidatorContext
 
 class TextPostSizeValidator: ConstraintValidator<TextPostSize, String> {
     private var min: Int? = null

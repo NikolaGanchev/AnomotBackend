@@ -1,9 +1,9 @@
 package com.anomot.anomotbackend.security.filters
 
 import java.util.*
-import javax.servlet.ServletRequest
-import javax.servlet.http.HttpServletRequest
-import javax.servlet.http.HttpServletRequestWrapper
+import jakarta.servlet.ServletRequest
+import jakarta.servlet.http.HttpServletRequest
+import jakarta.servlet.http.HttpServletRequestWrapper
 
 // This class is needed to be able to set parameters on request (used for converting form encoding to json)
 

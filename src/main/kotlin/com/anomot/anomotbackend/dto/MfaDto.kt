@@ -1,8 +1,8 @@
 package com.anomot.anomotbackend.dto
 
 import com.anomot.anomotbackend.utils.Constants
-import javax.validation.constraints.Pattern
-import javax.validation.constraints.Size
+import jakarta.validation.constraints.Pattern
+import jakarta.validation.constraints.Size
 
 data class MfaDto(
         @Size(min = Constants.MFA_PASSWORD_LENGTH, max = Constants.MFA_PASSWORD_LENGTH)

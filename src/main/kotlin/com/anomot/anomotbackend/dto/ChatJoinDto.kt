@@ -2,8 +2,8 @@ package com.anomot.anomotbackend.dto
 
 import com.anomot.anomotbackend.utils.Constants
 import org.jetbrains.annotations.NotNull
-import javax.validation.constraints.NotEmpty
-import javax.validation.constraints.Size
+import jakarta.validation.constraints.NotEmpty
+import jakarta.validation.constraints.Size
 
 data class ChatJoinDto(
         @NotNull

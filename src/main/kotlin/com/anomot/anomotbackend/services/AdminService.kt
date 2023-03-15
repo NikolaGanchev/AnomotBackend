@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.*
 import java.time.Instant
 import java.time.temporal.ChronoUnit
 import java.util.*
-import javax.transaction.Transactional
+import jakarta.transaction.Transactional
 
 @Service
 class AdminService @Autowired constructor(

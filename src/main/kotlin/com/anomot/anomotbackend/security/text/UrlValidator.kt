@@ -1,8 +1,8 @@
 package com.anomot.anomotbackend.security.text
 
 import com.anomot.anomotbackend.utils.TextUtils
-import javax.validation.ConstraintValidator
-import javax.validation.ConstraintValidatorContext
+import jakarta.validation.ConstraintValidator
+import jakarta.validation.ConstraintValidatorContext
 
 class UrlValidator: ConstraintValidator<ValidUrl, String> {
     override fun isValid(value: String?, context: ConstraintValidatorContext?): Boolean {

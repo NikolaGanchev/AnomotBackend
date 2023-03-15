@@ -1,6 +1,6 @@
 package com.anomot.anomotbackend.dto
 
-import javax.validation.constraints.Size
+import jakarta.validation.constraints.Size
 
 data class DecisionDto(
         val reportTicketId: String,

@@ -2,8 +2,8 @@ package com.anomot.anomotbackend.entities
 
 import com.anomot.anomotbackend.utils.NotificationType
 import java.io.Serializable
-import javax.persistence.Entity
-import javax.persistence.ManyToOne
+import jakarta.persistence.Entity
+import jakarta.persistence.ManyToOne
 
 @Entity
 class BattleBeginNotification(

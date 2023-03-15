@@ -1,8 +1,8 @@
 package com.anomot.anomotbackend.dto
 
 import com.anomot.anomotbackend.utils.Constants
-import javax.validation.constraints.Max
-import javax.validation.constraints.Min
+import jakarta.validation.constraints.Max
+import jakarta.validation.constraints.Min
 
 data class CommentUploadDto(
         @Max(Constants.MAX_COMMENT_SIZE.toLong())

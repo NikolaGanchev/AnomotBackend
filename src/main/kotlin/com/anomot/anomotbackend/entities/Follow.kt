@@ -1,7 +1,7 @@
 package com.anomot.anomotbackend.entities
 
 import java.io.Serializable
-import javax.persistence.*
+import jakarta.persistence.*
 
 @Table(
         uniqueConstraints=[UniqueConstraint(columnNames=arrayOf("followed_id", "follower_id"))]

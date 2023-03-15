@@ -12,7 +12,7 @@ import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import java.lang.NumberFormatException
 import java.util.*
-import javax.transaction.Transactional
+import jakarta.transaction.Transactional
 
 @Service
 class BattleService @Autowired constructor(

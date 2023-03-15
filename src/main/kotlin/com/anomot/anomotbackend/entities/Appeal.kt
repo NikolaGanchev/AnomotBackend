@@ -3,7 +3,7 @@ package com.anomot.anomotbackend.entities
 import com.anomot.anomotbackend.utils.AppealObjective
 import com.anomot.anomotbackend.utils.AppealReason
 import java.util.*
-import javax.persistence.*
+import jakarta.persistence.*
 
 @Table(
         uniqueConstraints=[UniqueConstraint(columnNames=arrayOf("media_id", "appealed_by_id"))]

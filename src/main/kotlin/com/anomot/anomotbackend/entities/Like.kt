@@ -2,7 +2,7 @@ package com.anomot.anomotbackend.entities
 
 import java.io.Serializable
 import java.util.*
-import javax.persistence.*
+import jakarta.persistence.*
 
 @Table(
         uniqueConstraints=[UniqueConstraint(columnNames=arrayOf("post_id", "liked_by_id"))]

@@ -4,10 +4,10 @@ import com.anomot.anomotbackend.dto.LoginDto
 import com.anomot.anomotbackend.dto.MfaDto
 import com.anomot.anomotbackend.utils.Constants
 import org.springframework.web.filter.OncePerRequestFilter
-import javax.servlet.FilterChain
-import javax.servlet.http.HttpServletRequest
-import javax.servlet.http.HttpServletResponse
-import javax.validation.Validation
+import jakarta.servlet.FilterChain
+import jakarta.servlet.http.HttpServletRequest
+import jakarta.servlet.http.HttpServletResponse
+import jakarta.validation.Validation
 
 class LoginArgumentValidationFilter: OncePerRequestFilter() {
     private var validator = Validation.buildDefaultValidatorFactory().validator

@@ -2,7 +2,7 @@ package com.anomot.anomotbackend.security
 
 import org.springframework.security.web.authentication.WebAuthenticationDetails
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource
-import javax.servlet.http.HttpServletRequest
+import jakarta.servlet.http.HttpServletRequest
 
 class CustomAuthenticationDetailsSource: WebAuthenticationDetailsSource() {
 

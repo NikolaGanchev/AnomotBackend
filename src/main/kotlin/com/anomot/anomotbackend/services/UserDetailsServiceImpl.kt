@@ -33,7 +33,7 @@ import org.springframework.web.multipart.MultipartFile
 import java.nio.charset.StandardCharsets
 import java.time.Duration
 import java.time.Instant
-import javax.transaction.Transactional
+import jakarta.transaction.Transactional
 
 
 data class AvatarResult(

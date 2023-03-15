@@ -3,7 +3,7 @@ package com.anomot.anomotbackend.entities
 import com.anomot.anomotbackend.utils.ChatRoles
 import java.io.Serializable
 import java.util.*
-import javax.persistence.*
+import jakarta.persistence.*
 
 @Entity
 class ChatRole(

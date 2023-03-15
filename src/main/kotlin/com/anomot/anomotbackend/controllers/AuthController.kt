@@ -25,8 +25,8 @@ import org.springframework.web.bind.annotation.RequestParam
 import org.springframework.web.bind.annotation.RestController
 import org.springframework.web.multipart.MultipartFile
 import java.time.Instant
-import javax.validation.Valid
-import javax.validation.constraints.Min
+import jakarta.validation.Valid
+import jakarta.validation.constraints.Min
 
 @RestController
 @RequestMapping("/account")

@@ -2,7 +2,7 @@ package com.anomot.anomotbackend.entities
 
 import com.anomot.anomotbackend.utils.NsfwScanType
 import java.io.Serializable
-import javax.persistence.*
+import jakarta.persistence.*
 
 @Entity
 class NsfwScan(

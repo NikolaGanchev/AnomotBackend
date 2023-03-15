@@ -11,7 +11,7 @@ import org.springframework.data.domain.Sort
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder
 import org.springframework.stereotype.Service
 import java.util.Date
-import javax.transaction.Transactional
+import jakarta.transaction.Transactional
 
 @Service
 class ChatService @Autowired constructor(
