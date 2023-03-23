@@ -34,6 +34,7 @@ import java.nio.charset.StandardCharsets
 import java.time.Duration
 import java.time.Instant
 import jakarta.transaction.Transactional
+import org.springframework.security.core.Authentication
 
 
 data class AvatarResult(
@@ -447,5 +448,9 @@ class UserDetailsServiceImpl: UserDetailsService {
             it.setAttribute("SPRING_SECURITY_CONTEXT", context)
             sessionRepository.save(it)
         }
+    }
+
+    fun verifyAuthenticationWithoutMfa(authentication: Authentication, password: String): Authentication? {
+        return authenticationService.verifyAuthenticationWithoutMfa(authentication, password)
     }
 }

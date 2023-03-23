@@ -3,6 +3,7 @@ package com.anomot.anomotbackend.services
 import com.anomot.anomotbackend.dto.*
 import com.anomot.anomotbackend.entities.*
 import com.anomot.anomotbackend.repositories.*
+import com.anomot.anomotbackend.security.CustomUserDetails
 import com.anomot.anomotbackend.utils.ChatEventType
 import com.anomot.anomotbackend.utils.ChatRoles
 import org.springframework.beans.factory.annotation.Autowired
@@ -12,6 +13,8 @@ import org.springframework.security.crypto.argon2.Argon2PasswordEncoder
 import org.springframework.stereotype.Service
 import java.util.Date
 import jakarta.transaction.Transactional
+import org.springframework.security.authentication.BadCredentialsException
+import org.springframework.security.core.Authentication
 
 @Service
 class ChatService @Autowired constructor(
@@ -23,6 +26,15 @@ class ChatService @Autowired constructor(
         private val userDetailsServiceImpl: UserDetailsServiceImpl,
         private val passwordEncoder: Argon2PasswordEncoder
 ) {
+
+    val ADD_ROLE: (member: ChatMember, role: ChatRoles) -> Boolean = {member, role ->
+        chatRoleRepository.save(ChatRole(member, role))
+
+        true
+    }
+    val REMOVE_ROLE: (member: ChatMember, role: ChatRoles) -> Boolean = {member, role ->
+        chatRoleRepository.deleteByChatMemberAndRole(member, role) > 0
+    }
 
     fun createChat(chatCreationDto: ChatCreationDto, creator: User): Chat {
         val chat = chatRepository.save(Chat(chatCreationDto.title,
@@ -38,7 +50,8 @@ class ChatService @Autowired constructor(
 
         val role = chatRoleRepository.saveAll(listOf(
                 ChatRole(member, ChatRoles.USER),
-                ChatRole(member, ChatRoles.ADMIN)))
+                ChatRole(member, ChatRoles.ADMIN),
+                ChatRole(member, ChatRoles.OWNER)))
 
         return chat
     }
@@ -58,7 +71,7 @@ class ChatService @Autowired constructor(
         return true
     }
 
-    fun join(chatJoinDto: ChatJoinDto, user: User): ChatMember? {
+    fun join(chatJoinDto: ChatJoinDto, user: User): ChatMemberDto? {
         val chat = getChatReferenceFromIdUnsafe(chatJoinDto.chatId) ?: return null
 
         if (chatMemberRepository.existsByChatAndUser(chat, user)) return null
@@ -72,7 +85,11 @@ class ChatService @Autowired constructor(
         ))
 
         val role = chatRoleRepository.save(ChatRole(member, ChatRoles.USER))
-        return member
+        return ChatMemberDto(
+                userDetailsServiceImpl.getAsDto(user),
+                member.chatUsername,
+                listOf(role.role.name),
+                member.id.toString())
     }
 
     fun report() {
@@ -80,46 +97,56 @@ class ChatService @Autowired constructor(
     }
 
     @Transactional
-    fun changeChatUsername(chatJoinDto: ChatJoinDto, user: User): Boolean {
-        val chat = getChatReferenceFromIdUnsafe(chatJoinDto.chatId) ?: return false
+    fun changeChatUsername(changeChatNameDto: ChangeChatNameDto, user: User): Boolean {
+        val chat = getChatReferenceFromIdUnsafe(changeChatNameDto.chatId) ?: return false
         val member = chatMemberRepository.getByChatAndUser(chat, user) ?: return false
 
-        // TODO Send system message about username change
-        member.chatUsername = chatJoinDto.username
-        return true
-    }
-
-    @Transactional
-    fun changeTitle(chatId: String, newTitle: String, user: User): Boolean {
-        val (chat, member, roles) = loadInChat(chatId, user) ?: return false
-
-        if (roles.none { it.role == ChatRoles.ADMIN }) return false
-
-        chat.title = newTitle
+        member.chatUsername = changeChatNameDto.username
+        publishSystemMessage(ChatEventType.USERNAME_CHANGE, chat, member)
 
         return true
     }
 
     @Transactional
-    fun changeDescription(chatId: String, newDescription: String, user: User): Boolean {
-        val (chat, member, roles) = loadInChat(chatId, user) ?: return false
+    fun changeTitle(changeChatTitleDto: ChangeChatTitleDto, user: User): Boolean {
+        val (chat, member, roles) = loadInChat(changeChatTitleDto.chatId, user) ?: return false
 
         if (roles.none { it.role == ChatRoles.ADMIN }) return false
 
-        chat.description = newDescription
+        if (chat.password == null || passwordEncoder.matches(chat.password, changeChatTitleDto.password)) {
+            chat.title = changeChatTitleDto.title
+            return true
+        }
 
-        return true
+        return false
     }
 
     @Transactional
-    fun changeInfo(chatId: String, newInfo: String, user: User): Boolean {
-        val (chat, member, roles) = loadInChat(chatId, user) ?: return false
+    fun changeDescription(changeChatDescriptionDto: ChangeChatDescriptionDto, user: User): Boolean {
+        val (chat, member, roles) = loadInChat(changeChatDescriptionDto.chatId, user) ?: return false
 
         if (roles.none { it.role == ChatRoles.ADMIN }) return false
 
-        chat.info = newInfo
+        if (chat.password == null || passwordEncoder.matches(chat.password, changeChatDescriptionDto.password)) {
+            chat.description = changeChatDescriptionDto.description
+            return true
+        }
 
-        return true
+        return false
+    }
+
+    @Transactional
+    fun changeInfo(changeChatInfoDto: ChangeChatInfoDto, user: User): Boolean {
+        val (chat, member, roles) = loadInChat(changeChatInfoDto.chatId, user) ?: return false
+
+        if (roles.none { it.role == ChatRoles.ADMIN }) return false
+
+        if (chat.password == null || passwordEncoder.matches(chat.password, changeChatInfoDto.password)) {
+            chat.info = changeChatInfoDto.info
+            return true
+        }
+
+        return false
     }
 
     @Transactional
@@ -131,7 +158,7 @@ class ChatService @Autowired constructor(
 
         if (roles.none { it.role == ChatRoles.ADMIN }) return false
 
-        return if (passwordEncoder.matches(chat.password, oldPassword)) {
+        return if (chat.password == null || passwordEncoder.matches(chat.password, oldPassword)) {
             if (newPassword == null) chat.password = null
             else {
                 chat.password = passwordEncoder.encode(newPassword)
@@ -140,9 +167,9 @@ class ChatService @Autowired constructor(
         } else false
     }
 
-    fun banMember(chatId: String, chatMemberToBan: String, user: User, until: Date, reason: String): Boolean {
-        val memberToBan = getChatMemberReferenceFromIdUnsafe(chatMemberToBan) ?: return false
-        val (chat, admin, roles) = loadInChat(chatId, user) ?: return false
+    fun banMember(chatMemberBanDto: ChatMemberBanDto, user: User): Boolean {
+        val memberToBan = getChatMemberReferenceFromIdUnsafe(chatMemberBanDto.chatMemberToBanId) ?: return false
+        val (chat, admin, roles) = loadInChat(chatMemberBanDto.chatId, user) ?: return false
         if (memberToBan.chat.id != chat.id) return false
 
         val memberToBanRoles = chatRoleRepository.getByChatMember(memberToBan)
@@ -150,7 +177,7 @@ class ChatService @Autowired constructor(
         if (roles.none { it.role == ChatRoles.ADMIN || it.role == ChatRoles.MODERATOR }) return false
         if (memberToBanRoles.any { it.role == ChatRoles.ADMIN }) return false
 
-        val ban = chatBanRepository.save(ChatBan(memberToBan, reason, admin, until))
+        val ban = chatBanRepository.save(ChatBan(memberToBan, chatMemberBanDto.reason, admin, chatMemberBanDto.until))
         publishSystemMessage(ChatEventType.BAN, chat, memberToBan)
 
         return true
@@ -204,36 +231,44 @@ class ChatService @Autowired constructor(
         ))
     }
 
-    fun addRole(chatId: String,
-                roleToChangeTo: ChatRoles,
-                chatMemberToPromoteId: String,
-                password: String?,
-                admin: User): Boolean {
-        val memberToPromote = getChatMemberReferenceFromIdUnsafe(chatMemberToPromoteId) ?: return false
-        val (chat, member, roles) = loadInChat(chatId, admin) ?: return false
+    fun editRole(chatMemberRoleChangeDto: ChatMemberRoleChangeDto, admin: User, editor: (member: ChatMember, role: ChatRoles) -> Boolean): Boolean {
+        val memberToPromote = getChatMemberReferenceFromIdUnsafe(chatMemberRoleChangeDto.chatMember) ?: return false
+
+        if (chatMemberRoleChangeDto.role == ChatRoles.OWNER) return false
+
+        val (chat, member, roles) = loadInChat(chatMemberRoleChangeDto.chatId, admin) ?: return false
 
         if (roles.none { it.role == ChatRoles.ADMIN}) return false
 
-        if (chat.password != null && !passwordEncoder.matches(chat.password, password)) return false
+        if (chatMemberRoleChangeDto.role == ChatRoles.ADMIN && roles.none { it.role == ChatRoles.OWNER }) return false
 
-        val role = chatRoleRepository.save(ChatRole(member, roleToChangeTo))
+        if (chat.password != null && !passwordEncoder.matches(chat.password, chatMemberRoleChangeDto.password)) return false
 
-        return true
+        return editor(memberToPromote, chatMemberRoleChangeDto.role)
     }
 
-    fun removeRole(chatId: String,
-                   roleToRemove: ChatRoles,
-                   chatMemberToDemoteId: String,
-                   password: String?,
-                   admin: User): Boolean {
-        val memberToDemote = getChatMemberReferenceFromIdUnsafe(chatMemberToDemoteId) ?: return false
-        val (chat, member, roles) = loadInChat(chatId, admin) ?: return false
+    fun transferOwnership(chatId: String,
+                          chatMemberToMakeOwner: String,
+                          chatPassword: String?,
+                          userPassword: String,
+                          ownerAuthentication: Authentication): Boolean {
+        val owner = userDetailsServiceImpl.getUserReferenceFromDetails((ownerAuthentication.principal) as CustomUserDetails)
+        val memberToMakeOwner = getChatMemberReferenceFromIdUnsafe(chatMemberToMakeOwner) ?: return false
 
-        if (roles.none { it.role == ChatRoles.ADMIN}) return false
+        val (chat, member, roles) = loadInChat(chatId, owner) ?: return false
 
-        if (chat.password != null && !passwordEncoder.matches(chat.password, password)) return false
+        if (roles.none { it.role == ChatRoles.OWNER}) return false
 
-        return chatRoleRepository.deleteByChatMemberAndRole(memberToDemote, roleToRemove) > 0
+        if (chat.password != null && !passwordEncoder.matches(chat.password, chatPassword)) return false
+
+        if (userDetailsServiceImpl.verifyAuthenticationWithoutMfa(ownerAuthentication, userPassword) == null) {
+            throw BadCredentialsException("Bad credentials")
+        }
+
+        val role = chatRoleRepository.save(ChatRole(member, ChatRoles.OWNER))
+        chatRoleRepository.deleteByChatMemberAndRole(memberToMakeOwner, ChatRoles.OWNER)
+
+        return true
     }
 
     fun loadInChat(chatId: String, user: User): Triple<Chat, ChatMember, List<ChatRole>>? {
