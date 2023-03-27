@@ -8,7 +8,8 @@ import com.anomot.anomotbackend.security.Authorities
 import com.anomot.anomotbackend.security.CustomUserDetails
 import com.anomot.anomotbackend.security.MfaMethodValue
 import com.anomot.anomotbackend.utils.Constants
-import com.bastiaanjansen.otp.TOTP
+import com.bastiaanjansen.otp.HMACAlgorithm
+import com.bastiaanjansen.otp.TOTPGenerator
 import org.hibernate.Hibernate
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Lazy
@@ -192,8 +193,11 @@ class UserDetailsServiceImpl: UserDetailsService {
             val token = MfaTotpSecret(stringSecret, user)
             totpService.saveCode(token)
 
-            val totp = TOTP.Builder(secret)
-                    .withPasswordLength(Constants.MFA_PASSWORD_LENGTH)
+            val totp = TOTPGenerator.Builder(secret)
+                    .withHOTPGenerator {
+                        it.withPasswordLength(Constants.MFA_PASSWORD_LENGTH)
+                        it.withAlgorithm(HMACAlgorithm.SHA256)
+                    }
                     .withPeriod(Duration.ofSeconds(Constants.TOTP_PERIOD))
                     .build()
 
