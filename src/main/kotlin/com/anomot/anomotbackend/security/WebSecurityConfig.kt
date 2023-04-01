@@ -9,7 +9,6 @@ import com.anomot.anomotbackend.utils.Constants
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.netty.resolver.DefaultAddressResolverGroup
-import jakarta.servlet.http.HttpServletResponse.*
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Bean
@@ -18,14 +17,13 @@ import org.springframework.context.annotation.Primary
 import org.springframework.context.annotation.Scope
 import org.springframework.context.support.ResourceBundleMessageSource
 import org.springframework.core.io.Resource
-import org.springframework.data.redis.connection.lettuce.LettuceConnectionFactory
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.http.client.reactive.ReactorClientHttpConnector
 import org.springframework.http.codec.ClientCodecConfigurer
 import org.springframework.mail.javamail.JavaMailSender
 import org.springframework.mail.javamail.JavaMailSenderImpl
-import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity
+import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
 import org.springframework.security.config.annotation.web.builders.WebSecurity
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity
@@ -36,24 +34,23 @@ import org.springframework.security.web.authentication.AuthenticationFailureHand
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository
-import org.springframework.session.data.redis.config.annotation.web.http.EnableRedisIndexedHttpSession
 import org.springframework.web.reactive.function.client.ExchangeStrategies
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.servlet.config.annotation.CorsRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer
 import org.thymeleaf.TemplateEngine
-import org.thymeleaf.spring6.SpringTemplateEngine
+import org.thymeleaf.spring5.SpringTemplateEngine
 import org.thymeleaf.templatemode.TemplateMode
 import org.thymeleaf.templateresolver.ClassLoaderTemplateResolver
 import org.thymeleaf.templateresolver.ITemplateResolver
 import reactor.netty.http.client.HttpClient
 import java.util.*
+import javax.servlet.http.HttpServletResponse.*
 
 
 @Configuration
 @EnableWebSecurity
-@EnableRedisIndexedHttpSession
-@EnableMethodSecurity(
+@EnableGlobalMethodSecurity(
         prePostEnabled = true,
         securedEnabled = true,
         jsr250Enabled = true)
@@ -84,8 +81,8 @@ class WebSecurityConfig {
 
     @Bean
     fun filterChain(http: HttpSecurity): SecurityFilterChain {
-        http.authorizeHttpRequests()
-                .requestMatchers("/account/new",
+        http.authorizeRequests()
+                    .antMatchers("/account/new",
                             "/account/email/verify",
                             "/account/mfa/email/methods",
                             "/account/mfa/email/send",
@@ -139,7 +136,7 @@ class WebSecurityConfig {
 
     @Bean
     fun webSecurityCustomizer(): WebSecurityCustomizer {
-        return WebSecurityCustomizer { web: WebSecurity -> web.ignoring().requestMatchers(HttpMethod.OPTIONS, "/**") }
+        return WebSecurityCustomizer { web: WebSecurity -> web.ignoring().antMatchers(HttpMethod.OPTIONS, "/**") }
     }
 
     private val loginSuccessHandler = AuthenticationSuccessHandler {
@@ -215,17 +212,12 @@ class WebSecurityConfig {
 
     @Bean
     fun passwordEncoder(): Argon2PasswordEncoder {
-        return Argon2PasswordEncoder.defaultsForSpringSecurity_v5_8()
+        return Argon2PasswordEncoder()
     }
 
     @Bean
     fun userDetailsService(): UserDetailsServiceImpl {
         return UserDetailsServiceImpl()
-    }
-
-    @Bean
-    fun redisConnectionFactory(): LettuceConnectionFactory {
-        return LettuceConnectionFactory()
     }
 
     @Bean

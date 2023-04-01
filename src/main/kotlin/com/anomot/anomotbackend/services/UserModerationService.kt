@@ -19,7 +19,7 @@ import java.lang.IllegalArgumentException
 import java.time.Instant
 import java.util.*
 import javax.crypto.SecretKey
-import jakarta.transaction.Transactional
+import javax.transaction.Transactional
 
 @Service
 class UserModerationService @Autowired constructor(

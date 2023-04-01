@@ -3,7 +3,7 @@ package com.anomot.anomotbackend.entities
 import com.anomot.anomotbackend.utils.MediaType
 import java.io.Serializable
 import java.util.*
-import jakarta.persistence.*
+import javax.persistence.*
 
 @Entity
 class Media(

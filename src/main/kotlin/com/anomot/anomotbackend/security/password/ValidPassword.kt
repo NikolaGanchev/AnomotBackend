@@ -1,6 +1,6 @@
 package com.anomot.anomotbackend.security.password
 
-import jakarta.validation.Constraint
+import javax.validation.Constraint
 import kotlin.reflect.KClass
 
 @MustBeDocumented

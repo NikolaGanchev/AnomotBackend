@@ -2,7 +2,7 @@ package com.anomot.anomotbackend.entities
 
 import com.anomot.anomotbackend.utils.ReportReason
 import java.util.*
-import jakarta.persistence.*
+import javax.persistence.*
 
 @Table(
         uniqueConstraints=[UniqueConstraint(columnNames=arrayOf("report_ticket_id", "reportReason", "reporter_id"))]

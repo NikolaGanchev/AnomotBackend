@@ -3,8 +3,8 @@ package com.anomot.anomotbackend.dto
 import com.anomot.anomotbackend.security.password.ValidPassword
 import com.anomot.anomotbackend.utils.Constants
 import org.jetbrains.annotations.NotNull
-import jakarta.validation.constraints.NotEmpty
-import jakarta.validation.constraints.Size
+import javax.validation.constraints.NotEmpty
+import javax.validation.constraints.Size
 
 class PasswordResetDto(
         @NotNull

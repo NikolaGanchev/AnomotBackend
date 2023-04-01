@@ -2,7 +2,7 @@ package com.anomot.anomotbackend.entities
 
 import java.io.Serializable
 import java.util.*
-import jakarta.persistence.*
+import javax.persistence.*
 
 @Entity
 class PreviousCommentVersion (

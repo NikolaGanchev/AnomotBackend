@@ -1,8 +1,8 @@
 package com.anomot.anomotbackend.dto
 
 import java.util.Date
-import jakarta.validation.constraints.Size
-import org.jetbrains.annotations.NotNull
+import javax.validation.constraints.Size
+import javax.validation.constraints.NotNull
 
 data class UserBanDto(
         val userId: String,

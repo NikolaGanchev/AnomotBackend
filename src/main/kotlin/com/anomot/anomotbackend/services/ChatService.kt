@@ -3,7 +3,6 @@ package com.anomot.anomotbackend.services
 import com.anomot.anomotbackend.dto.*
 import com.anomot.anomotbackend.entities.*
 import com.anomot.anomotbackend.repositories.*
-import com.anomot.anomotbackend.security.CustomUserDetails
 import com.anomot.anomotbackend.utils.ChatEventType
 import com.anomot.anomotbackend.utils.ChatRoles
 import org.springframework.beans.factory.annotation.Autowired
@@ -12,7 +11,7 @@ import org.springframework.data.domain.Sort
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder
 import org.springframework.stereotype.Service
 import java.util.Date
-import jakarta.transaction.Transactional
+import javax.transaction.Transactional
 import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.core.Authentication
 

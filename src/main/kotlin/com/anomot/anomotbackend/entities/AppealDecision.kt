@@ -2,7 +2,7 @@ package com.anomot.anomotbackend.entities
 
 import com.anomot.anomotbackend.utils.AppealAction
 import java.util.*
-import jakarta.persistence.*
+import javax.persistence.*
 
 @Entity
 class AppealDecision(

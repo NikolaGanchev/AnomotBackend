@@ -15,7 +15,7 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
 import org.springframework.stereotype.Service
 import java.util.*
-import jakarta.transaction.Transactional
+import javax.transaction.Transactional
 
 @Service
 class FollowService @Autowired constructor(

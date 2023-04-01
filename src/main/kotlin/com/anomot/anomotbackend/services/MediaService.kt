@@ -28,9 +28,7 @@ import org.springframework.web.reactive.function.client.WebClientResponseExcepti
 import reactor.core.publisher.Mono
 import java.lang.Exception
 import java.util.*
-import jakarta.transaction.Transactional
-import org.springframework.http.HttpStatusCode
-import java.nio.ByteBuffer
+import javax.transaction.Transactional
 
 
 @Service
@@ -143,11 +141,16 @@ class MediaService @Autowired constructor(
 
         try {
             val content = webClient.post()
-                    .uri("$mediaServerUrl/media?phash=$shouldHash&nsfw=$shouldNsfwScan")
+                    .uri {
+                        it.path("$mediaServerUrl/media")
+                                .queryParam("phash", shouldHash)
+                                .queryParam("nsfw", shouldNsfwScan)
+                                .build()
+                    }
                     .body(BodyInserters.fromMultipartData(builder.build()))
                     .accept(org.springframework.http.MediaType.APPLICATION_JSON, org.springframework.http.MediaType.TEXT_PLAIN)
                     .retrieve()
-                    .onStatus(HttpStatusCode::is4xxClientError) {
+                    .onStatus(HttpStatus::is4xxClientError) {
                         return@onStatus Mono.empty()
                     }
                     .bodyToMono(MediaSaveDto::class.java)
@@ -159,7 +162,7 @@ class MediaService @Autowired constructor(
 
             return content.get()
         } catch (e: Exception) {
-            logger.error(e.stackTraceToString())
+            logger.error(e.message)
             return null
         }
     }
@@ -168,7 +171,7 @@ class MediaService @Autowired constructor(
         val content: Optional<ResponseEntity<DataBuffer>> = webClient.get()
                 .uri("$mediaServerUrl/media/$name")
                 .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError) {
+                .onStatus(HttpStatus::is4xxClientError) {
                     return@onStatus Mono.empty()
                 }
                 .toEntity(DataBuffer::class.java)
@@ -226,7 +229,7 @@ class MediaService @Autowired constructor(
                 .body(BodyInserters.fromMultipartData(builder.build()))
                 .accept(org.springframework.http.MediaType.APPLICATION_JSON, org.springframework.http.MediaType.TEXT_PLAIN)
                 .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError) {
+                .onStatus(HttpStatus::is4xxClientError) {
                     return@onStatus Mono.empty()
                 }
                 .bodyToMono(FileUploadDto::class.java)
@@ -243,7 +246,7 @@ class MediaService @Autowired constructor(
         val content = webClient.get()
                 .uri("$mediaServerUrl/file/$name")
                 .retrieve()
-                .onStatus(HttpStatusCode::is4xxClientError) {
+                .onStatus(HttpStatus::is4xxClientError) {
                     return@onStatus Mono.empty()
                 }
                 .bodyToMono(DataBuffer::class.java)
@@ -297,10 +300,17 @@ class MediaService @Autowired constructor(
 
         try {
             val content = webClient.post()
-                    .uri("$mediaServerUrl/image/square?size=$size&left=$left&top=$top&cropSize=$cropSize")
+                    .uri {
+                        it.path("$mediaServerUrl/image/square")
+                                .queryParam("size", size)
+                                .queryParam("left", left)
+                                .queryParam("top", top)
+                                .queryParam("cropSize", cropSize)
+                                .build()
+                    }
                     .body(BodyInserters.fromMultipartData(builder.build()))
                     .retrieve()
-                    .onStatus(HttpStatusCode::is4xxClientError) {
+                    .onStatus(HttpStatus::is4xxClientError) {
                         return@onStatus Mono.empty()
                     }
                     .bodyToMono(SquareImageSaveDto::class.java)

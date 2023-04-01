@@ -10,9 +10,9 @@ import org.springframework.security.access.annotation.Secured
 import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
-import jakarta.validation.Valid
-import jakarta.validation.constraints.Max
-import jakarta.validation.constraints.Min
+import javax.validation.Valid
+import javax.validation.constraints.Max
+import javax.validation.constraints.Min
 
 @RestController
 class AdminController(

@@ -1,7 +1,7 @@
 package com.anomot.anomotbackend.entities
 
 import java.io.Serializable
-import jakarta.persistence.*
+import javax.persistence.*
 
 @Entity
 class MfaTotpSecret(

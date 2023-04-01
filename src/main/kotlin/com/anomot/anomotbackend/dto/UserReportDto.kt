@@ -1,7 +1,7 @@
 package com.anomot.anomotbackend.dto
 
 import com.anomot.anomotbackend.utils.UserReportReason
-import jakarta.validation.constraints.Size
+import javax.validation.constraints.Size
 
 data class UserReportDto(
         val reason: UserReportReason,

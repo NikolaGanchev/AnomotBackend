@@ -1,7 +1,7 @@
 package com.anomot.anomotbackend.dto
 
 import com.anomot.anomotbackend.utils.BattlePostReportReason
-import jakarta.validation.constraints.Size
+import javax.validation.constraints.Size
 
 data class BattleReportDto(
         val reason: BattlePostReportReason,

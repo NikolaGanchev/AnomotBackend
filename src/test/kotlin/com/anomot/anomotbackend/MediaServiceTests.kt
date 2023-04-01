@@ -71,7 +71,7 @@ class MediaServiceTests @Autowired constructor(
     fun setUp() {
         mockWebServer = MockWebServer()
         mockWebServer.start(8000)
-        ReflectionTestUtils.setField(mediaService, "mediaServerUrl", "http://localhost:8000")
+        ReflectionTestUtils.setField(mediaService, "mediaServerUrl", "localhost:8000")
     }
 
     @AfterAll

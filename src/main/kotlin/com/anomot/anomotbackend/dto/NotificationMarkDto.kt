@@ -1,6 +1,6 @@
 package com.anomot.anomotbackend.dto
 
-import jakarta.validation.constraints.Size
+import javax.validation.constraints.Size
 
 data class NotificationMarkDto(
         @Size(min = 1, max = 100)

@@ -3,7 +3,7 @@ package com.anomot.anomotbackend.security
 import com.anomot.anomotbackend.utils.Constants
 import org.springframework.security.web.authentication.WebAuthenticationDetails
 import java.util.*
-import jakarta.servlet.http.HttpServletRequest
+import javax.servlet.http.HttpServletRequest
 
 class CustomAuthenticationDetails(request: HttpServletRequest): WebAuthenticationDetails(request) {
     val mfaCode: String?

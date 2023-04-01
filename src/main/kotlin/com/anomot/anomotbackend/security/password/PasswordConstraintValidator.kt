@@ -2,8 +2,8 @@ package com.anomot.anomotbackend.security.password
 
 import com.anomot.anomotbackend.utils.Constants
 import org.passay.*
-import jakarta.validation.ConstraintValidator
-import jakarta.validation.ConstraintValidatorContext
+import javax.validation.ConstraintValidator
+import javax.validation.ConstraintValidatorContext
 
 class PasswordConstraintValidator: ConstraintValidator<ValidPassword, String> {
     companion object {

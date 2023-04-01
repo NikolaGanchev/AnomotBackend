@@ -17,7 +17,7 @@ import org.springframework.stereotype.Service
 import java.lang.Exception
 import java.time.Instant
 import java.util.*
-import jakarta.transaction.Transactional
+import javax.transaction.Transactional
 
 @Service
 class EmailVerificationService @Autowired constructor(

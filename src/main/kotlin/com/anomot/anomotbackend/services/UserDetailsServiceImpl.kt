@@ -8,8 +8,7 @@ import com.anomot.anomotbackend.security.Authorities
 import com.anomot.anomotbackend.security.CustomUserDetails
 import com.anomot.anomotbackend.security.MfaMethodValue
 import com.anomot.anomotbackend.utils.Constants
-import com.bastiaanjansen.otp.HMACAlgorithm
-import com.bastiaanjansen.otp.TOTPGenerator
+import com.bastiaanjansen.otp.TOTP
 import org.hibernate.Hibernate
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Lazy
@@ -34,8 +33,7 @@ import org.springframework.web.multipart.MultipartFile
 import java.nio.charset.StandardCharsets
 import java.time.Duration
 import java.time.Instant
-import jakarta.transaction.Transactional
-import org.springframework.security.core.Authentication
+import javax.transaction.Transactional
 
 
 data class AvatarResult(
@@ -193,11 +191,8 @@ class UserDetailsServiceImpl: UserDetailsService {
             val token = MfaTotpSecret(stringSecret, user)
             totpService.saveCode(token)
 
-            val totp = TOTPGenerator.Builder(secret)
-                    .withHOTPGenerator {
-                        it.withPasswordLength(Constants.MFA_PASSWORD_LENGTH)
-                        it.withAlgorithm(HMACAlgorithm.SHA256)
-                    }
+            val totp = TOTP.Builder(secret)
+                    .withPasswordLength(Constants.MFA_PASSWORD_LENGTH)
                     .withPeriod(Duration.ofSeconds(Constants.TOTP_PERIOD))
                     .build()
 
