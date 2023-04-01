@@ -8,7 +8,7 @@ import com.anomot.anomotbackend.repositories.UserRepository
 import com.anomot.anomotbackend.security.Authorities
 import com.anomot.anomotbackend.security.CustomUserDetails
 import com.anomot.anomotbackend.services.*
-import com.bastiaanjansen.otp.TOTPGenerator
+import com.bastiaanjansen.otp.TOTP
 import com.ninjasquad.springmockk.MockkBean
 import io.mockk.every
 import io.mockk.impl.annotations.InjectMockKs
@@ -42,7 +42,7 @@ class MfaTests @Autowired constructor(
     @MockkBean
     private lateinit var loginInfoExtractorService: LoginInfoExtractorService
     @MockK
-    private lateinit var totp: TOTPGenerator
+    private lateinit var totp: TOTP
 
     @Test
     fun `When email code is valid then return true`() {
