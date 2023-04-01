@@ -1,8 +1,8 @@
 package com.anomot.anomotbackend.dto
 
-import jakarta.validation.constraints.NotEmpty
-import jakarta.validation.constraints.Size
-import org.jetbrains.annotations.NotNull
+import javax.validation.constraints.NotEmpty
+import javax.validation.constraints.Size
+import javax.validation.constraints.NotNull
 import java.util.*
 
 data class ChatMemberBanDto(

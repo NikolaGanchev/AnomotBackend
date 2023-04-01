@@ -1,9 +1,9 @@
 package com.anomot.anomotbackend.dto
 
 import com.anomot.anomotbackend.utils.Constants
-import jakarta.validation.constraints.NotEmpty
-import jakarta.validation.constraints.Size
-import org.jetbrains.annotations.NotNull
+import javax.validation.constraints.NotEmpty
+import javax.validation.constraints.Size
+import javax.validation.constraints.NotNull
 
 data class ChangeChatNameDto(
         @NotNull

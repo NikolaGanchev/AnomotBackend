@@ -3,6 +3,7 @@ package com.anomot.anomotbackend.services
 import com.anomot.anomotbackend.dto.*
 import com.anomot.anomotbackend.entities.*
 import com.anomot.anomotbackend.repositories.*
+import com.anomot.anomotbackend.security.CustomUserDetails
 import com.anomot.anomotbackend.utils.ChatEventType
 import com.anomot.anomotbackend.utils.ChatRoles
 import org.springframework.beans.factory.annotation.Autowired
