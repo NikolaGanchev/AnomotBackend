@@ -17,6 +17,9 @@ import org.springframework.context.annotation.Primary
 import org.springframework.context.annotation.Scope
 import org.springframework.context.support.ResourceBundleMessageSource
 import org.springframework.core.io.Resource
+import org.springframework.data.redis.connection.RedisConnectionFactory
+import org.springframework.data.redis.core.StringRedisTemplate
+import org.springframework.data.redis.listener.RedisMessageListenerContainer
 import org.springframework.http.HttpMethod
 import org.springframework.http.HttpStatus
 import org.springframework.http.client.reactive.ReactorClientHttpConnector
@@ -78,6 +81,8 @@ class WebSecurityConfig {
     private lateinit var customRememberMeTokenRepository: CustomRememberMeTokenRepository
     @Autowired
     private lateinit var loginInfoExtractorService: LoginInfoExtractorService
+    @Autowired
+    private lateinit var redisConnectionFactory: RedisConnectionFactory
 
     @Bean
     fun filterChain(http: HttpSecurity): SecurityFilterChain {
@@ -200,6 +205,20 @@ class WebSecurityConfig {
                         .allowCredentials(true)
             }
         }
+    }
+
+    @Bean
+    fun redisContainer(): RedisMessageListenerContainer {
+        val container = RedisMessageListenerContainer()
+        container.setConnectionFactory(redisConnectionFactory)
+        return container
+    }
+
+    @Bean
+    fun redisTemplate(): StringRedisTemplate {
+        val redisTemplate = StringRedisTemplate()
+        redisTemplate.setConnectionFactory(redisConnectionFactory)
+        return redisTemplate
     }
 
     @Bean

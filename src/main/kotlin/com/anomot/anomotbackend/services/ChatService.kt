@@ -6,18 +6,34 @@ import com.anomot.anomotbackend.repositories.*
 import com.anomot.anomotbackend.security.CustomUserDetails
 import com.anomot.anomotbackend.utils.ChatEventType
 import com.anomot.anomotbackend.utils.ChatRoles
+import com.fasterxml.jackson.annotation.JsonCreator
+import com.fasterxml.jackson.annotation.JsonInclude
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.paramnames.ParameterNamesModule
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Lazy
+import org.springframework.context.event.EventListener
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
+import org.springframework.data.redis.connection.Message
+import org.springframework.data.redis.connection.MessageListener
+import org.springframework.data.redis.core.StringRedisTemplate
+import org.springframework.data.redis.listener.ChannelTopic
+import org.springframework.data.redis.listener.RedisMessageListenerContainer
+import org.springframework.data.redis.listener.adapter.MessageListenerAdapter
 import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.messaging.simp.user.SimpUserRegistry
-import org.springframework.security.crypto.argon2.Argon2PasswordEncoder
-import org.springframework.stereotype.Service
-import java.util.Date
-import javax.transaction.Transactional
+import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.core.Authentication
+import org.springframework.security.crypto.argon2.Argon2PasswordEncoder
+import org.springframework.stereotype.Service
+import org.springframework.web.socket.messaging.SessionDisconnectEvent
+import org.springframework.web.socket.messaging.SessionSubscribeEvent
+import org.springframework.web.socket.messaging.SessionUnsubscribeEvent
+import java.util.*
+import java.util.concurrent.ConcurrentHashMap
+import javax.transaction.Transactional
 
 @Service
 class ChatService @Autowired constructor(
@@ -28,9 +44,19 @@ class ChatService @Autowired constructor(
         private val chatRoleRepository: ChatRoleRepository,
         private val userDetailsServiceImpl: UserDetailsServiceImpl,
         private val passwordEncoder: Argon2PasswordEncoder,
+        private val redisContainer: RedisMessageListenerContainer,
+        private val redisTemplate: StringRedisTemplate,
         @Lazy
         private val simpMessagingTemplate: SimpMessagingTemplate
 ) {
+
+    private val destinations: ConcurrentHashMap<String, String> = ConcurrentHashMap()
+    private val subscriptions: ConcurrentHashMap<String,  ConcurrentHashMap.KeySetView<String, Boolean>> = ConcurrentHashMap()
+    private val listeners: HashMap<String, MessageListener> = hashMapOf()
+    private val mapper = ObjectMapper().also {
+        it.setSerializationInclusion(JsonInclude.Include.ALWAYS)
+        it.registerModule(ParameterNamesModule(JsonCreator.Mode.PROPERTIES))
+    }
 
     val ADD_ROLE: (member: ChatMember, role: ChatRoles) -> Boolean = {member, role ->
         chatRoleRepository.save(ChatRole(member, role))
@@ -247,7 +273,7 @@ class ChatService @Autowired constructor(
     }
 
     fun sendMessageToUsers(message: ChatMessageDto, chat: Chat) {
-        simpMessagingTemplate.convertAndSend("/chat/${chat.id.toString()}", message)
+        redisTemplate.convertAndSend("/chat/${chat.id.toString()}", mapper.writeValueAsString(message))
     }
 
     fun editRole(chatMemberRoleChangeDto: ChatMemberRoleChangeDto, admin: User, editor: (member: ChatMember, role: ChatRoles) -> Boolean): Boolean {
@@ -315,5 +341,74 @@ class ChatService @Autowired constructor(
         val member = chatMemberRepository.getByChatAndUser(chat, user) ?: return false
 
         return true
+    }
+
+    fun subscribeToRedisTopic(topic: String) {
+        if (listeners.containsKey(topic)) return
+        val messageListener = MessageListenerAdapter(object : MessageListener {
+            override fun onMessage(message: Message, pattern: ByteArray?) {
+
+                val chatMessageDto = mapper.readValue(message.toString(), ChatMessageDto::class.java)
+                // TODO Add detection if user can see other user
+                val chatMessageAnonymized = chatMessageDto.copy(member = chatMessageDto.member?.copy(user = null))
+                simpMessagingTemplate.convertAndSend(topic, chatMessageAnonymized)
+            }
+        })
+
+        redisContainer.addMessageListener(messageListener, ChannelTopic(topic))
+    }
+
+    @Scheduled(fixedRate = 1000 * 30)
+    fun unsubscribeFromRedisTopics() {
+        subscriptions.forEach {
+            if (it.value.size == 0) {
+                if (listeners.containsKey(it.key)) {
+                    redisContainer.removeMessageListener(listeners[it.key]!!)
+                    listeners.remove(it.key)
+                }
+            }
+        }
+    }
+
+
+
+    @EventListener
+    public fun onSubscribeEvent(event: SessionSubscribeEvent) {
+        val user = userDetailsServiceImpl.getUserReferenceFromDetails(
+                (event.user as Authentication).principal as CustomUserDetails)
+        val destination = event.message.headers["simpDestination"]
+        val userId = user.id.toString()
+
+        if (subscriptions.containsKey(destination)) {
+            subscriptions[destination]!!.add(userId)
+        } else {
+            subscriptions[destination.toString()] = ConcurrentHashMap.newKeySet()
+        }
+
+        subscribeToRedisTopic(destination.toString())
+        destinations[event.message.headers["simpSessionId"].toString()] = destination.toString()
+    }
+
+    @EventListener
+    public fun onUnsubscribeEvent(event: SessionUnsubscribeEvent) {
+        val user = userDetailsServiceImpl.getUserReferenceFromDetails((event.user as Authentication).principal as CustomUserDetails)
+        val simpSession = event.message.headers["simpSessionId"]
+        val destination = destinations[simpSession]
+        subscriptions[destination]?.remove(user.id.toString())
+        destinations.remove(simpSession)
+    }
+
+    @EventListener
+    public fun onConnectionEndEvent(event: SessionDisconnectEvent) {
+        val user = userDetailsServiceImpl.getUserReferenceFromDetails((event.user as Authentication).principal as CustomUserDetails)
+
+        subscriptions.forEach {
+            val userId = user.id.toString()
+            if (it.value.contains(userId)) {
+                it.value.remove(userId)
+            }
+        }
+
+        destinations.remove(event.message.headers["simpSessionId"])
     }
 }
