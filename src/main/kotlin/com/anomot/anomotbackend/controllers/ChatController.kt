@@ -25,14 +25,14 @@ internal class ChatController @Autowired constructor(
     fun createChat(@RequestBody @Valid chatCreationDto: ChatCreationDto, authentication: Authentication): ResponseEntity<ChatDto> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
         val chat = chatService.createChat(chatCreationDto, user)
-        return ResponseEntity(ChatDto(chat.title, chat.description, chat.info, chat.creationDate), HttpStatus.OK)
+        return ResponseEntity(ChatDto(chat.title, chat.description, chat.info, chat.creationDate, chat.id.toString()), HttpStatus.OK)
     }
 
     @DeleteMapping()
     @EmailVerified
     fun deleteChat(@RequestBody @Valid chatDeleteDto: ChatDeletionDto, authentication: Authentication): ResponseEntity<String> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
-        val result = chatService.delete(chatDeleteDto.chatId, chatDeleteDto.password, user);
+        val result = chatService.delete(chatDeleteDto.chatId, chatDeleteDto.password, user)
         return if (result) {
             ResponseEntity(HttpStatus.OK)
         } else ResponseEntity(HttpStatus.BAD_REQUEST)
@@ -133,5 +133,13 @@ internal class ChatController @Autowired constructor(
         } catch (e: BadCredentialsException) {
             ResponseEntity(HttpStatus.UNAUTHORIZED)
         }
+    }
+
+    @PostMapping("/{chatId}")
+    @EmailVerified
+    fun publishMessage(@PathVariable chatId: String, @RequestBody @Valid chatMessageDto: ChatMessageSendDto, authentication: Authentication): ResponseEntity<String> {
+        val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
+        val message = chatService.publishMessage(chatMessageDto.text, chatId, user)
+        return ResponseEntity(if (message != null) HttpStatus.OK else HttpStatus.BAD_REQUEST)
     }
 }

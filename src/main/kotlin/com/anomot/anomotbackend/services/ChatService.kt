@@ -7,8 +7,11 @@ import com.anomot.anomotbackend.security.CustomUserDetails
 import com.anomot.anomotbackend.utils.ChatEventType
 import com.anomot.anomotbackend.utils.ChatRoles
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.context.annotation.Lazy
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Sort
+import org.springframework.messaging.simp.SimpMessagingTemplate
+import org.springframework.messaging.simp.user.SimpUserRegistry
 import org.springframework.security.crypto.argon2.Argon2PasswordEncoder
 import org.springframework.stereotype.Service
 import java.util.Date
@@ -24,7 +27,9 @@ class ChatService @Autowired constructor(
         private val chatMessageRepository: ChatMessageRepository,
         private val chatRoleRepository: ChatRoleRepository,
         private val userDetailsServiceImpl: UserDetailsServiceImpl,
-        private val passwordEncoder: Argon2PasswordEncoder
+        private val passwordEncoder: Argon2PasswordEncoder,
+        @Lazy
+        private val simpMessagingTemplate: SimpMessagingTemplate
 ) {
 
     val ADD_ROLE: (member: ChatMember, role: ChatRoles) -> Boolean = {member, role ->
@@ -213,7 +218,7 @@ class ChatService @Autowired constructor(
 
         val savedMessage = chatMessageRepository.save(ChatMessage(member, message))
 
-        return ChatMessageDto(ChatMemberDto(
+        val dto = ChatMessageDto(ChatMemberDto(
                 userDetailsServiceImpl.getAsDto(user),
                 member.chatUsername,
                 roles.map { it.role.name },
@@ -221,14 +226,28 @@ class ChatService @Autowired constructor(
                 savedMessage.message,
                 false,
                 savedMessage.creationDate)
+
+        sendMessageToUsers(dto, chat)
+
+        return dto
     }
 
-    fun publishSystemMessage(message: ChatEventType, chat: Chat, chatMember: ChatMember): ChatMessage {
-        return chatMessageRepository.save(ChatMessage(
+    fun publishSystemMessage(message: ChatEventType, chat: Chat, chatMember: ChatMember): ChatMessageDto {
+        val savedMessage = chatMessageRepository.save(ChatMessage(
                 chatMember,
                 message.name,
                 true
         ))
+
+        val dto = ChatMessageDto(null, message.name, true, savedMessage.creationDate)
+
+        sendMessageToUsers(dto, chat)
+
+        return dto
+    }
+
+    fun sendMessageToUsers(message: ChatMessageDto, chat: Chat) {
+        simpMessagingTemplate.convertAndSend("/chat/${chat.id.toString()}", message)
     }
 
     fun editRole(chatMemberRoleChangeDto: ChatMemberRoleChangeDto, admin: User, editor: (member: ChatMember, role: ChatRoles) -> Boolean): Boolean {
@@ -288,5 +307,13 @@ class ChatService @Autowired constructor(
     fun getChatMemberReferenceFromIdUnsafe(chatMemberId: String): ChatMember? {
         val id = chatMemberId.toLongOrNull() ?: return null
         return if (chatMemberRepository.existsById(id)) chatMemberRepository.getReferenceById(id) else null
+    }
+
+    fun canSeeMessagesInChat(authentication: Authentication, chatId: String): Boolean {
+        val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
+        val chat = getChatReferenceFromIdUnsafe(chatId) ?: return false
+        val member = chatMemberRepository.getByChatAndUser(chat, user) ?: return false
+
+        return true
     }
 }

@@ -7,4 +7,5 @@ data class ChatDto(
         var description: String?,
         var info: String?,
         val creationDate: Date = Date(),
+        val id: String
 )
