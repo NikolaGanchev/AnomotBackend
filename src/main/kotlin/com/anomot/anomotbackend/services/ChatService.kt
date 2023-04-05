@@ -21,6 +21,8 @@ import org.springframework.data.redis.core.StringRedisTemplate
 import org.springframework.data.redis.listener.ChannelTopic
 import org.springframework.data.redis.listener.RedisMessageListenerContainer
 import org.springframework.data.redis.listener.adapter.MessageListenerAdapter
+import org.springframework.messaging.simp.SimpMessageHeaderAccessor
+import org.springframework.messaging.simp.SimpMessageType
 import org.springframework.messaging.simp.SimpMessagingTemplate
 import org.springframework.messaging.simp.user.SimpUserRegistry
 import org.springframework.scheduling.annotation.Scheduled
@@ -46,13 +48,16 @@ class ChatService @Autowired constructor(
         private val passwordEncoder: Argon2PasswordEncoder,
         private val redisContainer: RedisMessageListenerContainer,
         private val redisTemplate: StringRedisTemplate,
+        private val followService: FollowService,
+        @Lazy
+        private val simpUserRegistry: SimpUserRegistry,
         @Lazy
         private val simpMessagingTemplate: SimpMessagingTemplate
 ) {
 
     private val destinations: ConcurrentHashMap<String, String> = ConcurrentHashMap()
     private val subscriptions: ConcurrentHashMap<String,  ConcurrentHashMap.KeySetView<String, Boolean>> = ConcurrentHashMap()
-    private val listeners: HashMap<String, MessageListener> = hashMapOf()
+    private val listeners: ConcurrentHashMap<String, MessageListener> = ConcurrentHashMap()
     private val mapper = ObjectMapper().also {
         it.setSerializationInclusion(JsonInclude.Include.ALWAYS)
         it.registerModule(ParameterNamesModule(JsonCreator.Mode.PROPERTIES))
@@ -273,7 +278,7 @@ class ChatService @Autowired constructor(
     }
 
     fun sendMessageToUsers(message: ChatMessageDto, chat: Chat) {
-        redisTemplate.convertAndSend("/chat/${chat.id.toString()}", mapper.writeValueAsString(message))
+        redisTemplate.convertAndSend("/user/chat/${chat.id.toString()}", mapper.writeValueAsString(message))
     }
 
     fun editRole(chatMemberRoleChangeDto: ChatMemberRoleChangeDto, admin: User, editor: (member: ChatMember, role: ChatRoles) -> Boolean): Boolean {
@@ -343,18 +348,42 @@ class ChatService @Autowired constructor(
         return true
     }
 
-    fun subscribeToRedisTopic(topic: String) {
+    fun stripTopic(topic: String): String {
+        if (topic.startsWith("/user")) {
+            return topic.substring(5)
+        }
+        return topic
+    }
+
+    @Synchronized fun subscribeToRedisTopic(topic: String) {
         if (listeners.containsKey(topic)) return
+        val realTopic = stripTopic(topic)
         val messageListener = MessageListenerAdapter(object : MessageListener {
             override fun onMessage(message: Message, pattern: ByteArray?) {
 
                 val chatMessageDto = mapper.readValue(message.toString(), ChatMessageDto::class.java)
-                // TODO Add detection if user can see other user
                 val chatMessageAnonymized = chatMessageDto.copy(member = chatMessageDto.member?.copy(user = null))
-                simpMessagingTemplate.convertAndSend(topic, chatMessageAnonymized)
+
+                simpUserRegistry.findSubscriptions { it.destination == topic }.forEach {
+                    val headerAccessor = SimpMessageHeaderAccessor.create(SimpMessageType.MESSAGE)
+                    headerAccessor.sessionId = it.session.id
+                    headerAccessor.setLeaveMutable(true)
+
+                    if (!chatMessageDto.isSystem && chatMessageDto.member != null) {
+                        val receiver = userDetailsServiceImpl.getUserReferenceFromDetails(
+                                (it.session.user.principal as Authentication).principal as CustomUserDetails)
+                        val sender = userDetailsServiceImpl.getUserReferenceFromIdUnsafe(chatMessageDto.member.user?.id.toString())
+                        if (sender != null && followService.canSeeOtherUser(receiver, sender)) {
+                            simpMessagingTemplate.convertAndSendToUser(it.session.id, realTopic, chatMessageDto, headerAccessor.messageHeaders)
+                        } else {
+                            simpMessagingTemplate.convertAndSendToUser(it.session.id, realTopic, chatMessageAnonymized, headerAccessor.messageHeaders)
+                        }
+                    }
+                }
             }
         })
 
+        listeners[topic] = messageListener
         redisContainer.addMessageListener(messageListener, ChannelTopic(topic))
     }
 

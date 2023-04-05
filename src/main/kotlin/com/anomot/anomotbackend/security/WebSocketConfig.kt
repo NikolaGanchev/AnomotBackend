@@ -16,7 +16,8 @@ class WebSocketConfig : WebSocketMessageBrokerConfigurer {
     private val clientDomain: String? = null
     override fun configureMessageBroker(config: MessageBrokerRegistry) {
         config.enableSimpleBroker("/chat")
-        config.setApplicationDestinationPrefixes("/app")
+        config.setApplicationDestinationPrefixes("/app", "/user")
+        config.setUserDestinationPrefix("/user")
     }
 
     override fun registerStompEndpoints(registry: StompEndpointRegistry) {

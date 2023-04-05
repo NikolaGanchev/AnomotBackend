@@ -13,7 +13,7 @@ class WebSocketSecurityConfig @Autowired constructor(
 
     override fun configureInbound(messages: MessageSecurityMetadataSourceRegistry) {
         messages.nullDestMatcher().authenticated()
-                .simpSubscribeDestMatchers("/chat/{chatId}")
+                .simpSubscribeDestMatchers("/user/chat/{chatId}")
                     .access("@chatService.canSeeMessagesInChat(authentication,#chatId)")
                 .anyMessage().denyAll()
     }

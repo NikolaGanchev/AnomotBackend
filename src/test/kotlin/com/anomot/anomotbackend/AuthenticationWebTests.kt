@@ -15,6 +15,7 @@ import org.junit.jupiter.api.Test
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest
 import org.springframework.context.annotation.Import
+import org.springframework.data.redis.connection.RedisConnectionFactory
 import org.springframework.http.MediaType
 import org.springframework.security.access.AccessDeniedException
 import org.springframework.security.authentication.BadCredentialsException
@@ -78,6 +79,9 @@ class AuthenticationWebTests @Autowired constructor(
 
     @MockkBean
     private lateinit var userDeletionService: UserDeletionService
+
+    @MockkBean
+    private lateinit var redisConnectionFactory: RedisConnectionFactory
 
     val mfaMethodEmail = MfaMethod(MfaMethodValue.EMAIL.method)
     val mfaMethodTotp = MfaMethod(MfaMethodValue.TOTP.method)
