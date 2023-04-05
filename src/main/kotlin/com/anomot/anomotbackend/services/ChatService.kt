@@ -486,20 +486,23 @@ class ChatService @Autowired constructor(
                 val chatMessageDto = mapper.readValue(message.toString(), ChatMessageDto::class.java)
                 val chatMessageAnonymized = chatMessageDto.copy(member = chatMessageDto.member?.copy(user = null))
 
+                if (chatMessageDto.member == null) {
+                    simpMessagingTemplate.convertAndSend(topic, chatMessageDto)
+                    return
+                }
+
                 simpUserRegistry.findSubscriptions { it.destination == topic }.forEach {
                     val headerAccessor = SimpMessageHeaderAccessor.create(SimpMessageType.MESSAGE)
                     headerAccessor.sessionId = it.session.id
                     headerAccessor.setLeaveMutable(true)
 
-                    if (!chatMessageDto.isSystem && chatMessageDto.member != null) {
-                        val receiver = userDetailsServiceImpl.getUserReferenceFromDetails(
-                                (it.session.user.principal as Authentication).principal as CustomUserDetails)
-                        val sender = userDetailsServiceImpl.getUserReferenceFromIdUnsafe(chatMessageDto.member.user?.id.toString())
-                        if (sender != null && followService.canSeeOtherUser(receiver, sender)) {
-                            simpMessagingTemplate.convertAndSendToUser(it.session.id, realTopic, chatMessageDto, headerAccessor.messageHeaders)
-                        } else {
-                            simpMessagingTemplate.convertAndSendToUser(it.session.id, realTopic, chatMessageAnonymized, headerAccessor.messageHeaders)
-                        }
+                    val receiver = userDetailsServiceImpl.getUserReferenceFromDetails(
+                            (it.session.user.principal as Authentication).principal as CustomUserDetails)
+                    val sender = userDetailsServiceImpl.getUserReferenceFromIdUnsafe(chatMessageDto.member.user?.id.toString())
+                    if (sender != null && followService.canSeeOtherUser(receiver, sender)) {
+                        simpMessagingTemplate.convertAndSendToUser(it.session.id, realTopic, chatMessageDto, headerAccessor.messageHeaders)
+                    } else {
+                        simpMessagingTemplate.convertAndSendToUser(it.session.id, realTopic, chatMessageAnonymized, headerAccessor.messageHeaders)
                     }
                 }
             }
