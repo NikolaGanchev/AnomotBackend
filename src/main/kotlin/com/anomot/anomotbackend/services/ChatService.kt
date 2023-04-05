@@ -291,11 +291,11 @@ class ChatService @Autowired constructor(
                     PageRequest.of(page, 15,
                             Sort.by("creationDate").descending()))
                 .map {
-                    ChatMessageDto(ChatMemberDto(
+                    ChatMessageDto(if (it.chatMessage.member != null) ChatMemberDto(
                         if (it.user != null) userDetailsServiceImpl.getAsDto(it.user!!) else null,
-                        if (it.chatMessage.member != null) it.chatMessage.member!!.chatUsername else "",
+                        it.chatMessage.member!!.chatUsername,
                         it.roles.map { role -> role.name },
-                        if (it.chatMessage.member != null) it.chatMessage.member!!.id.toString() else ""),
+                        it.chatMessage.member!!.id.toString()) else null,
                         it.chatMessage.message,
                         it.chatMessage.isSystem,
                         it.chatMessage.creationDate
