@@ -11,7 +11,7 @@ class ChatBan(
         @Column(columnDefinition="TEXT")
         val reason: String,
         @ManyToOne
-        val bannedBy: ChatMember,
+        val bannedBy: ChatMember?,
         val until: Date,
         val creationDate: Date = Date(),
         @Id @GeneratedValue(strategy = GenerationType.AUTO) var id: Long? = null

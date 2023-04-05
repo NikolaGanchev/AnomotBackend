@@ -13,6 +13,7 @@ import org.springframework.data.domain.Sort
 import org.springframework.security.access.annotation.Secured
 import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.core.Authentication
+import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.web.bind.annotation.*
 import java.time.Instant
@@ -51,7 +52,13 @@ class AdminService @Autowired constructor(
         private val urlRepository: UrlRepository,
         private val previousCommentVersionRepository: PreviousCommentVersionRepository,
         private val rememberMeTokenRepository: RememberMeTokenRepository,
-        private val chatRepository: ChatRepository
+        private val chatRepository: ChatRepository,
+        private val chatService: ChatService,
+        private val chatMemberRepository: ChatMemberRepository,
+        private val chatRoleRepository: ChatRoleRepository,
+        private val chatMessageRepository: ChatMessageRepository,
+        private val passwordEncoder: PasswordEncoder,
+        private val chatBanRepository: ChatBanRepository
 ) {
     @Secured("ROLE_ADMIN")
     fun getReports(adminId: Long, page: Int): List<ReportTicketDto> {
@@ -611,6 +618,171 @@ class AdminService @Autowired constructor(
             val mfaMethod = userDetailsServiceImpl.getMfaEntityReference(MfaMethodValue.TOTP)
 
             userDetailsServiceImpl.deactivateMfa(user, mfaMethod)
+        }
+
+        return true
+    }
+
+    @Secured("ROLE_ADMIN")
+    fun joinChat(chatId: String, username: String, user: User): ChatMemberDto? {
+        val chat = chatService.getChatReferenceFromIdUnsafe(chatId) ?: return null
+
+        if (chatMemberRepository.existsByChatAndUser(chat, user)) return null
+
+        val member = chatMemberRepository.save(ChatMember(
+                chat,
+                user,
+                username
+        ))
+
+        val role = chatRoleRepository.save(ChatRole(member, ChatRoles.USER))
+        return ChatMemberDto(
+                userDetailsServiceImpl.getAsDto(user),
+                member.chatUsername,
+                listOf(role.role.name),
+                member.id.toString())
+    }
+
+    @Secured("ROLE_ADMIN")
+    @Transactional
+    fun changeTitle(chatId: String, title: String): Boolean {
+        val chat = chatService.getChatReferenceFromIdUnsafe(chatId) ?: return false
+
+        chat.title = title
+
+        return true
+    }
+
+    @Secured("ROLE_ADMIN")
+    @Transactional
+    fun changeDescription(chatId: String, description: String?): Boolean {
+        val chat = chatService.getChatReferenceFromIdUnsafe(chatId) ?: return false
+
+        chat.description = description
+
+        return true
+    }
+
+    @Secured("ROLE_ADMIN")
+    @Transactional
+    fun changeInfo(chatId: String, info: String?): Boolean {
+        val chat = chatService.getChatReferenceFromIdUnsafe(chatId) ?: return false
+
+        chat.info = info
+
+        return true
+    }
+
+    @Secured("ROLE_ADMIN")
+    @Transactional
+    fun changeChatPassword(chatId: String, newPassword: String?): Boolean {
+        val chat = chatService.getChatReferenceFromIdUnsafe(chatId) ?: return false
+
+        if (newPassword == null) chat.password = null
+        else {
+            chat.password = passwordEncoder.encode(newPassword)
+        }
+        return true
+    }
+
+    @Secured("ROLE_ADMIN")
+    fun banChatMember(banChatMemberBanDto: ChatMemberBanDto, user: User): Boolean {
+        val memberToBan = chatService.getChatMemberReferenceFromIdUnsafe(banChatMemberBanDto.chatMemberToBanId) ?: return false
+
+        chatBanRepository.save(ChatBan(memberToBan,
+                banChatMemberBanDto.reason,
+                memberToBan,
+                banChatMemberBanDto.until))
+
+        chatService.publishSystemMessage(ChatEventType.BAN, memberToBan.chat, memberToBan)
+
+        return true
+    }
+
+    @Secured("ROLE_ADMIN")
+    @Transactional
+    fun unbanChatMember(banChatMemberUnbanDto: ChatMemberUnbanDto, user: User): Boolean {
+        val memberToUnban = chatService.getChatMemberReferenceFromIdUnsafe(banChatMemberUnbanDto.chatMemberToUnbanId) ?: return false
+
+        val banIdLong = banChatMemberUnbanDto.banToRemoveId.toLongOrNull() ?: return false
+        if (!chatBanRepository.existsById(banIdLong)) return false
+        val ban = chatBanRepository.getReferenceById(banIdLong)
+        if (ban.chatMember.id != memberToUnban.id) return false
+
+        chatBanRepository.delete(ban)
+
+        chatService.publishSystemMessage(ChatEventType.UNBAN, memberToUnban.chat, memberToUnban)
+
+        return true
+    }
+
+    @Secured("ROLE_ADMIN")
+    fun getChatBanStatus(member: ChatMember, page: Int): List<ChatBanDto> {
+        val bans = chatBanRepository.getByChatMember(member, PageRequest.of(page, 10, Sort.by("creationDate").descending()))
+
+        return bans.map {
+            val rolesBannedBy = if (it.bannedBy != null) chatRoleRepository.getByChatMember(it.bannedBy!!) else null
+            return@map ChatBanDto(
+                    it.creationDate,
+                    it.until,
+                    if (it.bannedBy != null) ChatMemberDto(
+                            if (it.bannedBy!!.user != null)
+                                userDetailsServiceImpl.getAsDto(it.bannedBy!!.user!!) else null,
+                            it.bannedBy!!.chatUsername,
+                            rolesBannedBy!!.map { role -> role.role.name },
+                            it.bannedBy!!.id.toString()
+                    ) else null,
+                    it.reason,
+                    it.id.toString()
+            )
+        }
+    }
+
+    @Secured("ROLE_ADMIN")
+    fun getChatHistory(chatId: String, from: Date, page: Int): List<ChatMessageDto>? {
+        val chat = chatService.getChatReferenceFromIdUnsafe(chatId) ?: return null
+        return chatMessageRepository.getMessagesByChatAndFromDate(
+                chat,
+                from,
+                PageRequest.of(page, 15,
+                        Sort.by("creationDate").descending()))
+                .map {
+                    ChatMessageDto(if (it.chatMessage.member != null) ChatMemberDto(
+                            if (it.user != null) userDetailsServiceImpl.getAsDto(it.user!!) else null,
+                            it.chatMessage.member!!.chatUsername,
+                            it.roles.map { role -> role.name },
+                            it.chatMessage.member!!.id.toString()) else null,
+                            it.chatMessage.message,
+                            it.chatMessage.isSystem,
+                            it.chatMessage.creationDate
+                    )
+                }
+    }
+
+    @Secured("ROLE_ADMIN")
+    @Transactional
+    fun editRole(chatMemberRoleChangeDto: ChatMemberRoleChangeDto, editor: (member: ChatMember, role: ChatRoles) -> Boolean): Boolean {
+        val memberToPromote = chatService.getChatMemberReferenceFromIdUnsafe(chatMemberRoleChangeDto.chatMember) ?: return false
+
+        if (chatMemberRoleChangeDto.role == ChatRoles.OWNER) return false
+
+        return editor(memberToPromote, chatMemberRoleChangeDto.role)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @Transactional
+    fun transferChatOwnership(chatId: String, chatMember: String, accountPassword: String, authentication: Authentication): Boolean {
+        val memberToMakeOwner = chatService.getChatMemberReferenceFromIdUnsafe(chatMember) ?: return false
+        val chat = chatService.getChatReferenceFromIdUnsafe(chatId) ?: return false
+        val owner = chatService.getOwnerByChat(chat)
+
+        if (userDetailsServiceImpl.verifyAuthenticationWithoutMfa(authentication, accountPassword) == null) {
+            throw BadCredentialsException("Bad credentials")
+        }
+
+        chatRoleRepository.save(ChatRole(memberToMakeOwner, ChatRoles.OWNER))
+        if (owner != null) {
+            chatRoleRepository.deleteByChatMemberAndRole(owner, ChatRoles.OWNER)
         }
 
         return true

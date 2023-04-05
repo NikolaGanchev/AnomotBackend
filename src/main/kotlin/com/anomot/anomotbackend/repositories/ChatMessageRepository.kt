@@ -17,4 +17,10 @@ interface ChatMessageRepository: JpaRepository<ChatMessage, Long> {
             "(select f.followed from Follow f where f.followed = cm.member.user and f.follower = ?3) as user " +
             "from ChatMessage cm where cm.creationDate > ?2 and cm.member.chat = ?1")
     fun getMessagesByChatAndFromDate(chat: Chat, from: Date, fromUser: User, pageable: Pageable): List<ChatMessageWithUser>
+
+    @Query("select cm as chatMessage, " +
+            "(select r.role from ChatRole r where r.chatMember=cm.member) as roles, " +
+            "cm.member.user as user " +
+            "from ChatMessage cm where cm.creationDate > ?2 and cm.member.chat = ?1")
+    fun getMessagesByChatAndFromDate(chat: Chat, from: Date, pageable: Pageable): List<ChatMessageWithUser>
 }

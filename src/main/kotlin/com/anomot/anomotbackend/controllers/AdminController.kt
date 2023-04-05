@@ -2,6 +2,7 @@ package com.anomot.anomotbackend.controllers
 
 import com.anomot.anomotbackend.dto.*
 import com.anomot.anomotbackend.security.CustomUserDetails
+import com.anomot.anomotbackend.security.EmailVerified
 import com.anomot.anomotbackend.services.*
 import com.anomot.anomotbackend.utils.Constants
 import org.springframework.http.HttpStatus
@@ -10,6 +11,7 @@ import org.springframework.security.access.annotation.Secured
 import org.springframework.security.authentication.BadCredentialsException
 import org.springframework.security.core.Authentication
 import org.springframework.web.bind.annotation.*
+import java.util.*
 import javax.validation.Valid
 import javax.validation.constraints.Max
 import javax.validation.constraints.Min
@@ -21,7 +23,8 @@ class AdminController(
         private val postService: PostService,
         private val battleService: BattleService,
         private val loginInfoExtractorService: LoginInfoExtractorService,
-        private val commentService: CommentService
+        private val commentService: CommentService,
+        private val chatService: ChatService
 ) {
     @Secured("ROLE_ADMIN")
     @GetMapping("/admin/tickets")
@@ -449,4 +452,149 @@ class AdminController(
 
         return if (result) ResponseEntity(HttpStatus.OK) else ResponseEntity(HttpStatus.BAD_REQUEST)
     }
+
+    @Secured("ROLE_ADMIN")
+    @DeleteMapping("/admin/chat")
+    fun deleteChat(@RequestParam("id") chatId: String): ResponseEntity<String> {
+        val chat = chatService.getChatReferenceFromIdUnsafe(chatId) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+        val result = chatService.deleteChat(chat)
+        return if (result) ResponseEntity(HttpStatus.OK) else ResponseEntity(HttpStatus.BAD_REQUEST)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @PostMapping("/admin/chat/join")
+    fun joinChat(@RequestBody @Valid chatJoinDto: ChatJoinDto, authentication: Authentication): ResponseEntity<ChatMemberDto> {
+        val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
+        val result = adminService.joinChat(chatJoinDto.chatId, chatJoinDto.username, user)
+                ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+        return ResponseEntity(result, HttpStatus.OK)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @PutMapping("/admin/chat/username")
+    fun changeChatUsername(@RequestBody @Valid changeChatNameDto: ChangeChatNameDto,
+                           @RequestParam("memberId") memberId: String,
+                           authentication: Authentication): ResponseEntity<String> {
+        val member = chatService.getChatMemberReferenceFromIdUnsafe(memberId) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+        val result = chatService.changeChatUsername(changeChatNameDto, member)
+        return ResponseEntity(if (result) HttpStatus.OK else HttpStatus.BAD_REQUEST)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @PutMapping("/admin/chat/title")
+    fun changeTitle(@RequestBody @Valid changeChatTitleDto: ChangeChatTitleDto, authentication: Authentication): ResponseEntity<String>  {
+        val result = adminService.changeTitle(changeChatTitleDto.chatId, changeChatTitleDto.title)
+        return ResponseEntity(if (result) HttpStatus.OK else HttpStatus.BAD_REQUEST)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @PutMapping("/admin/chat/description")
+    fun changeDescription(@RequestBody @Valid changeChatDescriptionDto: ChangeChatDescriptionDto, authentication: Authentication): ResponseEntity<String>  {
+        val result = adminService.changeDescription(changeChatDescriptionDto.chatId, changeChatDescriptionDto.description)
+        return ResponseEntity(if (result) HttpStatus.OK else HttpStatus.BAD_REQUEST)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @PutMapping("/admin/chat/info")
+    fun changeInfo(@RequestBody @Valid changeChatInfoDto: ChangeChatInfoDto, authentication: Authentication): ResponseEntity<String>  {
+        val result = adminService.changeInfo(changeChatInfoDto.chatId, changeChatInfoDto.info)
+        return ResponseEntity(if (result) HttpStatus.OK else HttpStatus.BAD_REQUEST)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @PutMapping("/admin/chat/password")
+    fun changePassword(@RequestBody @Valid changeChatPasswordDto: ChangeChatPasswordDto, authentication: Authentication): ResponseEntity<String>  {
+        val result = adminService.changeChatPassword(changeChatPasswordDto.chatId,
+                changeChatPasswordDto.newPassword)
+        return ResponseEntity(if (result) HttpStatus.OK else HttpStatus.BAD_REQUEST)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @PostMapping("/admin/chat/ban")
+    fun banMember(@RequestBody @Valid banChatMemberBanDto: ChatMemberBanDto, authentication: Authentication): ResponseEntity<String> {
+        val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
+        val result = adminService.banChatMember(banChatMemberBanDto, user)
+        return ResponseEntity(if (result) HttpStatus.OK else HttpStatus.BAD_REQUEST)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @PostMapping("/admin/chat/unban")
+    fun unbanMember(@RequestBody @Valid banChatMemberUnbanDto: ChatMemberUnbanDto, authentication: Authentication): ResponseEntity<String> {
+        val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
+        val result = adminService.unbanChatMember(banChatMemberUnbanDto, user)
+        return ResponseEntity(if (result) HttpStatus.OK else HttpStatus.BAD_REQUEST)
+    }
+
+    @GetMapping("/bans")
+    @EmailVerified
+    fun getBanHistory(@RequestParam("memberId") memberId: String,
+                      @RequestParam("page") page: Int, authentication: Authentication): ResponseEntity<List<ChatBanDto>> {
+        val member = chatService.getChatMemberReferenceFromIdUnsafe(memberId)
+                ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+        val result = adminService.getChatBanStatus(member, page)
+        return ResponseEntity(result, HttpStatus.OK)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @GetMapping("/admin/chat/messages")
+    fun getChatHistory(@RequestParam("id") chatId: String, @RequestParam("from") from: Date, @RequestParam("page") page: Int, authentication: Authentication): ResponseEntity<List<ChatMessageDto>> {
+        val result = adminService.getChatHistory(chatId, from, page)
+        return ResponseEntity(result, HttpStatus.OK)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @PutMapping("/admin/chat/role")
+    fun addRole(@RequestBody @Valid chatMemberRoleChangeDto: ChatMemberRoleChangeDto, authentication: Authentication): ResponseEntity<String> {
+        val result = adminService.editRole(chatMemberRoleChangeDto, chatService.ADD_ROLE)
+        return ResponseEntity(if (result) HttpStatus.OK else HttpStatus.BAD_REQUEST)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @DeleteMapping("/admin/chat/role")
+    fun removeRole(@RequestBody @Valid chatMemberRoleChangeDto: ChatMemberRoleChangeDto, authentication: Authentication): ResponseEntity<String> {
+        val result = adminService.editRole(chatMemberRoleChangeDto, chatService.REMOVE_ROLE)
+        return ResponseEntity(if (result) HttpStatus.OK else HttpStatus.BAD_REQUEST)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @PostMapping("/admin/chat/ownership/transfer")
+    fun transferOwnership(@RequestBody @Valid ownershipTransferDto: OwnershipTransferDto, authentication: Authentication): ResponseEntity<String> {
+        return try {
+            val result = adminService.transferChatOwnership(ownershipTransferDto.chatId,
+                    ownershipTransferDto.chatMember,
+                    ownershipTransferDto.accountPassword,
+                    authentication)
+            ResponseEntity(if (result) HttpStatus.OK else HttpStatus.BAD_REQUEST)
+        } catch (e: BadCredentialsException) {
+            ResponseEntity(HttpStatus.UNAUTHORIZED)
+        }
+    }
+
+    @Secured("ROLE_ADMIN")
+    @PostMapping("/admin/chat/system/{chatId}")
+    fun publishSystemMessage(@PathVariable chatId: String,
+                             @RequestBody @Valid chatEventMessage: ChatEventSystemMessage,
+                             authentication: Authentication): ResponseEntity<String> {
+        val chat = chatService.getChatReferenceFromIdUnsafe(chatId) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+        val member = if (chatEventMessage.memberId != null) {
+            chatService.getChatMemberReferenceFromIdUnsafe(chatEventMessage.memberId) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+        } else null
+        chatService.publishSystemMessage(chatEventMessage.chatEventType, chat, member)
+        return ResponseEntity(HttpStatus.OK)
+    }
+
+    @Secured("ROLE_ADMIN")
+    @PostMapping("/admin/chat/system/literal/{chatId}")
+    fun publishLiteralSystemMessage(@PathVariable chatId: String,
+                                    @RequestParam("memberId", required = false) memberId: String?,
+                                    @RequestBody @Valid chatMessageDto: ChatMessageSendDto,
+                                    authentication: Authentication): ResponseEntity<String> {
+        val chat = chatService.getChatReferenceFromIdUnsafe(chatId) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+        val member = if (memberId != null) {
+            chatService.getChatMemberReferenceFromIdUnsafe(memberId) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+        } else null
+        chatService.publishSystemMessageLiteral(chatMessageDto.text, chat, member)
+        return ResponseEntity(HttpStatus.OK)
+    }
+
 }

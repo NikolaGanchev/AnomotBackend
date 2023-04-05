@@ -11,4 +11,5 @@ interface ChatRoleRepository: JpaRepository<ChatRole, Long> {
 
     fun deleteAllByChatMemberChat(chat: Chat): Int
     fun deleteByChatMemberAndRole(member: ChatMember, role: ChatRoles): Int
+    fun getByChatMemberChatAndRole(chat: Chat, owner: ChatRoles): ChatRole?
 }
