@@ -40,7 +40,8 @@ class UserDeletionService @Autowired constructor(
         private val reportDecisionRepository: ReportDecisionRepository,
         private val appealDecisionRepository: AppealDecisionRepository,
         private val banRepository: BanRepository,
-        private val userDetailsServiceImpl: UserDetailsServiceImpl
+        private val userDetailsServiceImpl: UserDetailsServiceImpl,
+        private val chatMemberRepository: ChatMemberRepository
 ) {
 
     @Transactional
@@ -91,6 +92,7 @@ class UserDeletionService @Autowired constructor(
         banRepository.deleteByUser(user)
         mediaService.deleteMediaByUserWithoutNsfwScans(user)
         mediaService.deleteFilesByUser(user)
+        chatMemberRepository.setNullByUser(user)
 
         userRepository.deleteById(user.id!!)
     }

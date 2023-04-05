@@ -10,5 +10,6 @@ data class ChatDeletionDto(
         @NotNull
         val chatId: String,
         @Size(min = 1, max = Constants.PASSWORD_MAX_SIZE, message = "Password has to be between 1 and ${Constants.PASSWORD_MAX_SIZE} characters")
-        val password: String?,
+        val chatPassword: String?,
+        val accountPassword: String
 )

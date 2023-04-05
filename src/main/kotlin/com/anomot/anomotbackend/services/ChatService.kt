@@ -93,21 +93,6 @@ class ChatService @Autowired constructor(
         return chat
     }
 
-    @Transactional
-    fun delete(chatId: String, password: String?, user: User): Boolean {
-        val (chat, member, roles) = loadInChat(chatId, user) ?: return false
-
-        if (roles.none { it.role == ChatRoles.ADMIN }) return false
-        if (chat.password != null && !passwordEncoder.matches(chat.password, password)) return false
-
-        chatBanRepository.deleteAllByChatMemberChat(chat)
-        chatMessageRepository.deleteAllByMemberChat(chat)
-        chatRoleRepository.deleteAllByChatMemberChat(chat)
-        chatMemberRepository.deleteAllByChat(chat)
-
-        return true
-    }
-
     fun join(chatJoinDto: ChatJoinDto, user: User): ChatMemberDto? {
         val chat = getChatReferenceFromIdUnsafe(chatJoinDto.chatId) ?: return null
 
@@ -338,6 +323,37 @@ class ChatService @Autowired constructor(
 
         val role = chatRoleRepository.save(ChatRole(member, ChatRoles.OWNER))
         chatRoleRepository.deleteByChatMemberAndRole(memberToMakeOwner, ChatRoles.OWNER)
+
+        return true
+    }
+
+
+    fun deleteChat(chatId: String,
+                   chatPassword: String?,
+                   userPassword: String,
+                   ownerAuthentication: Authentication): Boolean {
+        val owner = userDetailsServiceImpl.getUserReferenceFromDetails((ownerAuthentication.principal) as CustomUserDetails)
+
+        val (chat, member, roles) = loadInChat(chatId, owner) ?: return false
+
+        if (roles.none { it.role == ChatRoles.OWNER}) return false
+
+        if (chat.password != null && !passwordEncoder.matches(chat.password, chatPassword)) return false
+
+        if (userDetailsServiceImpl.verifyAuthenticationWithoutMfa(ownerAuthentication, userPassword) == null) {
+            throw BadCredentialsException("Bad credentials")
+        }
+
+        return deleteChat(chat)
+    }
+
+    @Transactional
+    fun deleteChat(chat: Chat): Boolean {
+        chatBanRepository.deleteAllByChatMemberChat(chat)
+        chatMessageRepository.deleteAllByMemberChat(chat)
+        chatRoleRepository.deleteAllByChatMemberChat(chat)
+        chatMemberRepository.deleteAllByChat(chat)
+        chatRepository.delete(chat)
 
         return true
     }

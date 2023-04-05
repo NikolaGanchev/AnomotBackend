@@ -10,7 +10,7 @@ class ChatMember(
         @ManyToOne
         val chat: Chat,
         @ManyToOne
-        val user: User,
+        val user: User?,
         @Column(length = Constants.USERNAME_MAX_LENGTH)
         var chatUsername: String,
         val creationDate: Date = Date(),

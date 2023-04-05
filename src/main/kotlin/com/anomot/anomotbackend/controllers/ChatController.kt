@@ -31,11 +31,16 @@ internal class ChatController @Autowired constructor(
     @DeleteMapping()
     @EmailVerified
     fun deleteChat(@RequestBody @Valid chatDeleteDto: ChatDeletionDto, authentication: Authentication): ResponseEntity<String> {
-        val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
-        val result = chatService.delete(chatDeleteDto.chatId, chatDeleteDto.password, user)
-        return if (result) {
-            ResponseEntity(HttpStatus.OK)
-        } else ResponseEntity(HttpStatus.BAD_REQUEST)
+        return try {
+            if (chatService.deleteChat(chatDeleteDto.chatId,
+                            chatDeleteDto.chatPassword,
+                            chatDeleteDto.accountPassword,
+                            authentication)) {
+                ResponseEntity(HttpStatus.OK)
+            } else ResponseEntity(HttpStatus.BAD_REQUEST)
+        } catch(e: BadCredentialsException) {
+            ResponseEntity(HttpStatus.UNAUTHORIZED)
+        }
     }
 
     @PostMapping("/join")
