@@ -145,7 +145,7 @@ internal class ChatController @Autowired constructor(
 
     @PostMapping("/report")
     @EmailVerified
-    fun reportBattle(@RequestBody @Valid chatReportDto: ChatReportDto, authentication: Authentication): ResponseEntity<String> {
+    fun reportChat(@RequestBody @Valid chatReportDto: ChatReportDto, authentication: Authentication): ResponseEntity<String> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
 
         val result = chatService.report(chatReportDto, user)
@@ -154,7 +154,7 @@ internal class ChatController @Autowired constructor(
     }
 
     @GetMapping("/report")
-    fun getBattleReport(@RequestParam("chatId") chatId: String,
+    fun getChatReport(@RequestParam("chatId") chatId: String,
                         authentication: Authentication): ResponseEntity<ReportDto> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
 
