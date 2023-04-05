@@ -101,9 +101,29 @@ internal class ChatController @Autowired constructor(
         return ResponseEntity(if (result) HttpStatus.OK else HttpStatus.BAD_REQUEST)
     }
 
+    @PostMapping("/unban")
+    fun unbanMember(@RequestBody @Valid banChatMemberUnbanDto: ChatMemberUnbanDto, authentication: Authentication): ResponseEntity<String> {
+        val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
+        val result = chatService.unbanMember(banChatMemberUnbanDto, user)
+        return ResponseEntity(if (result) HttpStatus.OK else HttpStatus.BAD_REQUEST)
+    }
+
+    @GetMapping("/bans")
+    @EmailVerified
+    fun getBanHistory(@RequestParam("memberId") memberId: String,
+                      @RequestParam("page") page: Int, authentication: Authentication): ResponseEntity<List<ChatBanDto>> {
+        val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
+        val member = chatService.getChatMemberReferenceFromIdUnsafe(memberId)
+                ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+        val result = chatService.getBanStatus(member, user, page)
+        return ResponseEntity(result, HttpStatus.OK)
+    }
+
     @GetMapping("/messages")
     @EmailVerified
-    fun getChatHistory(@RequestParam("id") chatId: String, @RequestParam("from") from: Date, @RequestParam("page") page: Int, authentication: Authentication): ResponseEntity<List<ChatMessageDto>> {
+    fun getChatHistory(@RequestParam("id") chatId: String,
+                       @RequestParam("from") from: Date,
+                       @RequestParam("page") page: Int, authentication: Authentication): ResponseEntity<List<ChatMessageDto>> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
         val result = chatService.getChatHistory(chatId, user, from, page)
         return ResponseEntity(result, HttpStatus.OK)

@@ -7,7 +7,7 @@ import javax.persistence.*
 @Entity
 class ChatMessage(
         @ManyToOne
-        val member: ChatMember,
+        val member: ChatMember?,
         @Column(columnDefinition="TEXT")
         val message: String,
         val isSystem: Boolean = false,

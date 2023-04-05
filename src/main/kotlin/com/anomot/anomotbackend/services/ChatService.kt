@@ -150,6 +150,15 @@ class ChatService @Autowired constructor(
     }
 
     @Transactional
+    fun changeChatUsername(changeChatNameDto: ChangeChatNameDto, member: ChatMember): Boolean {
+        member.chatUsername = changeChatNameDto.username
+        publishSystemMessage(ChatEventType.USERNAME_CHANGE, member.chat, member)
+
+        return true
+    }
+
+
+    @Transactional
     fun changeTitle(changeChatTitleDto: ChangeChatTitleDto, user: User): Boolean {
         val (chat, member, roles) = loadInChat(changeChatTitleDto.chatId, user) ?: return false
 
@@ -225,6 +234,53 @@ class ChatService @Autowired constructor(
         return true
     }
 
+    fun unbanMember(chatMemberUnbanDto: ChatMemberUnbanDto, user: User): Boolean {
+        val memberToUnban = getChatMemberReferenceFromIdUnsafe(chatMemberUnbanDto.chatMemberToUnbanId) ?: return false
+        val (chat, admin, roles) = loadInChat(chatMemberUnbanDto.chatId, user) ?: return false
+        if (memberToUnban.chat.id != chat.id) return false
+
+        val memberToUnbanRoles = chatRoleRepository.getByChatMember(memberToUnban)
+
+        if (roles.none { it.role == ChatRoles.ADMIN || it.role == ChatRoles.MODERATOR }) return false
+        if (memberToUnbanRoles.any { it.role == ChatRoles.ADMIN }) return false
+
+        val banIdLong = chatMemberUnbanDto.banToRemoveId.toLongOrNull() ?: return false
+        if (!chatBanRepository.existsById(banIdLong)) return false
+        val ban = chatBanRepository.getReferenceById(banIdLong)
+        if (ban.chatMember.id != memberToUnban.id) return false
+
+        chatBanRepository.delete(ban)
+
+        publishSystemMessage(ChatEventType.UNBAN, chat, memberToUnban)
+
+        return true
+    }
+
+    fun getBanStatus(member: ChatMember, fromUser: User, page: Int): List<ChatBanDto>? {
+        val (chat, admin, roles) = loadInChat(member.chat.id.toString(), fromUser) ?: return null
+
+        if (roles.none { it.role == ChatRoles.ADMIN || it.role == ChatRoles.MODERATOR }) return null
+
+        val bans = chatBanRepository.getByChatMember(member, PageRequest.of(page, 10, Sort.by("creationDate").descending()))
+
+        return bans.map {
+            val rolesBannedBy = chatRoleRepository.getByChatMember(it.bannedBy)
+            return@map ChatBanDto(
+                    it.creationDate,
+                    it.until,
+                    ChatMemberDto(
+                            if (it.bannedBy.user != null && followService.canSeeOtherUser(fromUser, it.bannedBy.user!!))
+                                userDetailsServiceImpl.getAsDto(it.bannedBy.user!!) else null,
+                            it.bannedBy.chatUsername,
+                            rolesBannedBy.map { role -> role.role.name },
+                            it.bannedBy.id.toString()
+                    ),
+                    it.reason,
+                    it.id.toString()
+            )
+        }
+    }
+
     fun getChatHistory(chatId: String, fromUser: User, from: Date, page: Int): List<ChatMessageDto>? {
         val chat = getChatReferenceFromIdUnsafe(chatId) ?: return null
         return chatMessageRepository.
@@ -237,9 +293,9 @@ class ChatService @Autowired constructor(
                 .map {
                     ChatMessageDto(ChatMemberDto(
                         if (it.user != null) userDetailsServiceImpl.getAsDto(it.user!!) else null,
-                        it.chatMessage.member.chatUsername,
+                        if (it.chatMessage.member != null) it.chatMessage.member!!.chatUsername else "",
                         it.roles.map { role -> role.name },
-                        it.chatMessage.member.id.toString()),
+                        if (it.chatMessage.member != null) it.chatMessage.member!!.id.toString() else ""),
                         it.chatMessage.message,
                         it.chatMessage.isSystem,
                         it.chatMessage.creationDate
@@ -269,14 +325,40 @@ class ChatService @Autowired constructor(
         return dto
     }
 
-    fun publishSystemMessage(message: ChatEventType, chat: Chat, chatMember: ChatMember): ChatMessageDto {
+    fun publishSystemMessage(message: ChatEventType, chat: Chat, chatMember: ChatMember?): ChatMessageDto {
         val savedMessage = chatMessageRepository.save(ChatMessage(
                 chatMember,
                 message.name,
                 true
         ))
 
-        val dto = ChatMessageDto(null, message.name, true, savedMessage.creationDate)
+        val chatMemberDto = if (chatMember != null) ChatMemberDto(
+                if (chatMember.user != null) userDetailsServiceImpl.getAsDto(chatMember.user!!) else null,
+                chatMember.chatUsername,
+                chatRoleRepository.getByChatMember(chatMember).map { it.role.name },
+                chatMember.id.toString()) else null
+
+        val dto = ChatMessageDto(chatMemberDto, message.name, true, savedMessage.creationDate)
+
+        sendMessageToUsers(dto, chat)
+
+        return dto
+    }
+
+    fun publishSystemMessageLiteral(message: String, chat: Chat, chatMember: ChatMember?): ChatMessageDto {
+        val savedMessage = chatMessageRepository.save(ChatMessage(
+                chatMember,
+                message,
+                true
+        ))
+
+        val chatMemberDto = if (chatMember != null) ChatMemberDto(
+                if (chatMember.user != null) userDetailsServiceImpl.getAsDto(chatMember.user!!) else null,
+                chatMember.chatUsername,
+                chatRoleRepository.getByChatMember(chatMember).map { it.role.name },
+                chatMember.id.toString()) else null
+
+        val dto = ChatMessageDto(chatMemberDto, message, true, savedMessage.creationDate)
 
         sendMessageToUsers(dto, chat)
 
@@ -436,8 +518,6 @@ class ChatService @Autowired constructor(
         }
     }
 
-
-
     @EventListener
     public fun onSubscribeEvent(event: SessionSubscribeEvent) {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails(
@@ -453,6 +533,10 @@ class ChatService @Autowired constructor(
 
         subscribeToRedisTopic(destination.toString())
         destinations[event.message.headers["simpSessionId"].toString()] = destination.toString()
+
+        val chatId = if (destination.toString().startsWith("/user/chat/")) destination.toString().substring(11) else return
+        val (chat, member, roles) = loadInChat(chatId, user) ?: return
+        publishSystemMessage(ChatEventType.JOIN, chat, member)
     }
 
     @EventListener
@@ -462,6 +546,10 @@ class ChatService @Autowired constructor(
         val destination = destinations[simpSession]
         subscriptions[destination]?.remove(user.id.toString())
         destinations.remove(simpSession)
+
+        val chatId = if (destination.toString().startsWith("/user/chat/")) destination.toString().substring(11) else return
+        val (chat, member, roles) = loadInChat(chatId, user) ?: return
+        publishSystemMessage(ChatEventType.LEAVE, chat, member)
     }
 
     @EventListener
@@ -475,6 +563,11 @@ class ChatService @Autowired constructor(
             }
         }
 
+        val destination = destinations[event.message.headers["simpSessionId"]]
         destinations.remove(event.message.headers["simpSessionId"])
+
+        val chatId = if (destination.toString().startsWith("/user/chat/")) destination.toString().substring(11) else return
+        val (chat, member, roles) = loadInChat(chatId, user) ?: return
+        publishSystemMessage(ChatEventType.LEAVE, chat, member)
     }
 }
