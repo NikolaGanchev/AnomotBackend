@@ -223,7 +223,7 @@ class BattleService @Autowired constructor(
         return userModerationService.report(reportReason,
                 ReportType.BATTLE,
                 battleReportDto.other,
-                user, post, battle, null, null,
+                user, post, battle, null, null, null,
                 Constants.BATTLE_COOLDOWN)
     }
 

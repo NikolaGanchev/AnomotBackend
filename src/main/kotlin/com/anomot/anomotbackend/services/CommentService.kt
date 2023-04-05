@@ -258,7 +258,7 @@ class CommentService @Autowired constructor(
         return userModerationService.report(reportReason,
                 ReportType.POST,
                 commentReportDto.other,
-                user, null, null, comment, null,
+                user, null, null, comment, null, null,
                 Constants.COMMENT_COOLDOWN)
     }
 

@@ -60,6 +60,7 @@ class Constants {
         const val COMMENT_COOLDOWN: Long = 60 * 60 * 24 * 1 // 1 days cooldown after a ticket is resolved before a new one can be opened
         const val BATTLE_COOLDOWN: Long = 60 * 60 * 24 * 3 // 3 days cooldown after a ticket is resolved before a new one can be opened
         const val POST_REPORT_COOLDOWN: Long = 60 * 60 * 24 * 30 // 30 days cooldown after a ticket is resolved before a new one can be opened
+        const val CHAT_REPORT_COOLDOWN: Long = 60 * 60 * 24 * 1
         const val MAX_CHAT_TITLE_LENGTH = 60
         const val USERNAME_MAX_LENGTH = 40
     }

@@ -263,7 +263,7 @@ class PostService @Autowired constructor(
         return userModerationService.report(reportReason,
                 ReportType.POST,
                 postReportDto.other,
-                user, post, null, null, null,
+                user, post, null, null, null, null,
                 Constants.POST_REPORT_COOLDOWN)
     }
 

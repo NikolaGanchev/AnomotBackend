@@ -18,6 +18,8 @@ interface ReportRepository: JpaRepository<Report, Long> {
 
     fun getAllByReporterAndReportTicketPostAndReportTicketBattle(user: User, post: Post, battle: Battle?): List<Report>
 
+    fun getAllByReporterAndReportTicketChat(user: User, chat: Chat): List<Report>
+
     @Query("update Report r set r.reporter = NULL where r.reporter = ?1")
     @Modifying
     fun setNullByUser(user: User)

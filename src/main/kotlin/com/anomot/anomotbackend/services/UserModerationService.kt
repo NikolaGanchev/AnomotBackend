@@ -46,7 +46,7 @@ class UserModerationService @Autowired constructor(
                 ReportType.USER,
                 userReportDto.other,
                 user, null, null, null,
-                otherUser,
+                otherUser, null,
                 Constants.USER_REPORT_COOLDOWN)
     }
 
@@ -59,11 +59,12 @@ class UserModerationService @Autowired constructor(
                battle: Battle?,
                comment: Comment?,
                user: User?,
-                decisionCooldown: Long): Boolean {
-        var reportTicket = reportTicketRepository.getByPostOrBattleOrCommentOrUser(post, battle, comment, user)
+               chat: Chat?,
+               decisionCooldown: Long): Boolean {
+        var reportTicket = reportTicketRepository.getByPostOrBattleOrCommentOrUserOrChat(post, battle, comment, user, chat)
 
         if (reportTicket == null) {
-            reportTicket = reportTicketRepository.save(ReportTicket(type, post, battle, comment, user,
+            reportTicket = reportTicketRepository.save(ReportTicket(type, post, battle, comment, user, chat,
                     false))
             reportTicketRepository.flush()
         } else {

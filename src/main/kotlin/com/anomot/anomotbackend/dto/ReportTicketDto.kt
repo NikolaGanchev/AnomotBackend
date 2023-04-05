@@ -9,6 +9,7 @@ data class ReportTicketDto(
         val battle: AdminBattleDto?,
         val commentId: CommentDto?,
         val user: UserDto?,
+        val chat: ChatDto?,
         val isDecided: Boolean,
         val decisions: Int,
         val creationDate: Date,

@@ -4,8 +4,7 @@ import com.anomot.anomotbackend.dto.*
 import com.anomot.anomotbackend.entities.*
 import com.anomot.anomotbackend.repositories.*
 import com.anomot.anomotbackend.security.CustomUserDetails
-import com.anomot.anomotbackend.utils.ChatEventType
-import com.anomot.anomotbackend.utils.ChatRoles
+import com.anomot.anomotbackend.utils.*
 import com.fasterxml.jackson.annotation.JsonCreator
 import com.fasterxml.jackson.annotation.JsonInclude
 import com.fasterxml.jackson.databind.ObjectMapper
@@ -49,6 +48,8 @@ class ChatService @Autowired constructor(
         private val redisContainer: RedisMessageListenerContainer,
         private val redisTemplate: StringRedisTemplate,
         private val followService: FollowService,
+        private val userModerationService: UserModerationService,
+        private val reportRepository: ReportRepository,
         @Lazy
         private val simpUserRegistry: SimpUserRegistry,
         @Lazy
@@ -128,8 +129,28 @@ class ChatService @Autowired constructor(
                 member.id.toString())
     }
 
-    fun report() {
-        //TODO
+    fun report(chatReportDto: ChatReportDto, user: User): Boolean {
+        val chat = getChatReferenceFromIdUnsafe(chatReportDto.chatId)
+
+        val reportReason = ReportReason.from(chatReportDto.reason)
+
+        return userModerationService.report(reportReason,
+                ReportType.POST,
+                chatReportDto.other,
+                user, null, null, null, null, chat,
+                Constants.CHAT_REPORT_COOLDOWN)
+    }
+
+    fun getReport(user: User, chatId: String): ReportDto? {
+        val chat = getChatReferenceFromIdUnsafe(chatId) ?: return null
+
+        val reports = reportRepository.getAllByReporterAndReportTicketChat(user, chat)
+
+        val singleReportedDtos = reports.map {
+            SingleReportDto(it.reportReason, it.other)
+        }.toTypedArray()
+
+        return ReportDto(singleReportedDtos, ReportType.POST)
     }
 
     @Transactional

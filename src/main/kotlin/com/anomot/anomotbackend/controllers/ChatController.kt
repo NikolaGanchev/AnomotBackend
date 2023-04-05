@@ -142,4 +142,28 @@ internal class ChatController @Autowired constructor(
         val message = chatService.publishMessage(chatMessageDto.text, chatId, user)
         return ResponseEntity(if (message != null) HttpStatus.OK else HttpStatus.BAD_REQUEST)
     }
+
+    @PostMapping("/report")
+    @EmailVerified
+    fun reportBattle(@RequestBody @Valid chatReportDto: ChatReportDto, authentication: Authentication): ResponseEntity<String> {
+        val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
+
+        val result = chatService.report(chatReportDto, user)
+
+        return ResponseEntity(if (result) HttpStatus.CREATED else HttpStatus.BAD_REQUEST)
+    }
+
+    @GetMapping("/report")
+    fun getBattleReport(@RequestParam("chatId") chatId: String,
+                        authentication: Authentication): ResponseEntity<ReportDto> {
+        val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
+
+        val result = chatService.getReport(user, chatId)
+
+        return if (result != null) {
+            ResponseEntity(result, HttpStatus.OK)
+        } else {
+            ResponseEntity(HttpStatus.BAD_REQUEST)
+        }
+    }
 }

@@ -9,8 +9,8 @@ import java.util.*
 
 interface ReportTicketRepository: JpaRepository<ReportTicket, Long> {
 
-    @Query("from ReportTicket rt where rt.post = ?1 or (rt.post = ?1 and rt.battle = ?2) or rt.comment = ?3 or rt.user = ?4")
-    fun getByPostOrBattleOrCommentOrUser(post: Post?, battle: Battle?, comment: Comment?, user: User?): ReportTicket?
+    @Query("from ReportTicket rt where rt.post = ?1 or (rt.post = ?1 and rt.battle = ?2) or rt.comment = ?3 or rt.user = ?4 or rt.chat = ?5")
+    fun getByPostOrBattleOrCommentOrUserOrChat(post: Post?, battle: Battle?, comment: Comment?, user: User?, chat: Chat?): ReportTicket?
 
     @Query("select rt.type as reportType, " +
             "rt.post_id as post," +
@@ -37,7 +37,7 @@ interface ReportTicketRepository: JpaRepository<ReportTicket, Long> {
             "rt.comment_id as comment, (select count(c.id) from comment c where c.parent_comment_id=rt.comment_id) as commentResponseCount, " +
             "(select count(cl.id) from comment_like cl where cl.comment_id=rt.comment_id) as commentLikes, " +
             "(select count(cl.id) > 0 from comment_like cl where cl.comment_id=rt.comment_id and cl.liked_by_id=?1) as hasUserLikedComment, " +
-            "rt.user_id as \"user\", rt.decided, (select count(rd.id) from report_decision rd where rd.report_ticket_id=rt.id) as decisions, " +
+            "rt.user_id as \"user\", rt.chat_id as \"chat\", rt.decided, (select count(rd.id) from report_decision rd where rd.report_ticket_id=rt.id) as decisions, " +
             "rt.creation_date as creationDate, rt.id as id " +
             "from report_ticket rt where rt.post_id is not null or ( rt.battle_id is not null ) and ( rt.post_id is not null ) or rt.comment_id is not null or rt.user_id is not null", nativeQuery = true)
     fun getAll(adminId: Long, pageable: Pageable): List<ReportTicketIntermediary>
@@ -61,7 +61,7 @@ interface ReportTicketRepository: JpaRepository<ReportTicket, Long> {
             "rt.comment_id as comment, (select count(c.id) from comment c where c.parent_comment_id=rt.comment_id) as commentResponseCount, " +
             "(select count(cl.id) from comment_like cl where cl.comment_id=rt.comment_id) as commentLikes, " +
             "(select count(cl.id) > 0 from comment_like cl where cl.comment_id=rt.comment_id and cl.liked_by_id=?1) as hasUserLikedComment, " +
-            "rt.user_id as \"user\", rt.decided, (select count(rd.id) from report_decision rd where rd.report_ticket_id=rt.id) as decisions, " +
+            "rt.user_id as \"user\", rt.chat_id as \"chat\", rt.decided, (select count(rd.id) from report_decision rd where rd.report_ticket_id=rt.id) as decisions, " +
             "rt.creation_date as creationDate, rt.id as id " +
             "from report_ticket rt where rt.id = ?1", nativeQuery = true)
     fun getIntermediaryById(adminId: Long, id: Long): ReportTicketIntermediary
@@ -80,6 +80,7 @@ interface ReportTicketIntermediary {
     val commentLikes: Long
     val hasUserLikedComment: Boolean
     val user: Long?
+    val chat: Long?
     val isDecided: Boolean
     val decisions: Long
     val creationDate: Date

@@ -16,6 +16,8 @@ class ReportTicket(
         val comment: Comment?,
         @ManyToOne
         val user: User?,
+        @ManyToOne
+        val chat: Chat?,
         var decided: Boolean = false,
         var creationDate: Date = Date(),
         @Id @GeneratedValue(strategy = GenerationType.AUTO) var id: Long? = null

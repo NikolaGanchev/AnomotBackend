@@ -50,7 +50,8 @@ class AdminService @Autowired constructor(
         private val battleQueueRepository: BattleQueueRepository,
         private val urlRepository: UrlRepository,
         private val previousCommentVersionRepository: PreviousCommentVersionRepository,
-        private val rememberMeTokenRepository: RememberMeTokenRepository
+        private val rememberMeTokenRepository: RememberMeTokenRepository,
+        private val chatRepository: ChatRepository
 ) {
     @Secured("ROLE_ADMIN")
     fun getReports(adminId: Long, page: Int): List<ReportTicketDto> {
@@ -64,6 +65,7 @@ class AdminService @Autowired constructor(
         val battle = if (it.battle != null) battleRepository.getReferenceById(it.battle!!) else null
         val comment = if (it.comment != null) commentRepository.getReferenceById(it.comment!!) else null
         val user = if (it.user != null) userRepository.getReferenceById(it.user!!) else null
+        val chat = if (it.chat != null) chatRepository.getReferenceById(it.chat!!) else null
 
         return ReportTicketDto(ReportType.values().first {i -> i.ordinal == it.reportType},
                 if (post != null) asPostDto(post, it.postLikes, it.hasUserLiked) else null,
@@ -77,6 +79,7 @@ class AdminService @Autowired constructor(
                 battle.id.toString()) else null,
                 if (comment != null) getAsCommentDto(comment, it.commentLikes, it.commentResponseCount.toInt(), it.hasUserLikedComment) else null,
                 if (user != null) userDetailsServiceImpl.getAsDto(user) else null,
+                if (chat != null) ChatDto(chat.title, chat.description, chat.info, chat.creationDate, chat.id.toString()) else null,
                 it.isDecided,
                 it.decisions.toInt(),
                 it.creationDate,

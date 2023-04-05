@@ -29,6 +29,10 @@ enum class ReportReason {
         fun from(commentReportReason: CommentReportReason): ReportReason {
             return ReportReason.valueOf(commentReportReason.toString())
         }
+
+        fun from(chatReportReason: ChatReportReason): ReportReason {
+            return ReportReason.valueOf(chatReportReason.toString())
+        }
     }
 }
 
@@ -70,4 +74,18 @@ enum class CommentReportReason {
     TERRORISM,
     SPAM,
     IDENTITY_REVEAL;
+}
+
+enum class ChatReportReason {
+    NSFW_CONTENT,
+    ADVERTISING,
+    VIOLENCE,
+    HARASSMENT,
+    HATE_SPEECH,
+    TERRORISM,
+    SPAM,
+    IDENTITY_REVEAL,
+    INAPPROPRIATE_NAME,
+    INAPPROPRIATE_DESCRIPTION,
+    INAPPROPRIATE_INFO;
 }
