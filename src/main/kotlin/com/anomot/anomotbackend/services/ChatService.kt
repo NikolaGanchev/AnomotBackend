@@ -207,7 +207,7 @@ class ChatService @Autowired constructor(
                        user: User): Boolean {
         val (chat, _, roles) = loadInChat(chatId, user) ?: return false
 
-        if (roles.none { it.role == ChatRoles.ADMIN }) return false
+        if (roles.none { it.role == ChatRoles.OWNER }) return false
 
         return if (chat.password == null || passwordEncoder.matches(chat.password, oldPassword)) {
             if (newPassword == null) chat.password = null
@@ -226,7 +226,7 @@ class ChatService @Autowired constructor(
         val memberToBanRoles = chatRoleRepository.getByChatMember(memberToBan)
 
         if (roles.none { it.role == ChatRoles.ADMIN || it.role == ChatRoles.MODERATOR }) return false
-        if (memberToBanRoles.any { it.role == ChatRoles.ADMIN }) return false
+        if (memberToBanRoles.any { it.role == ChatRoles.ADMIN || it.role == ChatRoles.OWNER }) return false
 
         chatBanRepository.save(ChatBan(memberToBan, chatMemberBanDto.reason, admin, chatMemberBanDto.until))
         publishSystemMessage(ChatEventType.BAN, chat, memberToBan)
@@ -243,7 +243,7 @@ class ChatService @Autowired constructor(
         val memberToUnbanRoles = chatRoleRepository.getByChatMember(memberToUnban)
 
         if (roles.none { it.role == ChatRoles.ADMIN || it.role == ChatRoles.MODERATOR }) return false
-        if (memberToUnbanRoles.any { it.role == ChatRoles.ADMIN }) return false
+        if (memberToUnbanRoles.any { it.role == ChatRoles.ADMIN || it.role == ChatRoles.OWNER }) return false
 
         val banIdLong = chatMemberUnbanDto.banToRemoveId.toLongOrNull() ?: return false
         if (!chatBanRepository.existsById(banIdLong)) return false
@@ -380,7 +380,9 @@ class ChatService @Autowired constructor(
 
         val (chat, _, roles) = loadInChat(chatMemberRoleChangeDto.chatId, admin) ?: return false
 
-        if (roles.none { it.role == ChatRoles.ADMIN}) return false
+        if (memberToPromote.chat.id != chat.id) return false
+
+        if (roles.none { it.role == ChatRoles.ADMIN || it.role == ChatRoles.OWNER }) return false
 
         if (chatMemberRoleChangeDto.role == ChatRoles.ADMIN && roles.none { it.role == ChatRoles.OWNER }) return false
 
