@@ -258,9 +258,11 @@ class ChatService @Autowired constructor(
     }
 
     fun getBanStatus(member: ChatMember, fromUser: User, page: Int): List<ChatBanDto>? {
-        val (_, _, roles) = loadInChat(member.chat.id.toString(), fromUser) ?: return null
+        if (member.user?.id.toString() != fromUser.id.toString()) {
+            val (_, _, roles) = loadInChat(member.chat.id.toString(), fromUser) ?: return null
 
-        if (roles.none { it.role == ChatRoles.ADMIN || it.role == ChatRoles.MODERATOR }) return null
+            if (roles.none { it.role == ChatRoles.ADMIN || it.role == ChatRoles.MODERATOR }) return null
+        }
 
         val bans = chatBanRepository.getByChatMember(member, PageRequest.of(page, 10, Sort.by("creationDate").descending()))
 
@@ -579,5 +581,47 @@ class ChatService @Autowired constructor(
 
     fun getOwnerByChat(chat: Chat): ChatMember? {
         return chatRoleRepository.getByChatMemberChatAndRole(chat, ChatRoles.OWNER)?.chatMember
+    }
+
+    fun getChats(page: Int, sort: ChatSort): List<ChatDto> {
+        val results = when (sort) {
+            ChatSort.NEWEST -> chatRepository.getAll(PageRequest.of(page, 20, Sort.by("creationDate").descending()))
+            ChatSort.OLDEST -> chatRepository.getAll(PageRequest.of(page, 20, Sort.by("creationDate").ascending()))
+            ChatSort.MOST_MEMBERS -> chatRepository.getAllByMostMembers(PageRequest.of(page, 20))
+            ChatSort.LEAST_MEMBERS -> chatRepository.getAllByLeastMembers(PageRequest.of(page, 20))
+        }
+
+        return results.map {
+            return@map ChatDto(
+                    it.title,
+                    it.description,
+                    it.info,
+                    it.creationDate,
+                    it.password != null,
+                    it.id.toString()
+            )
+        }
+    }
+
+    fun getChatsJoined(page: Int, sort: ChatSort, user: User): List<ChatDto> {
+        val results = when (sort) {
+            ChatSort.NEWEST -> chatRepository.getAllByMember(user,
+                    PageRequest.of(page, 20, Sort.by("creationDate").descending()))
+            ChatSort.OLDEST -> chatRepository.getAllByMember(user,
+                    PageRequest.of(page, 20, Sort.by("creationDate").ascending()))
+            ChatSort.MOST_MEMBERS -> chatRepository.getAllByMemberMostMembers(user, PageRequest.of(page, 20))
+            ChatSort.LEAST_MEMBERS -> chatRepository.getAllByMemberLeastMembers(user, PageRequest.of(page, 20))
+        }
+
+        return results.map {
+            return@map ChatDto(
+                    it.title,
+                    it.description,
+                    it.info,
+                    it.creationDate,
+                    it.password != null,
+                    it.id.toString()
+            )
+        }
     }
 }

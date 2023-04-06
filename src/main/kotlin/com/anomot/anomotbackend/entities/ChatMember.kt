@@ -6,6 +6,9 @@ import java.util.*
 import javax.persistence.*
 
 @Entity
+@Table(
+        uniqueConstraints=[UniqueConstraint(columnNames=arrayOf("chat_id", "user_id"))]
+)
 class ChatMember(
         @ManyToOne
         val chat: Chat,

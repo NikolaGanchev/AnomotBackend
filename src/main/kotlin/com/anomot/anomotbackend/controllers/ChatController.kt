@@ -4,6 +4,7 @@ import com.anomot.anomotbackend.dto.*
 import com.anomot.anomotbackend.security.CustomUserDetails
 import com.anomot.anomotbackend.security.EmailVerified
 import com.anomot.anomotbackend.services.ChatService
+import com.anomot.anomotbackend.services.ChatSort
 import com.anomot.anomotbackend.services.UserDetailsServiceImpl
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
@@ -25,7 +26,12 @@ internal class ChatController @Autowired constructor(
     fun createChat(@RequestBody @Valid chatCreationDto: ChatCreationDto, authentication: Authentication): ResponseEntity<ChatDto> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
         val chat = chatService.createChat(chatCreationDto, user)
-        return ResponseEntity(ChatDto(chat.title, chat.description, chat.info, chat.creationDate, chat.id.toString()), HttpStatus.OK)
+        return ResponseEntity(ChatDto(chat.title,
+                chat.description,
+                chat.info,
+                chat.creationDate,
+                chat.password != null,
+                chat.id.toString()), HttpStatus.OK)
     }
 
     @DeleteMapping()
@@ -125,7 +131,7 @@ internal class ChatController @Autowired constructor(
                        @RequestParam("from") from: Date,
                        @RequestParam("page") page: Int, authentication: Authentication): ResponseEntity<List<ChatMessageDto>> {
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
-        val result = chatService.getChatHistory(chatId, user, from, page)
+        val result = chatService.getChatHistory(chatId, user, from, page) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
         return ResponseEntity(result, HttpStatus.OK)
     }
 
@@ -190,5 +196,30 @@ internal class ChatController @Autowired constructor(
         } else {
             ResponseEntity(HttpStatus.BAD_REQUEST)
         }
+    }
+
+    @GetMapping("/ban")
+    fun getBanStatus(@RequestParam("chatId") chatId: String,
+                     @RequestParam("page") page: Int,
+                     authentication: Authentication): ResponseEntity<List<ChatBanDto>> {
+        val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
+        val (_, member, _) = chatService.loadInChat(chatId, user) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+        val result = chatService.getBanStatus(member, user, page) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+        return ResponseEntity(result, HttpStatus.OK)
+    }
+
+    @GetMapping
+    fun getChats(@RequestParam("page") page: Int,
+                 @RequestParam("sortBy") sort: ChatSort,
+                 authentication: Authentication): ResponseEntity<List<ChatDto>> {
+        return ResponseEntity(chatService.getChats(page, sort), HttpStatus.OK)
+    }
+
+    @GetMapping("/joined")
+    fun getJoinedChats(@RequestParam("page") page: Int,
+                       @RequestParam("sortBy") sort: ChatSort,
+                       authentication: Authentication): ResponseEntity<List<ChatDto>>  {
+        val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
+        return ResponseEntity(chatService.getChatsJoined(page, sort, user), HttpStatus.OK)
     }
 }
