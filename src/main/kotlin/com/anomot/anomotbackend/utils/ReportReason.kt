@@ -11,7 +11,10 @@ enum class ReportReason {
     INAPPROPRIATE_USERNAME,
     UNDERAGE,
     ABUSE_OF_SERVICE,
-    IDENTITY_REVEAL;
+    IDENTITY_REVEAL,
+    INAPPROPRIATE_NAME,
+    INAPPROPRIATE_DESCRIPTION,
+    INAPPROPRIATE_INFO;
 
     companion object {
         fun from(postReportReason: PostReportReason): ReportReason {

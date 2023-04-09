@@ -121,7 +121,7 @@ internal class ChatController @Autowired constructor(
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
         val member = chatService.getChatMemberReferenceFromIdUnsafe(memberId)
                 ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
-        val result = chatService.getBanStatus(member, user, page)
+        val result = chatService.getBanStatus(member, user, page) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
         return ResponseEntity(result, HttpStatus.OK)
     }
 
