@@ -222,4 +222,11 @@ internal class ChatController @Autowired constructor(
         val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
         return ResponseEntity(chatService.getChatsJoined(page, sort, user), HttpStatus.OK)
     }
+
+    @GetMapping("/member")
+    fun getSelfMember(@RequestParam("chatId") chatId: String, authentication: Authentication): ResponseEntity<ChatMemberDto>  {
+        val user = userDetailsServiceImpl.getUserReferenceFromDetails((authentication.principal) as CustomUserDetails)
+        val result = chatService.getChatMember(chatId, user) ?: return ResponseEntity(HttpStatus.BAD_REQUEST)
+        return ResponseEntity(result, HttpStatus.OK)
+    }
 }

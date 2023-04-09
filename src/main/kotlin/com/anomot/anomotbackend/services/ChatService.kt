@@ -285,7 +285,7 @@ class ChatService @Autowired constructor(
     }
 
     fun getChatHistory(chatId: String, fromUser: User, from: Date, page: Int): List<ChatMessageDto>? {
-        val chat = getChatReferenceFromIdUnsafe(chatId) ?: return null
+        val (chat, _, _) = loadInChat(chatId, fromUser) ?: return null
         return chatMessageRepository.
             getMessagesByChatAndFromDate(
                     chat,
@@ -625,5 +625,15 @@ class ChatService @Autowired constructor(
                     it.id.toString()
             )
         }
+    }
+
+    fun getChatMember(chatId: String, user: User): ChatMemberDto? {
+        val (chat, member, roles) = loadInChat(chatId, user) ?: return null
+        return ChatMemberDto(
+                userDetailsServiceImpl.getAsDto(user),
+                member.chatUsername,
+                roles.map { it.role.name },
+                member.id.toString()
+        )
     }
 }
